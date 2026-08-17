@@ -15,7 +15,7 @@ Live, seeded, and holding the name. A long way from finished.
 | CLI | `npx dshmarketplace-cli` — [npm](https://www.npmjs.com/package/dshmarketplace-cli) · repo **public, MIT** |
 | Python | `pip install dshmarketplace` — [PyPI](https://pypi.org/project/dshmarketplace/) · repo **public, MIT**. Zero dependencies, `dshm` CLI, agent tools, 3.9–3.13 |
 | In-DSH plugin | `dsh plugin --profile web add dshmarketplace-plugin` — [npm](https://www.npmjs.com/package/dshmarketplace-plugin) · repo **public, MIT**. Verified running in a real harness |
-| Userscript | [DSH Plugin Radar](https://github.com/DshMarketPlace/dsh-plugin-radar) — marks plugins on GitHub and npm · repo **public, MIT**. Not yet submitted to Greasy Fork |
+| Userscript | [DSH Plugin Radar](https://greasyfork.org/scripts/591735-dsh-plugin-radar) — marks plugins on GitHub and npm · [repo](https://github.com/DshMarketPlace/dsh-plugin-radar) **public, MIT**. Live on Greasy Fork 17 Aug 2026 |
 | This repo | **Public, MIT**, history squashed to one commit |
 | Analytics | GA4 `G-R6HWVQVVVB`, all pages |
 | Launch | [LINUX DO thread](https://linux.do/t/topic/2765838), 17 Aug 2026 |
@@ -140,11 +140,12 @@ What that implies, in order of effort against payoff:
 5. ~~**A Python client.**~~ **Shipped** as `dshmarketplace` on PyPI. Worth
    knowing: PyPI links are `rel=nofollow`, so this is distribution and brand
    presence, not link equity — measure a channel before investing in it.
-6. ~~**A userscript.**~~ **Built** as `dsh-plugin-radar`, not yet submitted to
-   Greasy Fork. Same finding as PyPI, measured the same way: Greasy Fork
-   dofollows an allowlist (github.com among it) and `rel=nofollow`s every other
-   author-supplied link, so `dshmarketplace.dev` in a description earns no link
-   equity. The repo link does, and it points here.
+6. ~~**A userscript.**~~ **Shipped** as
+   [`dsh-plugin-radar`](https://greasyfork.org/scripts/591735-dsh-plugin-radar),
+   script 591735. Same finding as PyPI, measured the same way — on our own
+   listing page, the repo link in the description is dofollow and
+   `dshmarketplace.dev` is `nofollow`, so Greasy Fork runs a trusted-domain
+   allowlist. The equity arrives one hop later, via the repo's README.
 7. **Real validation.** Most expensive; needs a Docker runner in CI, cannot run
    on Workers.
 
