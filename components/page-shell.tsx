@@ -14,6 +14,9 @@ export function PageShell({
   updated,
   updatedLabel,
   locale = "en",
+  // Prose sets its own measure; a page carrying request lines and JSON needs a
+  // wider one, or every example wraps at a point the reader has to undo.
+  wide = false,
   children,
 }: {
   eyebrow: string;
@@ -22,11 +25,14 @@ export function PageShell({
   updated?: string;
   updatedLabel?: string;
   locale?: Locale;
+  wide?: boolean;
   children: React.ReactNode;
 }) {
   return (
     <main className="mx-auto max-w-shell px-5 sm:px-8">
-      <div className="max-w-2xl py-14 sm:py-20">
+      <div
+        className={`${wide ? "max-w-3xl" : "max-w-2xl"} py-14 sm:py-20`}
+      >
         <nav className="mb-6 text-xs text-muted-foreground">
           <Link
             href={localePath(locale)}

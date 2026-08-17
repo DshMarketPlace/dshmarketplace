@@ -4,6 +4,10 @@ on:
   push:
     branches: [main]
   workflow_dispatch:
+  # Called by sync.yml. A run triggered with the built-in token cannot start
+  # another workflow, so the nightly sync has to reuse this one rather than
+  # dispatch it — otherwise the site keeps serving the pre-sync numbers.
+  workflow_call:
 
 # One deploy at a time. A queued run supersedes an older queued run, but a
 # run already pushing to Cloudflare is left alone rather than cancelled.

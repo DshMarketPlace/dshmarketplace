@@ -39,6 +39,7 @@ function SiteHeader({ locale }: { locale: Locale }) {
     { href: localePath(locale, "/plugins"), label: d.nav.plugins },
     { href: `${localePath(locale)}#install`, label: d.nav.install },
     { href: `${localePath(locale)}#how`, label: d.nav.how },
+    { href: localePath(locale, "/api-docs"), label: d.nav.api },
   ];
 
   return (
@@ -107,6 +108,7 @@ function SiteFooter({ locale }: { locale: Locale }) {
           title={d.footer.directory}
           links={[
             { href: p("/plugins"), label: d.footer.explore },
+            { href: p("/api-docs"), label: d.footer.api },
             { href: p("/submit"), label: d.nav.submit },
             { href: `${p("/")}#faq`, label: d.footer.faq },
           ]}

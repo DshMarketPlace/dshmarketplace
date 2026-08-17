@@ -174,6 +174,29 @@
   letter-spacing: 0.08em;
 }
 
+/* Tailwind Typography ships a cold slate for code blocks. Every other neutral
+   here is tinted toward the copper hue, so an untouched `pre` reads as a panel
+   borrowed from somebody else's site. Applies to README markdown on the detail
+   pages too, which is where it was already wrong. */
+.prose pre {
+  background: var(--paper-sunken);
+  color: var(--ink);
+  border: 1px solid var(--rule);
+  font-size: 0.8125rem;
+  line-height: 1.65;
+}
+
+.prose pre code {
+  color: inherit;
+}
+
+/* A request line is one long token; wrapping it beats a scrollbar the reader
+   has to find before they can read the second half. */
+.prose pre code {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
 @layer utilities {
   .text-balance {
     text-wrap: balance;

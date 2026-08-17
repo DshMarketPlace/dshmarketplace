@@ -32,6 +32,7 @@ const en = {
     plugins: "Plugins",
     install: "Install",
     how: "How it works",
+    api: "API",
     submit: "Submit a plugin",
   },
 
@@ -40,6 +41,7 @@ const en = {
       "A directory for discovering practical plugins built for DeepSeek Harness. Browse the source, check the install notes, then extend the profile you actually use.",
     directory: "Directory",
     explore: "Explore plugins",
+    api: "Public API",
     faq: "FAQ",
     project: "Project",
     about: "About",
@@ -278,6 +280,7 @@ const zh: Dict = {
     plugins: "插件",
     install: "安装",
     how: "怎么用",
+    api: "API",
     submit: "提交插件",
   },
 
@@ -286,6 +289,7 @@ const zh: Dict = {
       "一个 DeepSeek Harness 插件索引站。按能力找到插件，翻一眼源码和安装说明，再装进你自己那套配置里。",
     directory: "索引",
     explore: "浏览插件",
+    api: "公开 API",
     faq: "常见问题",
     project: "项目",
     about: "关于",
