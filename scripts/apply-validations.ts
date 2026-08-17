@@ -13,6 +13,8 @@ import { eq } from "drizzle-orm";
 
 import { db } from "../db/client";
 import { plugins } from "../db/schema";
+import { primaryInstall } from "../lib/install";
+import { persist } from "./lib/persist";
 
 async function main() {
   const path = process.argv[2];
@@ -23,9 +25,17 @@ async function main() {
     .filter(Boolean)
     .map((l) => JSON.parse(l));
 
+  // What each listing publishes *now*. A batch takes hours, and
+  // `repair-npm-claims.ts` retracted 412 commands while this one was running.
+  const current = new Map<string, string | undefined>();
+  for (const p of await db.select().from(plugins)) {
+    current.set(p.fullName, primaryInstall(p)?.cmd);
+  }
+
   const now = new Date();
   const tally: Record<string, number> = {};
   let applied = 0;
+  let stale = 0;
 
   for (const r of rows) {
     tally[r.status] = (tally[r.status] ?? 0) + 1;
@@ -33,23 +43,35 @@ async function main() {
     // "error" onto a listing would turn our outage into its reputation.
     if (r.status === "error") continue;
 
-    const result = await db
-      .update(plugins)
-      .set({
-        installStatus: r.status,
-        installDetail: r.detail ?? null,
-        blockedBuilds: r.blockedBuildScripts?.length
-          ? JSON.stringify(r.blockedBuildScripts)
-          : null,
-        installCheckedAt: now,
-        updatedAt: now,
-      })
-      .where(eq(plugins.fullName, r.fullName));
+    // A verdict is only about the command that was run. When the listing has
+    // since changed — an npm name we retracted because it was never published,
+    // or was somebody else's — the old result describes a command we no longer
+    // publish, and applying it would blame this repository for a package it
+    // never shipped.
+    if (r.install && current.get(r.fullName) !== r.install) {
+      stale++;
+      continue;
+    }
+
+    const result = await persist(() =>
+      db
+        .update(plugins)
+        .set({
+          installStatus: r.status,
+          installDetail: r.detail ?? null,
+          blockedBuilds: r.blockedBuildScripts?.length
+            ? JSON.stringify(r.blockedBuildScripts)
+            : null,
+          installCheckedAt: now,
+          updatedAt: now,
+        })
+        .where(eq(plugins.fullName, r.fullName)),
+    );
     applied += Number(result.rowsAffected ?? 1);
   }
 
   console.log(JSON.stringify(tally, null, 2));
-  console.log(`applied ${applied} of ${rows.length}`);
+  console.log(`applied ${applied} of ${rows.length}, ${stale} stale (command changed)`);
 }
 
 main();

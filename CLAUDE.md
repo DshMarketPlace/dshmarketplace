@@ -10,7 +10,8 @@ the rules — read it before changing anything.
 
 ## The one thing to understand first
 
-Six or more directories already index DSH plugins. All of them are card walls
+Sixteen directories already index DSH plugins — one search pass found them, and
+found that we appeared in none of those results. All of them are card walls
 that link straight out to GitHub. **The only differentiator is written depth**:
 a page per plugin carrying an overview, a documentation section and an
 illustration that a scraper cannot produce.
@@ -106,9 +107,24 @@ three. A filter nobody can check is not a filter.
 
 **Never claim a plugin is broken on evidence weaker than an install.** The
 sandbox distinguishes `passed`, `needs-approval`, `failed` and `timeout`; a
-blocked build script is `needs-approval`, not a defect, and 29 "failures" in
-the first batch were our own bad data. Reading the code has now twice failed to
-catch commands that cannot run, and installing them caught both.
+blocked build script is `needs-approval`, not a defect. Of 410 "failures" in
+the first full batch, 366 were our own bad npm data and 18 more were a probe
+change made mid-run. Reading the code has now twice failed to catch commands
+that cannot run, and installing them caught both.
+
+**A name in `package.json` proves nothing.** It is an intention, and it is not
+even evidence of intent when the repo is a fork, which inherits the upstream's
+manifest wholesale. 412 of 852 npm claims were wrong: 362 named a package that
+was never published, and 50 named somebody else's — installing them fetched a
+stranger's code, which then "failed" in our sandbox under the listed author's
+name. `repair-npm-claims.ts` checks existence *and* ownership across the whole
+catalogue; `sync-github.ts` only checks the rows it happens to refresh.
+Ownership means the **owner** matches, not the repo — authors rename
+repositories, and treating that as a collision retracts working commands.
+
+**A verdict belongs to the command that was run.** `apply-validations.ts`
+drops any result whose install command no longer matches what the listing
+publishes. A batch takes hours, and the catalogue changes underneath it.
 
 **The AI review judges fit, never people.** It is labelled as generated, says
 which parts were observed in a real install and which were read off the repo,
@@ -171,6 +187,10 @@ pnpm dev                                          # localhost:3177 — 3000 is t
 pnpm build                                        # must pass before any push
 
 pnpm tsx scripts/sync-github.ts                   # refresh GitHub metadata
+pnpm tsx scripts/repair-npm-claims.ts --dry       # audit every npm claim, whole catalogue
+pnpm tsx scripts/export-validation-specs.ts > /tmp/specs.jsonl   # → sandbox on `oracle`
+pnpm tsx scripts/apply-validations.ts /tmp/results.jsonl
+pnpm tsx scripts/write-review.ts --limit 10 [--force]
 pnpm tsx scripts/write-content.ts --limit 10 --images
 pnpm tsx scripts/promote.ts --limit 10            # move into the sitemap
 pnpm tsx scripts/repair-content.ts --all          # re-render after a rule change
