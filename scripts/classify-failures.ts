@@ -14,7 +14,7 @@
  * the reason lives in the log and only the verdict is stored.
  */
 import "dotenv/config";
-import { readFileSync } from "node:fs";
+import { readFileSync, writeFileSync } from "node:fs";
 import { eq, and } from "drizzle-orm";
 
 import { db } from "../db/client";
@@ -84,8 +84,18 @@ async function main() {
     for (const n of unexplained) console.log(`        ${n}`);
   }
 
-  const ours = sorted.filter(([, b]) => b.ours).reduce((n, [, b]) => n + b.names.length, 0);
-  console.log(`\n${ours} of ${latest.size} are ours. Retract those before writing any review.`);
+  // A gate that refuses to write a bad verdict does not remove one already
+  // written, so classifying is only half of it: 31 rows kept a `failed` from
+  // before the gate existed while every later run was correctly discarded.
+  const ours = sorted.filter(([, b]) => b.ours).flatMap(([, b]) => b.names);
+  const out = process.argv.find((a) => a.startsWith("--write-ours="))?.slice(14);
+  if (out) {
+    writeFileSync(out, ours.join("\n") + "\n");
+    console.log(`\n${ours.length} of ${latest.size} are ours — written to ${out}`);
+    console.log(`  pnpm tsx scripts/retract-verdicts.ts ${out}`);
+  } else {
+    console.log(`\n${ours.length} of ${latest.size} are ours. Retract those before writing any review.`);
+  }
 }
 
 main();
