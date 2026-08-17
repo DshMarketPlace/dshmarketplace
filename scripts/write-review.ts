@@ -47,9 +47,9 @@ function endpoint() {
 
 /** Our risk flags in the reader's words, so the model never quotes the raw id. */
 const RISK_PROSE: Record<string, string> = {
-  "install script": "包在安装时会自动跑脚本（这是对 package.json 的静态检查，不代表脚本有问题）",
-  "terminal surface": "README 里提到会执行 shell 命令（这是对 README 的关键词匹配，只是提示它能碰到终端）",
-  "requires credentials": "需要你提供 API key 或 token 才能用",
+  "install script": "安装时会自动执行脚本",
+  "terminal surface": "会执行 shell 命令",
+  "requires credentials": "需要提供 API key 或 token",
 };
 
 /** The sandbox verdict in the reader's words. Absent means we have not run it. */
@@ -73,6 +73,26 @@ function installProse(p: Plugin) {
   }
 }
 
+/**
+ * A constraint the model is not allowed to reason its way out of.
+ *
+ * Left to prose rules it wrote "I would install it" under a verdict section
+ * whose own caveat said the plugin does not finish installing. Whether to
+ * recommend something we watched fail is not a judgement call, so it is not
+ * left as one.
+ */
+function verdictConstraint(p: Plugin) {
+  switch (p.installStatus) {
+    case "failed":
+    case "timeout":
+      return "\n\n硬约束：实测显示它现在装不上。第四段必须反映这一点，绝对不能建议读者直接安装；可以说清在什么条件下才值得回头再看。";
+    case "needs-approval":
+      return "\n\n硬约束：实测显示它要先手动允许构建才能装好。第四段如果建议安装，必须同时点明这一步，不能让读者以为一行命令就完事。";
+    default:
+      return "";
+  }
+}
+
 function facts(p: Plugin) {
   const risks = p.riskFlags ? (JSON.parse(p.riskFlags) as string[]) : [];
   const pushed = p.repoPushedAt?.toISOString().slice(0, 10) ?? "未知";
@@ -82,8 +102,8 @@ function facts(p: Plugin) {
     `仓库：${p.fullName}`,
     `仓库自述：${p.summary ?? "（没有写描述）"}`,
     `Star：${p.stars}｜主要语言：${p.language ?? "未知"}｜开源协议：${p.license ?? "没有声明"}｜最近推送：${pushed}`,
-    `安装：${primaryInstall(p)?.cmd ?? "没有一行命令能装（子目录插件或者哪儿都没发布）"}`,
-    `已知需要注意的：${risks.length ? risks.map((r) => RISK_PROSE[r] ?? r).join("；") : "静态检查没发现"}`,
+    `安装方式：${primaryInstall(p) ? (p.npmPackage ? "npm 一行装" : "从 GitHub 源码装") : "没有一行命令能装（子目录插件，或者哪儿都没发布）"}`,
+    `静态检查发现（这是我们扫 README 和 package.json 得到的，只是提示，不是缺陷）：${risks.length ? risks.map((r) => RISK_PROSE[r] ?? r).join("；") : "没有发现"}`,
     `沙箱实测：${installProse(p)}`,
     `README（可能截断）：\n${(p.readmeMd ?? "（这个仓库没有 README）").slice(0, README_BUDGET)}`,
   ].join("\n");
@@ -93,21 +113,34 @@ const RULES = `写作规矩，违反任何一条这条锐评就不能用：
 
 1. 只用下面给出的事实。事实里没有的，一个字都不许推断——功能、数字、命令、适用场景都不行。不确定就直说不确定。
 2. 评插件，不评人。不许对作者的水平、动机、态度作任何评价，不许暗示项目"糊弄""凑数"。
-3. "需要注意的"里那些标记是我们自己做的静态检查，不是插件的缺陷。可以转述成读者能懂的话，但不许拿它当把柄贬低这个插件，也不许把我们的内部字段名（riskFlags、dsh.profile.bundles、installStatus 之类）写进正文。
+3. 静态检查那几条是我们扫 README 和 package.json 扫出来的提示，不是缺陷。可以转述成人话，但不许拿它贬低插件，也不许把内部字段名（riskFlags、dsh.profile.bundles、installStatus 之类）写进正文。
 4. 不吹。禁止"强大""轻松""一站式""赋能""让您"，禁止 emoji，禁止排比煽情。
 5. 具体压过形容词。能说"依赖 node-pty，构建脚本被拦时装不完"就别说"安装有点麻烦"。
-6. 产品和技术名词保留英文：DeepSeek Harness、DSH、profile、plugin、npm、topic、agent、token。`;
+6. 产品和技术名词保留英文：DeepSeek Harness、DSH、profile、plugin、npm、topic、agent、token。
+
+再加三条，上一版就是栽在这里：
+
+7. 禁止同义反复。"需要侧边栏的人适合装侧边栏插件""想要 X 的用户可以装 X"这种句子等于没说，一句都不许出现。谁该装必须落到**具体处境**——用什么模型、做什么活、缺哪块能力。
+8. 四段之间不许互相复述。同一件事在前面说过，后面就不能再说一遍，换个措辞也不行。
+9. 不要重复页面上已经有的东西：安装命令、Star 数、协议、语言，这些就在锐评旁边摆着，写进来是浪费读者的眼睛。
+10. 四段不许自相矛盾。第二段说了某类人适合装，第四段就不能整体否定这个插件；要否定，只能否定"在某个前提下"，并且把那个前提说出来。
+11. 不许用没有依据的比较来否定它。"别的方案更好""这类模型自己就能做"——事实里没给的，就是编的。要说不值得装，理由必须来自上面列出的事实。
+12. 中文和英文、数字之间留一个半角空格：写"使用 DeepSeek Harness 进行"，不要写"使用DeepSeek Harness进行"。`;
 
 const SHAPE = `每种语言输出四段，用给定的标记包起来，标记独占一行：
 
-<<<ZH_WHAT>>>     一句话说清它是什么、解决什么。不超过 60 字。
-<<<ZH_WHO>>>      谁值得装、谁可以跳过。两三句。
-<<<ZH_CAVEAT>>>   真实的代价或坑，包括实测结果。确实没有就写「没发现明显的坑」。两三句。
-<<<ZH_TAKE>>>     一句不客气的实话，帮读者做决定。可以直接，但对事不对人。一句。
+<<<ZH_WHAT>>>     一句话说清它做什么。不超过 60 字。不要抄仓库自述的措辞。
+<<<ZH_WHO>>>      第一句写一个能对号入座的具体场景（在做什么活、用什么模型、缺哪块能力）。第二句写谁不必装，理由必须是**另一个角度**，不能是第一句的否定式——"不做 X 的人不用装"等于没说。
+<<<ZH_CAVEAT>>>   真实的代价。实测结果优先写在这里。确实没有就写「没发现明显的坑」，不要硬凑。两三句。
+<<<ZH_TAKE>>>     只回答一个问题：换成你，装还是不装，为什么。一句话。这句必须提供**前三段没给过的判断**——一个取舍、一个前提、或者一句直白的值不值。禁止复述前面。
 <<<EN_WHAT>>>     同上，英文，独立写而不是翻译。
 <<<EN_WHO>>>
 <<<EN_CAVEAT>>>
-<<<EN_TAKE>>>`;
+<<<EN_TAKE>>>
+
+第四段不要每次都用同一个句式。"如果…我会装它，因为…" 连着用两次就说明你在套模板，换一种说法。
+
+写完自检一遍：第四段如果去掉，读者会不会少知道一件事？如果不会，重写它。`;
 
 const KEYS = [
   "ZH_WHAT", "ZH_WHO", "ZH_CAVEAT", "ZH_TAKE",
@@ -144,6 +177,9 @@ async function main() {
   };
   const limit = Number(at("--limit")) || 10;
   const one = at("--full-name");
+  // The prompt is the product here, and it changes. Without this, tightening
+  // it leaves every already-written review frozen at the old wording.
+  const force = argv.includes("--force");
   const model = process.env.REVIEW_MODEL ?? "grok-4.6";
 
   // Reviews are worth regenerating once a plugin has been through the sandbox,
@@ -159,7 +195,11 @@ async function main() {
     .where(
       one
         ? eq(plugins.fullName, one)
-        : and(eq(plugins.isArchived, false), isNotNull(plugins.readmeMd), stale),
+        : and(
+            eq(plugins.isArchived, false),
+            isNotNull(plugins.readmeMd),
+            force ? isNotNull(plugins.installCheckedAt) : stale,
+          ),
     )
     .orderBy(desc(plugins.stars))
     .limit(one ? 1 : limit);
@@ -170,7 +210,7 @@ async function main() {
     process.stdout.write(`→ ${row.fullName} … `);
     try {
       const parts = await chatBlocks(
-        `你在给一个 DeepSeek Harness 插件目录站写「AI 锐评」。这段话会标明是 AI 生成、仅供参考，读者最终以实际运行为准——所以它必须准确，不能靠含糊取巧。\n\n${RULES}\n\n${SHAPE}\n\n事实：\n${facts(row)}`,
+        `你在给一个 DeepSeek Harness 插件目录站写「AI 锐评」。这段话会标明是 AI 生成、仅供参考，读者最终以实际运行为准——所以它必须准确，不能靠含糊取巧。\n\n${RULES}\n\n${SHAPE}${verdictConstraint(row)}\n\n事实：\n${facts(row)}`,
         KEYS,
         { model, endpoint: endpoint(), maxTokens: 3000 },
       );
