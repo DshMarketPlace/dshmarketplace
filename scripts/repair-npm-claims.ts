@@ -193,6 +193,17 @@ async function main() {
         installDetail: null,
         blockedBuilds: null,
         installCheckedAt: null,
+        // And a review that cites a measurement cannot outlive it. These said
+        // "沙箱实测显示…" about installs of packages the authors never
+        // published — a sentence about someone else's abandoned library,
+        // published under their name. It regenerates once the real command
+        // has been through the sandbox.
+        review: null,
+        reviewZh: null,
+        reviewHtml: null,
+        reviewHtmlZh: null,
+        reviewModel: null,
+        reviewedAt: null,
         updatedAt: new Date(),
       })
       .where(eq(plugins.id, row.id));
