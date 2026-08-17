@@ -8,8 +8,9 @@ Live, seeded, and holding the name. A long way from finished.
 | --- | --- |
 | Site | <https://dshmarketplace.dev> — Next.js 16 on Cloudflare Workers via OpenNext |
 | Languages | English at `/`, Chinese at `/zh` — separate root layouts, bidirectional hreflang |
-| Database | Turso (libSQL), 2,356 plugins with GitHub metadata |
+| Database | Turso (libSQL), 2,348 plugins with GitHub metadata; 2,341 carry a README |
 | Detail pages | 28 written bilingually, each with a documentation section; 25 illustrated |
+| Install check | 1,820 listings installed in a sandbox; the verdict is printed under the command it is about, and served as `installCheck` |
 | LINUX DO | 6 plugins verified against the thread their author posted |
 | Content pipeline | `write-content.ts` → `promote.ts`. Text on one gateway, images on another |
 | CLI | `npx dshmarketplace-cli` — [npm](https://www.npmjs.com/package/dshmarketplace-cli) · repo **public, MIT** |
@@ -17,8 +18,8 @@ Live, seeded, and holding the name. A long way from finished.
 | In-DSH plugin | `dsh plugin --profile web add dshmarketplace-plugin` — [npm](https://www.npmjs.com/package/dshmarketplace-plugin) · repo **public, MIT**. Verified running in a real harness |
 | Userscript | [DSH Plugin Radar](https://greasyfork.org/scripts/591735-dsh-plugin-radar) — marks plugins on GitHub and npm · [repo](https://github.com/DshMarketPlace/dsh-plugin-radar) **public, MIT**. Live on Greasy Fork 17 Aug 2026 |
 | Validator | [dsh-plugin-validator](https://github.com/DshMarketPlace/dsh-plugin-validator) — installs each plugin in a throwaway container on an Oracle ARM box · **public, MIT** |
-| AI review | Pre-generated bilingual verdict per plugin, grounded in the sandbox result. Button on every card, section on every detail page |
-| Nightly sync | `.github/workflows/sync.yml` — discover, refresh, re-apply the bar, then redeploy |
+| AI review | Pre-generated bilingual verdict per plugin, grounded in the sandbox result where there is one. Button on every card, section on every detail page |
+| Nightly sync | `.github/workflows/sync.yml` — ten steps, discovery through redeploy, no human in the loop |
 | This repo | **Public, MIT**, history squashed to one commit |
 | Analytics | GA4 `G-R6HWVQVVVB`, all pages |
 | Launch | [LINUX DO thread](https://linux.do/t/topic/2765838), 17 Aug 2026 |
@@ -70,12 +71,52 @@ capped, no host mount — and reports what the harness recorded rather than what
 the CLI returned. Verdicts: `passed`, `needs-approval`, `failed`, `timeout`,
 `rejected`.
 
-It found our own defect within the first 150 runs. 29 listings published
-`dsh plugin --profile web add <name>` for packages that are not on npm, because
-`sync-github.ts` read `package.json`'s `name` as proof of publication and never
-asked the registry. Fixed. **This is the second time this project shipped
-install commands that cannot run**, and both times reading the code did not
-catch it and installing it did.
+It found our own defect before it found anyone else's, and the defect was
+bigger than it first looked. **412 of 852 listings claiming an npm package were
+wrong**: 362 named a package that is not on the registry, and 50 named one that
+belongs to somebody else — almost all forks, which inherit the upstream's
+`package.json`, so the fork's card printed the upstream's install command. We
+installed a stranger's code and were about to publish its failure under the
+fork author's name. `repair-npm-claims.ts` sweeps both, catalogue-wide, nightly.
+
+**This is the second time this project shipped install commands that cannot
+run**, and both times reading the code did not catch it and installing it did.
+
+Of the 1,793-run batch, 410 came back `failed`. Almost none were broken
+plugins: 366 were those bad npm claims, 18 were an artifact of editing the
+probe mid-run, and a later batch produced 119 more that were nothing but the
+npm registry throttling us. What survives is a low single-digit percentage,
+mostly monorepo and workspace resolution errors.
+
+## What runs itself, and what never will
+
+`sync.yml` runs nightly at 03:00 Asia/Shanghai and needs nobody:
+
+```
+discover → README for anything new → refresh metadata → verify every npm claim
+→ re-apply the bar → export unchecked → install in a sandbox → record verdicts
+→ write reviews → deploy
+```
+
+It is **three jobs, split on one line that cannot be crossed**: the job that
+runs other people's install scripts holds no secrets at all. A `postinstall`
+that can reach `TURSO_AUTH_TOKEN` owns the catalogue, so there is nothing in
+that job to reach. `sync` answers "which listings need running" where the
+credentials already are and hands the answer over as a file; `apply` reads the
+results back and never runs a plugin.
+
+A review rewrites itself when the sandbox has something to add —
+`reviewedAt < installCheckedAt` — so a listing reviewed before it was installed
+gets a second, better review automatically.
+
+**Not automated, deliberately:** `write-content.ts` and `promote.ts`. The
+per-plugin writing is the only thing competitors cannot scrape, and `promote.ts`
+is a quality gate — automating it would push empty pages into the sitemap.
+
+Caps to remember: 150 installs and 40 reviews a night, and a 400-listing
+metadata refresh, so the catalogue cycles in six days. That keeps up with new
+arrivals; it does not clear a backlog. Sandbox concurrency stays at 3 — going
+faster got the whole batch throttled and every plugin in it looked broken.
 
 ## The strategy this is built around
 
@@ -244,6 +285,36 @@ both languages after every type change.
 ## Traps already hit
 
 Each of these cost real time; they are recorded so they are not rediscovered.
+
+**One family of bug accounts for most of a day.** Five separate defects, none
+of which was a logic error — every one was a correct rule applied to the wrong
+scope, and none of them raised an error. They are invisible precisely because
+nothing breaks; some subset of the data simply never gets its turn.
+
+- **A guard that only runs on the rows you refresh is not a guard.**
+  `sync-github.ts` checked the npm name on every row it touched — 400 a night
+  against 2,356 — so the 412 bad claims it existed to prevent accumulated
+  anyway. Sweeps now run catalogue-wide.
+- **A gate on the wrong precondition excludes a class forever.** The review
+  required a sandbox verdict, but the most-starred listings are monorepo
+  subpaths that can never have one, so the entries readers are most likely to
+  open were permanently guaranteed to be empty. The prompt already refused to
+  claim anything about installing without a verdict; the gate was redundant and
+  exclusionary.
+- **Oldest-first ordering starves new arrivals.** `ingest-topic.ts` stamps
+  `syncedAt` but never fetches a README, and the nightly refresh runs
+  oldest-synced first — so a plugin admitted tonight sorted dead last and waited
+  six nights to be read once. The newest listings were the emptiest ones.
+- **A conservative fallback hides the outage it protects you from.** The npm
+  audit treated any non-404 as "unknown, keep", which silently absorbed several
+  hundred 429s and made a dry run look authoritative while measuring almost
+  nothing. Count what a fallback swallows.
+- **A verdict is about the command that produced it.** 366 results described
+  commands that had been retracted mid-batch. `apply-validations.ts` drops any
+  result whose command no longer matches what the listing publishes.
+
+The general question worth asking of any new filter, gate or sort order:
+**which rows does this exclude, and can they ever come back?**
 
 - **pnpm's symlinked store breaks OpenNext's bundle copy.** `.npmrc` pins
   `node-linker=hoisted` for this reason.

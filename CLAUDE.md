@@ -126,6 +126,19 @@ repositories, and treating that as a collision retracts working commands.
 drops any result whose install command no longer matches what the listing
 publishes. A batch takes hours, and the catalogue changes underneath it.
 
+**The harness is not a plugin.** `deepseek-ai/deepseek-harness` carries the
+topic and every marker a plugin does, has two orders of magnitude more stars
+than anything else, and the sandbox passes it — installing the harness into a
+profile does technically work. It still sat at the top of the catalogue telling
+readers to install it, and then the review told them not to. `IS_A_HOST` in
+`ingest-topic.ts` rejects hosts by name.
+
+**No verdict is publishable unless it is about us being right.** Four separate
+checks now refuse to publish a measurement: a registry 429 (that measures our
+traffic), a command that changed since the run, a probe with no verdict, and a
+review section that admits it has nothing to say. Each was added after the
+thing it prevents had already reached the live site.
+
 **The AI review judges fit, never people.** It is labelled as generated, says
 which parts were observed in a real install and which were read off the repo,
 and never uses our own heuristic risk flags as a stick. When the sandbox says a
