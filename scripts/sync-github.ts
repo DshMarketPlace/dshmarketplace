@@ -12,7 +12,7 @@
 import "dotenv/config";
 import { marked } from "marked";
 import sanitizeHtml from "sanitize-html";
-import { eq, asc, isNotNull } from "drizzle-orm";
+import { eq, asc, desc, isNotNull, isNull } from "drizzle-orm";
 
 import { db } from "../db/client";
 import { plugins } from "../db/schema";
@@ -224,6 +224,10 @@ async function main() {
   // page worth showing; re-crawling a thousand repos to get one is wasteful.
   const only = onlyAt === -1 ? null : argv[onlyAt + 1];
   const limit = Number(argv.find((a) => /^\d+$/.test(a))) || 10_000;
+  // The review needs a README and will not write without one, so a listing
+  // that has never had one fetched is worth more than one being refreshed for
+  // the fifth time. Oldest-synced order alone starves them indefinitely.
+  const missing = argv.includes("--missing-readme");
 
   const rows = await db
     .select({
@@ -233,8 +237,14 @@ async function main() {
       summary: plugins.summary,
     })
     .from(plugins)
-    .where(only ? isNotNull(plugins.linuxdoUrl) : undefined)
-    .orderBy(asc(plugins.syncedAt))
+    .where(
+      only
+        ? isNotNull(plugins.linuxdoUrl)
+        : missing
+          ? isNull(plugins.readmeMd)
+          : undefined,
+    )
+    .orderBy(missing ? desc(plugins.stars) : asc(plugins.syncedAt))
     .limit(limit);
 
   console.log(`syncing ${rows.length} repos (concurrency ${CONCURRENCY})`);
