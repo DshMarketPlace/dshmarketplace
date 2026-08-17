@@ -86,6 +86,14 @@ const BANNERS: Banner[] = [
       "two interlocking coiled ribbons descending through a stack of open trays, each tray holding a small labelled block, dotted guide lines tracing the path between them",
   },
   {
+    file: "banner-radar",
+    title: "DSH Plugin Radar",
+    tagline: ["Spot DeepSeek Harness plugins", "while you browse"],
+    command: "dsh plugin --profile web add @liustack/modlens",
+    subject:
+      "a wide sweeping radar arc drawn in dotted construction lines passing over a scattered field of small cubes, three of the cubes lit and ringed by concentric measure circles",
+  },
+  {
     file: "banner-cli",
     title: "DSH Marketplace CLI",
     tagline: ["DeepSeek Harness plugins,", "built for coding agents"],

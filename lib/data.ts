@@ -210,6 +210,31 @@ export async function countLinuxDoPlugins() {
   return row?.value ?? 0;
 }
 
+/**
+ * Every listing, five columns — the payload behind `/api/v1/index`.
+ *
+ * A client that decorates a page full of repositories cannot make one request
+ * per repository, so this exists to be fetched once and cached. Star order so
+ * a client that truncates keeps the listings anyone is likely to hit.
+ */
+export async function getCatalogueIndex() {
+  return db
+    .select({
+      fullName: plugins.fullName,
+      owner: plugins.owner,
+      repo: plugins.repo,
+      subpath: plugins.subpath,
+      npmPackage: plugins.npmPackage,
+      installKind: plugins.installKind,
+      categoryId: plugins.categoryId,
+      slug: plugins.slug,
+      visibility: plugins.visibility,
+    })
+    .from(plugins)
+    .where(eq(plugins.isArchived, false))
+    .orderBy(desc(plugins.stars));
+}
+
 /** Header counters. Real numbers, computed — never hardcoded. */
 export async function getCatalogStats() {
   const [totals] = await db
