@@ -33,6 +33,7 @@ import { db } from "../db/client";
 import { plugins, type Plugin } from "../db/schema";
 import { primaryInstall } from "../lib/install";
 import { chatBlocks } from "./lib/velokey";
+import { persist } from "./lib/persist";
 
 const README_BUDGET = 6000;
 
@@ -205,43 +206,81 @@ async function main() {
     .orderBy(desc(plugins.stars))
     .limit(one ? 1 : limit);
 
-  console.log(`${rows.length} to review, model ${model}\n`);
+  // A generation takes tens of seconds, almost all of it waiting, so running
+  // these one at a time spends a day to do an hour's work. Concurrency is
+  // bounded by the gateway's rate, not by ours: `rpm` spaces out when requests
+  // may *start*, and the workers are only there to keep that spacing full.
+  const rpm = Number(at("--rpm")) || 30;
+  const workers = Math.min(Number(at("--concurrency")) || 12, rows.length);
+  const spacing = 60_000 / rpm;
 
-  for (const row of rows) {
-    process.stdout.write(`→ ${row.fullName} … `);
-    try {
-      const parts = await chatBlocks(
-        `你在给一个 DeepSeek Harness 插件目录站写「AI 锐评」。这段话会标明是 AI 生成、仅供参考，读者最终以实际运行为准——所以它必须准确，不能靠含糊取巧。\n\n${RULES}\n\n${SHAPE}${verdictConstraint(row)}\n\n事实：\n${facts(row)}`,
-        KEYS,
-        { model, endpoint: endpoint(), maxTokens: 3000 },
-      );
+  console.log(
+    `${rows.length} to review, model ${model}, ${workers} workers at ${rpm}/min\n`,
+  );
 
-      const zh = render(parts, "zh");
-      const en = render(parts, "en");
+  let nextStart = Date.now();
+  let done = 0;
+  let failed = 0;
 
-      if (dryRun) {
-        console.log(`\n--- zh\n${zh}\n--- en\n${en}\n`);
-        continue;
-      }
-
-      await db
-        .update(plugins)
-        .set({
-          review: en,
-          reviewZh: zh,
-          reviewHtml: toHtml(en),
-          reviewHtmlZh: toHtml(zh),
-          reviewModel: model,
-          reviewedAt: new Date(),
-          updatedAt: new Date(),
-        })
-        .where(eq(plugins.id, row.id));
-
-      console.log("ok");
-    } catch (err) {
-      console.log(`failed: ${(err as Error).message.slice(0, 120)}`);
-    }
+  /** Hands out start times so the whole pool stays under the rate limit. */
+  async function gate() {
+    const at = Math.max(nextStart, Date.now());
+    nextStart = at + spacing;
+    const wait = at - Date.now();
+    if (wait > 0) await new Promise((r) => setTimeout(r, wait));
   }
+
+  const queue = [...rows];
+  await Promise.all(
+    Array.from({ length: workers }, async () => {
+      for (;;) {
+        const row = queue.shift();
+        if (!row) return;
+        await gate();
+
+        try {
+          const parts = await chatBlocks(
+            `你在给一个 DeepSeek Harness 插件目录站写「AI 锐评」。这段话会标明是 AI 生成、仅供参考，读者最终以实际运行为准——所以它必须准确，不能靠含糊取巧。\n\n${RULES}\n\n${SHAPE}${verdictConstraint(row)}\n\n事实：\n${facts(row)}`,
+            KEYS,
+            { model, endpoint: endpoint(), maxTokens: 3000 },
+          );
+
+          const zh = render(parts, "zh");
+          const en = render(parts, "en");
+
+          if (dryRun) {
+            console.log(`\n--- ${row.fullName} zh\n${zh}\n--- en\n${en}\n`);
+            continue;
+          }
+
+          await persist(() =>
+            db
+              .update(plugins)
+              .set({
+                review: en,
+                reviewZh: zh,
+                reviewHtml: toHtml(en),
+                reviewHtmlZh: toHtml(zh),
+                reviewModel: model,
+                reviewedAt: new Date(),
+                updatedAt: new Date(),
+              })
+              .where(eq(plugins.id, row.id)),
+          );
+
+          done++;
+          if (done % 25 === 0 || done + failed === rows.length) {
+            console.log(`  ${done + failed}/${rows.length} — ${done} ok, ${failed} failed`);
+          }
+        } catch (err) {
+          failed++;
+          console.log(`  ✗ ${row.fullName}: ${(err as Error).message.slice(0, 100)}`);
+        }
+      }
+    }),
+  );
+
+  console.log(`\n${done} written, ${failed} failed`);
 }
 
 main();
