@@ -15,20 +15,31 @@ Live, seeded, and holding the name. A long way from finished.
 | CLI | `npx dshmarketplace-cli` — [npm](https://www.npmjs.com/package/dshmarketplace-cli) · repo **public, MIT** |
 | Python | `pip install dshmarketplace` — [PyPI](https://pypi.org/project/dshmarketplace/) · repo **public, MIT**. Zero dependencies, `dshm` CLI, agent tools, 3.9–3.13 |
 | In-DSH plugin | `dsh plugin --profile web add dshmarketplace-plugin` — [npm](https://www.npmjs.com/package/dshmarketplace-plugin) · repo **public, MIT**. Verified running in a real harness |
+| Userscript | [DSH Plugin Radar](https://github.com/DshMarketPlace/dsh-plugin-radar) — marks plugins on GitHub and npm · repo **public, MIT**. Not yet submitted to Greasy Fork |
 | This repo | **Public, MIT**, history squashed to one commit |
 | Analytics | GA4 `G-R6HWVQVVVB`, all pages |
 | Launch | [LINUX DO thread](https://linux.do/t/topic/2765838), 17 Aug 2026 |
 
-**Four surfaces, one API.** The site, the npm CLI, the Python package and the
-in-DSH plugin all read `/api/v1/plugins`, so a listing cannot say one thing in a
-browser and another inside the harness. The Python package's `pytest -m live`
-enforces that from the outside: it asserts against the real catalogue that every
-published command survives the install guard, carries `--profile`, and agrees
-with its own `installable` flag.
+**Five surfaces, one API.** The site, the npm CLI, the Python package, the
+in-DSH plugin and the userscript all read the same endpoints, so a listing
+cannot say one thing in a browser and another inside the harness. The Python
+package's `pytest -m live` enforces that from the outside: it asserts against
+the real catalogue that every published command survives the install guard,
+carries `--profile`, and agrees with its own `installable` flag.
+
+Two public endpoints, both CORS-open:
+
+- `/api/v1/plugins?q=&category=&limit=` — the full record for a plugin.
+- `/api/v1/index` — every listing, five positional columns, one request.
+  113 KB, 22 KB gzipped. Exists because a client decorating a page full of
+  repositories cannot ask about them one at a time. **Deliberately
+  `force-dynamic`**: `promote.ts` and `sync-github.ts` write straight to the
+  database without a deploy, and a prerendered index would disagree with
+  `/api/v1/plugins` until the next push.
 
 Pages, each in both languages: `/` (hero, catalogue, how-it-works, FAQ),
 `/p/[slug]`, `/about`, `/submit`, `/contact`, `/terms`, `/privacy`. English-only:
-`/admin`, `/api/v1/plugins`. Sitemap: 56 URLs.
+`/admin`, `/api/v1/*`. Sitemap: 56 URLs.
 
 ## The strategy this is built around
 
@@ -129,7 +140,12 @@ What that implies, in order of effort against payoff:
 5. ~~**A Python client.**~~ **Shipped** as `dshmarketplace` on PyPI. Worth
    knowing: PyPI links are `rel=nofollow`, so this is distribution and brand
    presence, not link equity — measure a channel before investing in it.
-6. **Real validation.** Most expensive; needs a Docker runner in CI, cannot run
+6. ~~**A userscript.**~~ **Built** as `dsh-plugin-radar`, not yet submitted to
+   Greasy Fork. Same finding as PyPI, measured the same way: Greasy Fork
+   dofollows an allowlist (github.com among it) and `rel=nofollow`s every other
+   author-supplied link, so `dshmarketplace.dev` in a description earns no link
+   equity. The repo link does, and it points here.
+7. **Real validation.** Most expensive; needs a Docker runner in CI, cannot run
    on Workers.
 
 Depth stays the moat. Their listings are metadata; ours are written. Do not

@@ -54,14 +54,16 @@ DeepSeek 开源的 agent harness，所有能力都以插件形式提供。上线
 
 ## 三个入口，一份数据
 
-网站、CLI 和 DSH 内嵌插件读的都是 `/api/v1/plugins`，所以同一条记录不会在
-浏览器里是一个说法、在 harness 里是另一个说法。
+所有入口读的都是同一套 API，所以同一条记录不会在浏览器里是一个说法、在
+harness 里是另一个说法。
 
 | | |
 | --- | --- |
 | **网页** | <https://dshmarketplace.dev> |
 | **CLI** | [`dshmarketplace-cli`](https://github.com/DshMarketPlace/dshmarketplace-cli) —— 给 DSH 之外的 coding agent 用 |
+| **Python** | [`dshmarketplace`](https://github.com/DshMarketPlace/dshmarketplace-py) —— 零依赖，`dshm` CLI，agent tools |
 | **DSH 里** | [`dshmarketplace-plugin`](https://github.com/DshMarketPlace/dsh-plugins-store) —— 在 harness 里打 `/store` |
+| **浏览器里** | [DSH Plugin Radar](https://github.com/DshMarketPlace/dsh-plugin-radar) —— 油猴脚本，在 GitHub 和 npm 上标出插件 |
 
 ## 公开 API
 
@@ -97,6 +99,27 @@ curl -s 'https://dshmarketplace.dev/api/v1/plugins?q=memory&limit=5'
 
 没有命令能装得上的时候，`install` 是 `null`，不是一个占位串。会直接执行这个
 字段的调用方，不能拿到一条跑不通的命令——原因见下面 `--profile` 那段。
+
+### 一个请求拿整份目录
+
+```bash
+curl -s 'https://dshmarketplace.dev/api/v1/index'
+```
+
+给那种需要知道"一千个仓库里哪些是插件"的调用方用 —— 浏览器扩展要给一整页
+GitHub topic 打标记，不可能一个一个问。为了小，行是位置数组，大概 113 KB，
+压过去 22 KB，列名跟着 payload 一起发：
+
+```jsonc
+{
+  "fields": ["fullName", "category", "install", "path", "npm"],
+  "plugins": [
+    ["Anionex/dsh-vision-toolkit", "vision", "dsh plugin --profile web add dsh-vision-toolkit", "/plugins/anionex-dsh-vision-toolkit", "dsh-vision-toolkit"]
+  ]
+}
+```
+
+条目还没有独立页面的时候 `path` 是 `null`，插件没发包的时候 `npm` 是 `null`。
 
 ## 装 DSH 插件要知道的两件事
 

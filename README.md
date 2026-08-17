@@ -59,15 +59,16 @@ It is a provenance signal, not a security review.
 
 ## Three surfaces, one source
 
-The site, the CLI and the in-DSH plugin all read `/api/v1/plugins`, so a
-listing cannot say one thing in a browser and something else inside the
-harness.
+Every surface reads the same API, so a listing cannot say one thing in a
+browser and something else inside the harness.
 
 | | |
 | --- | --- |
 | **Web** | <https://dshmarketplace.dev> |
 | **CLI** | [`dshmarketplace-cli`](https://github.com/DshMarketPlace/dshmarketplace-cli) — for coding agents outside DSH |
+| **Python** | [`dshmarketplace`](https://github.com/DshMarketPlace/dshmarketplace-py) — zero dependencies, `dshm` CLI, agent tools |
 | **In DSH** | [`dshmarketplace-plugin`](https://github.com/DshMarketPlace/dsh-plugins-store) — `/store` inside the harness |
+| **In the browser** | [DSH Plugin Radar](https://github.com/DshMarketPlace/dsh-plugin-radar) — a userscript that marks plugins on GitHub and npm |
 
 ## Public API
 
@@ -105,6 +106,29 @@ flags and the source repository:
 `install` is `null` rather than a placeholder when no command can work. A
 caller that runs whatever is in that field must never be handed something that
 fails — see the note on `--profile` below.
+
+### The whole catalogue in one request
+
+```bash
+curl -s 'https://dshmarketplace.dev/api/v1/index'
+```
+
+For clients that need to know *which* of a thousand repositories are plugins —
+a browser extension decorating a GitHub topic page cannot ask one at a time.
+Rows are positional to keep it small, about 113 KB and 22 KB over the wire, and
+the column names ship with the payload:
+
+```jsonc
+{
+  "fields": ["fullName", "category", "install", "path", "npm"],
+  "plugins": [
+    ["Anionex/dsh-vision-toolkit", "vision", "dsh plugin --profile web add dsh-vision-toolkit", "/plugins/anionex-dsh-vision-toolkit", "dsh-vision-toolkit"]
+  ]
+}
+```
+
+`path` is `null` when a listing has no page of its own yet, and `npm` is `null`
+when the plugin publishes nowhere.
 
 ## Two things about installing DSH plugins
 

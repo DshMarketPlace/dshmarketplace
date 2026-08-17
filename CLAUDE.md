@@ -77,15 +77,18 @@ has the full set.
 
 ## Publishing
 
-Four packages read one API — the site, `dshmarketplace-cli` (npm),
-`dshmarketplace` (PyPI) and `dshmarketplace-plugin` (npm). Two rules follow.
+Five surfaces read one API — the site, `dshmarketplace-cli` (npm),
+`dshmarketplace` (PyPI), `dshmarketplace-plugin` (npm) and the
+`dsh-plugin-radar` userscript. Two rules follow.
 
 **When the API's output changes, re-run every client against live data.** This
 project's recurring bug is producer/consumer drift, and fixtures have never
 caught it: 1,002 install commands missing `--profile`, then the in-DSH plugin's
 own safety guard refusing every command the API actually sends. The Python
 package's `pytest -m live` exists for this; run it after any change to
-`lib/install.ts` or the API shape.
+`lib/install.ts` or the API shape. `/api/v1/index` is `force-dynamic` for the
+same reason — `promote.ts` and `sync-github.ts` write without a deploy, so a
+prerendered copy would drift from `/api/v1/plugins`.
 
 **`npm publish` does not work for `dshmarketplace-plugin`.** It is refused with
 a bare 403 from every environment and credential, while a raw `PUT` of the same
