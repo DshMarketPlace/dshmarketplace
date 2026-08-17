@@ -25,9 +25,12 @@ export function InstallCheck({
 
   // `rejected` means the runner declined to execute the string at all, which
   // is a fact about our sandbox and not about the plugin. It stays unshown.
+  // `not-a-layer` reads as neutral ink rather than copper: the command works,
+  // and the only news is which kind of package arrived.
   const shape = {
     passed: { icon: CircleCheck, label: d.passed, tone: "text-ink-faint" },
     "needs-approval": { icon: CircleAlert, label: d.needsApproval, tone: "text-copper" },
+    "not-a-layer": { icon: CircleCheck, label: d.notALayer, tone: "text-ink-faint" },
     failed: { icon: CircleX, label: d.failed, tone: "text-copper" },
     timeout: { icon: Clock, label: d.timeout, tone: "text-copper" },
   }[status ?? ""];

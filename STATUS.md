@@ -68,8 +68,15 @@ distribution across 2,024 candidates: 1–4 → 754, 5–9 → 380, 10–24 → 
 `dsh-plugin-validator` installs a plugin into a fresh profile inside a
 throwaway container — non-root, all capabilities dropped, memory and pid
 capped, no host mount — and reports what the harness recorded rather than what
-the CLI returned. Verdicts: `passed`, `needs-approval`, `failed`, `timeout`,
-`rejected`.
+the CLI returned. Verdicts: `passed`, `needs-approval`, `not-a-layer`,
+`failed`, `timeout`, `rejected`.
+
+**Only two of those are defects.** `needs-approval` is one `allowBuilds` entry
+away from working. `not-a-layer` is not even that: the harness prints
+`declares no dsh.bundle — installed as a plain dependency, not a profile
+layer`, and promises a later version that gains one activates by itself. The
+command worked; the package is simply a theme, an agent bundle or a library
+rather than a profile layer. It spent a day inside the `failed` bucket.
 
 It found our own defect before it found anyone else's, and the defect was
 bigger than it first looked. **412 of 852 listings claiming an npm package were

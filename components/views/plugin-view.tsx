@@ -221,11 +221,17 @@ export async function PluginView({
                 locale={locale}
                 className="text-xs"
               />
+              {/* The two verdicts a reader can act on, so each says how rather
+                  than leaving them to work out `allowBuilds`, or to read a
+                  working install as a broken one. */}
               {plugin.installStatus === "needs-approval" ? (
-                // The one verdict a reader can act on, so it says how rather
-                // than leaving them to find `allowBuilds` themselves.
                 <p className="text-xs leading-relaxed text-muted-foreground">
                   {t(locale).installCheck.approvalHelp}
+                </p>
+              ) : null}
+              {plugin.installStatus === "not-a-layer" ? (
+                <p className="text-xs leading-relaxed text-muted-foreground">
+                  {t(locale).installCheck.layerHelp}
                 </p>
               ) : null}
               <p className="text-xs leading-relaxed text-ink-faint">

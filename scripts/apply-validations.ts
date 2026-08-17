@@ -44,12 +44,14 @@ async function main() {
     // "error" onto a listing would turn our outage into its reputation.
     if (r.status === "error") continue;
 
-    // Neither does a run the registry refused to serve. 119 listings came back
+    // Neither does a run a host refused to serve. 119 listings came back
     // "failed" with ERR_PNPM_FETCH_429 — npm throttling us, partly because an
-    // npm-claim audit had just made a thousand requests of its own. That is a
-    // measurement of our own traffic, and publishing it would mark working
-    // plugins broken. Checked here rather than only in the probe because this
-    // is the last gate before a verdict becomes something a reader sees.
+    // npm-claim audit had just made a thousand requests of its own — and 28
+    // more from codeload.github.com, which rate limits tarball downloads the
+    // same way. Whose 429 it is never matters; it measures our traffic, and
+    // publishing it marks working plugins broken. Checked here rather than
+    // only in the probe because this is the last gate before a verdict becomes
+    // something a reader sees.
     if (/ERR_PNPM_FETCH_(429|5\d\d)\b/.test(r.log ?? "")) {
       throttled++;
       continue;

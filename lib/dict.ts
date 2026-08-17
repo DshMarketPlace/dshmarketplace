@@ -176,11 +176,14 @@ const en = {
   installCheck: {
     passed: "Installed cleanly when we ran it",
     needsApproval: "Installs, but needs a build approved first",
+    notALayer: "Installs, but not as a profile layer",
     failed: "Did not install when we ran it",
     timeout: "Took too long to install when we ran it",
     heading: "What happened when we ran it",
     approvalHelp:
       "pnpm refuses to run a package's build script until it is allowlisted. Add the key pnpm prints to allowBuilds in the profile's pnpm-workspace.yaml, then run the command again.",
+    layerHelp:
+      "The command works. The package declares no dsh.bundle, so the harness takes it as an ordinary dependency rather than a layer over your profile — use it the way its README describes. If a later version adds one, it activates on its own.",
     checkedAt: (when: string) => `Last run ${when}`,
     method:
       "Every command here is run in a throwaway container against a clean profile, and the result is whatever the harness recorded — not a guess from the source.",
@@ -448,11 +451,14 @@ const zh: Dict = {
   installCheck: {
     passed: "我们跑过，装得上",
     needsApproval: "装得上，但要先放行构建脚本",
+    notALayer: "装得上，但不是 profile layer",
     failed: "我们跑过，没装上",
     timeout: "我们跑过，装到超时",
     heading: "我们跑过之后",
     approvalHelp:
       "pnpm 不会执行没进白名单的构建脚本。把 pnpm 打印出来的那个 key 加进 profile 里 pnpm-workspace.yaml 的 allowBuilds，再跑一次即可。",
+    layerHelp:
+      "命令是好的。它的 package.json 里没写 dsh.bundle，所以 harness 把它当普通依赖收下，而不是叠一层到你的 profile 上——按它 README 说的方式用就行。以后哪个版本补上了，会自己生效。",
     checkedAt: (when: string) => `最近一次 ${when}`,
     method:
       "这里每条命令都在一次性容器里、对着干净 profile 真跑过，结果取自 harness 自己的记录，不是读源码猜的。",

@@ -127,8 +127,9 @@ export const plugins = sqliteTable(
 
     // What happened when the plugin was actually installed, in a throwaway
     // container on a machine that had never seen it. `installStatus` is one of
-    // passed / needs-approval / failed / timeout, and it is the one field here
-    // that no competitor can scrape: it is the record of a run, not of a repo.
+    // passed / needs-approval / not-a-layer / failed / timeout, and it is the
+    // one field here that no competitor can scrape: it is the record of a run,
+    // not of a repo.
     installStatus: text("install_status"),
     installDetail: text("install_detail"),
     blockedBuilds: text("blocked_builds"),

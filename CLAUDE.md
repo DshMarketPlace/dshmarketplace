@@ -106,11 +106,20 @@ standard is checkable against someone else's rules. `/api-docs` states all
 three. A filter nobody can check is not a filter.
 
 **Never claim a plugin is broken on evidence weaker than an install.** The
-sandbox distinguishes `passed`, `needs-approval`, `failed` and `timeout`; a
-blocked build script is `needs-approval`, not a defect. Of 410 "failures" in
-the first full batch, 366 were our own bad npm data and 18 more were a probe
-change made mid-run. Reading the code has now twice failed to catch commands
-that cannot run, and installing them caught both.
+sandbox distinguishes `passed`, `needs-approval`, `not-a-layer`, `failed` and
+`timeout`, and only the last two are defects. Of 410 "failures" in the first
+full batch, 366 were our own bad npm data and 18 more were a probe change made
+mid-run. Reading the code has now twice failed to catch commands that cannot
+run, and installing them caught both.
+
+**A catch-all verdict collects things that do not belong together.** `failed`
+was the branch nothing else matched, so it accumulated three unrelated
+populations: a 429 from `codeload.github.com` (a source install downloads its
+tarball from GitHub, which rate limits too), a package the harness deliberately
+took as a plain dependency because it declares no `dsh.bundle`, and genuine
+packaging defects. Only the third is publishable, and it was 21 of 59. When one
+detail string covers dozens of unrelated repositories, that uniformity is the
+bug — split the bucket before believing it.
 
 **A name in `package.json` proves nothing.** It is an intention, and it is not
 even evidence of intent when the repo is a fork, which inherits the upstream's

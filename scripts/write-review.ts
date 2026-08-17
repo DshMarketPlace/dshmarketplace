@@ -65,6 +65,8 @@ function installProse(p: Plugin) {
       return "实测通过：在全新 profile 里装上，并被 harness 注册进 profile";
     case "needs-approval":
       return `实测：能装进去，但有构建脚本被 pnpm 拦下${named}，导致 harness 没有完成注册。用户需要手动允许该构建才能真正装好`;
+    case "not-a-layer":
+      return "实测：装是装上了，但它的 package.json 里没有 dsh.bundle，所以 harness 把它当普通依赖收下，没有变成 profile layer。这不是安装失败，是它本来就不是 bundle 型插件";
     case "failed":
       return `实测失败：装完之后 harness 没有把它注册进 profile${named}`;
     case "timeout":
@@ -89,6 +91,8 @@ function verdictConstraint(p: Plugin) {
       return "\n\n硬约束：实测显示它现在装不上。第四段必须反映这一点，绝对不能建议读者直接安装；可以说清在什么条件下才值得回头再看。";
     case "needs-approval":
       return "\n\n硬约束：实测显示它要先手动允许构建才能装好。第四段如果建议安装，必须同时点明这一步，不能让读者以为一行命令就完事。";
+    case "not-a-layer":
+      return "\n\n硬约束：实测显示这条命令能装上，不许说它装不上。但它进的是普通依赖，不是 profile layer——第四段如果建议安装，要让读者知道装完不会多出一个 profile layer，得按它 README 说的方式用。";
     default:
       return "";
   }

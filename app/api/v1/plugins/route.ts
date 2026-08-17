@@ -47,10 +47,12 @@ export async function GET(request: Request) {
     installable: isInstallable(p),
     installOptions: installOptions(p),
     // What happened when the command above was actually run, in a throwaway
-    // container against a clean profile: passed | needs-approval | failed |
-    // timeout, or null where it has not been run since the command last
-    // changed. `needs-approval` is not a defect — pnpm blocks a build script
-    // until it is allowlisted, and one `allowBuilds` entry fixes it.
+    // container against a clean profile: passed | needs-approval | not-a-layer
+    // | failed | timeout, or null where it has not been run since the command
+    // last changed. Only the last two are defects. `needs-approval` means pnpm
+    // blocked a build script until it is allowlisted, which one `allowBuilds`
+    // entry fixes; `not-a-layer` means the package installed but declares no
+    // `dsh.bundle`, so the harness took it as an ordinary dependency.
     installCheck: p.installStatus,
     installCheckedAt: p.installCheckedAt,
     riskFlags: p.riskFlags ? JSON.parse(p.riskFlags) : [],
