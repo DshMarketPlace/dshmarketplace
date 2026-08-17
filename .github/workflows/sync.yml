@@ -181,6 +181,20 @@ jobs:
       - name: Record what happened
         run: pnpm tsx scripts/apply-validations.ts results.jsonl
 
+      # `failed` is the probe's catch-all, and three separate times the
+      # majority of it turned out to be ours: a host throttling us, a probe
+      # edited mid-run, a package the harness took as a plain dependency on
+      # purpose. Each was found by hand, after it was already live. This runs
+      # before the reviews because a review that cites a verdict outlives it,
+      # and it retracts anything it cannot attribute to the plugin — including
+      # a cause it does not recognise, which is how the next one gets caught.
+      - name: Retract failures that are ours
+        run: |
+          pnpm tsx scripts/classify-failures.ts --write-ours=ours.txt results.jsonl
+          if [ -s ours.txt ]; then
+            pnpm tsx scripts/retract-verdicts.ts ours.txt
+          fi
+
       # A review is only ours because it carries the install result, so it is
       # written after the verdict lands and regenerates whenever the verdict
       # moves. Skipped when no key is configured rather than failing the run.

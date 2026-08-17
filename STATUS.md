@@ -102,7 +102,7 @@ mostly monorepo and workspace resolution errors.
 ```
 discover → README for anything new → refresh metadata → verify every npm claim
 → re-apply the bar → export unchecked → install in a sandbox → record verdicts
-→ write reviews → deploy
+→ retract the failures that are ours → write reviews → deploy
 ```
 
 It is **three jobs, split on one line that cannot be crossed**: the job that
@@ -115,6 +115,17 @@ results back and never runs a plugin.
 A review rewrites itself when the sandbox has something to add —
 `reviewedAt < installCheckedAt` — so a listing reviewed before it was installed
 gets a second, better review automatically.
+
+**`classify-failures.ts` runs before the reviews, and it is the important
+one.** `failed` is the probe's catch-all, so it collects whatever no earlier
+branch claimed, and three separate times the majority of it was ours rather
+than the plugin's. Each was found by hand, after it was live. The step now
+labels every failure OURS or THEIRS from its log and retracts the OURS ones,
+including causes it does not recognise — a failure we cannot explain is not
+publishable. That default is safe and endless: an unknown cause is retracted,
+re-run, and retracted again every night while the run reports success. So it
+prints those logs, and one entry in `CAUSES` ends the loop. Nothing else will
+ever ask.
 
 **Not automated, deliberately:** `write-content.ts` and `promote.ts`. The
 per-plugin writing is the only thing competitors cannot scrape, and `promote.ts`

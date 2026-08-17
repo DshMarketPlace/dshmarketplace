@@ -79,6 +79,21 @@ async function main() {
     console.log(`\n${String(names.length).padStart(4)}  ${ours ? "OURS  " : "THEIRS"}  ${label}`);
     for (const n of names) console.log(`        ${n}`);
   }
+
+  // A cause with no pattern here is retracted, which is safe and endless: the
+  // listing re-enters the queue, fails the same way tomorrow and is retracted
+  // again, forever, while every run reports success. So it prints its own log
+  // — the fix is one entry in CAUSES, and this is the only thing that will
+  // ever ask for it.
+  const nameless = buckets.get("no cause in the log");
+  if (nameless) {
+    console.log(`\n${nameless.names.length} failures match no cause above. They will be`);
+    console.log(`retracted and re-run nightly until CAUSES learns them:`);
+    for (const n of nameless.names.slice(0, 5)) {
+      const log = (latest.get(n)?.log ?? "").split("\n").slice(-6).join("\n        ");
+      console.log(`\n        ${n}\n        ${log}`);
+    }
+  }
   if (unexplained.length) {
     console.log(`\n${unexplained.length} have no result in these files:`);
     for (const n of unexplained) console.log(`        ${n}`);
