@@ -36,12 +36,24 @@ async function main() {
   const tally: Record<string, number> = {};
   let applied = 0;
   let stale = 0;
+  let throttled = 0;
 
   for (const r of rows) {
     tally[r.status] = (tally[r.status] ?? 0) + 1;
     // A probe that produced no verdict says nothing about the plugin; writing
     // "error" onto a listing would turn our outage into its reputation.
     if (r.status === "error") continue;
+
+    // Neither does a run the registry refused to serve. 119 listings came back
+    // "failed" with ERR_PNPM_FETCH_429 — npm throttling us, partly because an
+    // npm-claim audit had just made a thousand requests of its own. That is a
+    // measurement of our own traffic, and publishing it would mark working
+    // plugins broken. Checked here rather than only in the probe because this
+    // is the last gate before a verdict becomes something a reader sees.
+    if (/ERR_PNPM_FETCH_(429|5\d\d)\b/.test(r.log ?? "")) {
+      throttled++;
+      continue;
+    }
 
     // A verdict is only about the command that was run. When the listing has
     // since changed — an npm name we retracted because it was never published,
@@ -71,7 +83,10 @@ async function main() {
   }
 
   console.log(JSON.stringify(tally, null, 2));
-  console.log(`applied ${applied} of ${rows.length}, ${stale} stale (command changed)`);
+  console.log(
+    `applied ${applied} of ${rows.length}, ${stale} stale (command changed), ` +
+      `${throttled} discarded (registry throttled the run)`,
+  );
 }
 
 main();
