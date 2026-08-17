@@ -184,11 +184,18 @@ async function main() {
   const force = argv.includes("--force");
   const model = process.env.REVIEW_MODEL ?? "grok-4.6";
 
-  // Reviews are worth regenerating once a plugin has been through the sandbox,
-  // because that is the fact that makes them ours. Everything else is stable.
-  const stale = and(
-    isNotNull(plugins.installCheckedAt),
-    or(isNull(plugins.reviewedAt), lt(plugins.reviewedAt, plugins.installCheckedAt)),
+  // Write once, then rewrite when the sandbox has something to add.
+  //
+  // Requiring a verdict up front looked right — it is the fact that makes a
+  // review ours — but it permanently excluded the listings at the top of the
+  // catalogue. The most-starred entries are monorepo subpaths with no one-line
+  // install, so they will never have a verdict, and the readers most likely to
+  // arrive were guaranteed to find nothing. `verdictConstraint()` already
+  // handles an absent verdict by forbidding any claim about installing, so the
+  // review is honest without one.
+  const stale = or(
+    isNull(plugins.reviewedAt),
+    lt(plugins.reviewedAt, plugins.installCheckedAt),
   );
 
   const rows = await db
@@ -200,7 +207,7 @@ async function main() {
         : and(
             eq(plugins.isArchived, false),
             isNotNull(plugins.readmeMd),
-            force ? isNotNull(plugins.installCheckedAt) : stale,
+            force ? undefined : stale,
           ),
     )
     .orderBy(desc(plugins.stars))
