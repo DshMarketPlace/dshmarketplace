@@ -60,6 +60,15 @@ jobs:
       - name: Refresh listing metadata
         run: pnpm tsx scripts/sync-github.ts ${{ inputs.refresh || '400' }}
 
+      # `sync-github.ts` verifies the npm name on every row it touches, but it
+      # only touches 400 a night. That guard was live for a fortnight and still
+      # never reached the backlog: 412 of 852 listings were serving a command
+      # for a package that was never published, or was somebody else's. A
+      # correct check nothing sweeps with is not a check. This one is cheap —
+      # a HEAD per distinct name — so it runs over the whole catalogue.
+      - name: Verify every npm claim
+        run: pnpm tsx scripts/repair-npm-claims.ts
+
       - name: Re-apply the admission bar
         if: ${{ inputs.prune != 'false' }}
         run: pnpm tsx scripts/prune-topic.ts
