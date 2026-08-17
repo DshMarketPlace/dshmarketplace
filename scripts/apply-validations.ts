@@ -37,6 +37,7 @@ async function main() {
   let applied = 0;
   let stale = 0;
   let throttled = 0;
+  let superseded = 0;
 
   for (const r of rows) {
     tally[r.status] = (tally[r.status] ?? 0) + 1;
@@ -54,6 +55,16 @@ async function main() {
     // something a reader sees.
     if (/ERR_PNPM_FETCH_(429|5\d\d)\b/.test(r.log ?? "")) {
       throttled++;
+      continue;
+    }
+
+    // A result file outlives the probe that wrote it, and older ones call this
+    // a failure. The harness's own line says otherwise — the package installed
+    // and was taken as a plain dependency for declaring no `dsh.bundle` — so
+    // the row goes back in the queue rather than being rewritten here, and the
+    // current probe gives it `not-a-layer` on the next run.
+    if (r.status === "failed" && /declares no dsh\.bundle/.test(r.log ?? "")) {
+      superseded++;
       continue;
     }
 
@@ -87,7 +98,8 @@ async function main() {
   console.log(JSON.stringify(tally, null, 2));
   console.log(
     `applied ${applied} of ${rows.length}, ${stale} stale (command changed), ` +
-      `${throttled} discarded (registry throttled the run)`,
+      `${throttled} discarded (a host throttled the run), ` +
+      `${superseded} discarded (an old probe called a plain dependency a failure)`,
   );
 }
 
