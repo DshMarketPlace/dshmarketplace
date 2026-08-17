@@ -78,6 +78,14 @@ const BANNERS: Banner[] = [
       "a tall modular cabinet of open sockets being filled by small cubes that arrive along dotted rails from off-frame",
   },
   {
+    file: "banner-py",
+    title: "DSH Marketplace for Python",
+    tagline: ["DeepSeek Harness plugins,", "importable"],
+    command: "pip install dshmarketplace",
+    subject:
+      "two interlocking coiled ribbons descending through a stack of open trays, each tray holding a small labelled block, dotted guide lines tracing the path between them",
+  },
+  {
     file: "banner-cli",
     title: "DSH Marketplace CLI",
     tagline: ["DeepSeek Harness plugins,", "built for coding agents"],

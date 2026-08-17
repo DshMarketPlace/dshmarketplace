@@ -13,8 +13,18 @@ Live, seeded, and holding the name. A long way from finished.
 | LINUX DO | 6 plugins verified against the thread their author posted |
 | Content pipeline | `write-content.ts` → `promote.ts`. Text on one gateway, images on another |
 | CLI | `npx dshmarketplace-cli` — [npm](https://www.npmjs.com/package/dshmarketplace-cli) · repo **public, MIT** |
+| Python | `pip install dshmarketplace` — [PyPI](https://pypi.org/project/dshmarketplace/) · repo **public, MIT**. Zero dependencies, `dshm` CLI, agent tools, 3.9–3.13 |
 | In-DSH plugin | `dsh plugin --profile web add dshmarketplace-plugin` — [npm](https://www.npmjs.com/package/dshmarketplace-plugin) · repo **public, MIT**. Verified running in a real harness |
+| This repo | **Public, MIT**, history squashed to one commit |
 | Analytics | GA4 `G-R6HWVQVVVB`, all pages |
+| Launch | [LINUX DO thread](https://linux.do/t/topic/2765838), 17 Aug 2026 |
+
+**Four surfaces, one API.** The site, the npm CLI, the Python package and the
+in-DSH plugin all read `/api/v1/plugins`, so a listing cannot say one thing in a
+browser and another inside the harness. The Python package's `pytest -m live`
+enforces that from the outside: it asserts against the real catalogue that every
+published command survives the install guard, carries `--profile`, and agrees
+with its own `installable` flag.
 
 Pages, each in both languages: `/` (hero, catalogue, how-it-works, FAQ),
 `/p/[slug]`, `/about`, `/submit`, `/contact`, `/terms`, `/privacy`. English-only:
@@ -33,18 +43,21 @@ Three further moats, in build order:
    `add --dry-run --json` resolves an install without running it. `SKILL.md`
    ships inside the package so agents discover when to reach for it.
 2. **Install counts.** Star counts are scrapeable by anyone; real install
-   numbers are not. Schema is ready (`installCount`, `plugin_stats`), nothing
-   reports into it yet.
-3. **A companion in-DSH plugin** reading this same API, so the catalogue is
-   reachable from inside the harness and links back out. Not started.
+   numbers are not. `POST /api/v1/installs` is live and the in-DSH plugin
+   reports into it. No leaderboard page reads it yet.
+3. **A companion in-DSH plugin** reading this same API. **Shipped and verified
+   in a real harness**, alongside a Python client — four surfaces now share one
+   endpoint.
 
 ## Two decisions worth not re-litigating
 
 **Visibility is three-tier, not a noindex flag.** `hidden` generates no route at
 all; `listed` renders with `noindex, follow`; `indexed` enters the sitemap. A
 noindex page is still crawled and still counts toward site-level quality, so
-parking a thousand thin pages there is not free. Everything currently sits at
-`hidden` — the catalogue is browsable, but Google sees no plugin pages yet.
+parking a thousand thin pages there is not free. 28 pages are `indexed` and the
+remaining 976 are `hidden` — nothing sits at `listed`, so Google sees only the
+written pages. `scoreContent` gates promotion and visibility only moves
+forward.
 
 **Keywords came from autocomplete, not intuition.** English head term is
 `deepseek harness plugins` (plural), from Google. The first landing copy
@@ -71,7 +84,16 @@ upstream, so no card is machine-translated.
 
 **Blocking on someone else**
 
-- npm Trusted Publisher (OIDC) — the workflow is already written for it.
+- **npm Trusted Publisher (OIDC).** Configured correctly and refused anyway —
+  see the trap below. `dsh-plugins-store` publishes through
+  `scripts/publish.mjs` instead. Worth an npm support ticket; the evidence is
+  precise. Also time-boxed: npm restricts bypass-2FA tokens for direct
+  publishing from January 2027, so the current workaround has a deadline.
+- **Rotate the npm token.** `NPM_TOKEN` in `dsh-plugins-store` was pasted into a
+  chat transcript. Replace it and update the secret.
+- **A staged `dshmarketplace-cli@0.1.6`** is sitting unapproved on npm from a
+  control experiment. It cannot publish itself, but rejecting it needs an OTP:
+  `npm stage reject 5b95be5d-066a-467c-8346-ef02e0435850`.
 
 **Competitive position, as of 2026-08-17**
 
@@ -93,19 +115,21 @@ What that implies, in order of effort against payoff:
 1. **Document the API and link it.** It already exists; nobody knows. Cheapest
    possible win for distribution. `installable` and `install: null` are part of
    the contract now — a caller that runs whatever is in `install` must not be
-   handed something that does not install.
+   handed something that does not install. Both READMEs and the Python
+   package's now document it; the site itself still does not link it.
 2. **Add the `deepseek-harness` topic and partition the search.** Roughly
    doubles coverage, one script.
 3. **A leaderboard.** `POST /api/v1/installs` is live and the in-DSH plugin
    reports into it, so `installCount` finally has a source. `plugin_stats`
    daily snapshots are still not running, so star velocity is not computable
    yet. The leaderboard page itself does not exist.
-4. ~~**The in-DSH plugin.**~~ **Shipped** as `dshmarketplace-plugin@0.1.0`.
-   `/store` in any session, a Settings → Plugins tab, and two agent tools with
-   a bundled skill. Reads the same `/api/v1/plugins` as the site and the CLI.
-   Untested against a live harness — DSH is a developer preview and the client
-   slot names come from reading a competitor's source, not from documentation.
-5. **Real validation.** Most expensive; needs a Docker runner in CI, cannot run
+4. ~~**The in-DSH plugin.**~~ **Shipped**, now at `dshmarketplace-plugin@0.1.4`
+   and verified in a real harness. `/store` in any session, a Settings →
+   Plugins tab, and two agent tools with a bundled skill.
+5. ~~**A Python client.**~~ **Shipped** as `dshmarketplace` on PyPI. Worth
+   knowing: PyPI links are `rel=nofollow`, so this is distribution and brand
+   presence, not link equity — measure a channel before investing in it.
+6. **Real validation.** Most expensive; needs a Docker runner in CI, cannot run
    on Workers.
 
 Depth stays the moat. Their listings are metadata; ours are written. Do not
@@ -217,6 +241,23 @@ Each of these cost real time; they are recorded so they are not rediscovered.
   the commit was right, and a static page from the same commit was serving new
   content. Verify production with `curl --noproxy '*'`. Believing the first
   reading here nearly produced a second wrong diagnosis on top of a first.
+- **`npm publish` cannot publish `dshmarketplace-plugin`, from anywhere.** Local
+  and CI, granular token and Trusted Publishing's OIDC token, plus
+  `npm stage publish` — all six refused with a bare `403 Forbidden - PUT` and no
+  response body. A raw `PUT` of the same tarball to the same URL with the same
+  token returns `{"success":true}`. `scripts/publish.mjs` in that repo does
+  that, and CI runs it. Proven correct and not worth re-investigating: the
+  trusted-publisher config (the OIDC exchange returns 201, which requires an
+  exact match), package ownership, and 2FA — `npm dist-tag add` gets a normal
+  EOTP challenge, and `npm stage publish` exists solely to defer the 2FA proof
+  yet fails identically.
+- **Producer/consumer drift is this project's recurring bug, and fixtures never
+  catch it.** Twice now the catalogue changed its output and a client kept its
+  old assumption: 1,002 install commands missing `--profile`, then the in-DSH
+  plugin's own safety guard matching only `dsh plugin add …` and refusing every
+  command the API actually sends — so every install in the store was rejected by
+  its own check. Both were found by running against live data, which is why
+  `dshmarketplace-py` ships opt-in live tests.
 - **Cloudflare's rate-limit binding is far looser in production than locally.**
   At 5 requests/60s, `wrangler dev` refuses the 6th exactly; production took 34
   of a 40-request burst before the first 429, because counting is per-location
