@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Star, GitFork, ExternalLink, MessagesSquare } from "lucide-react";
+import { Star, GitFork, ExternalLink, MessagesSquare, Sparkles } from "lucide-react";
 
 import { PluginCard } from "@/components/plugin-card";
 import { CopyCommand } from "@/components/copy-command";
@@ -36,6 +36,12 @@ function docsFor(plugin: Plugin, locale: Locale) {
   return locale === "zh"
     ? (plugin.docsHtmlZh ?? plugin.docsHtml)
     : plugin.docsHtml;
+}
+
+function reviewFor(plugin: Plugin, locale: Locale) {
+  return locale === "zh"
+    ? (plugin.reviewHtmlZh ?? plugin.reviewHtml)
+    : (plugin.reviewHtml ?? plugin.reviewHtmlZh);
 }
 
 function JsonLd({ plugin, locale }: { plugin: Plugin; locale: Locale }) {
@@ -101,6 +107,8 @@ export async function PluginView({
   const summary = summaryFor(plugin, locale);
   const overview = overviewFor(plugin, locale);
   const docs = docsFor(plugin, locale);
+  const review = reviewFor(plugin, locale);
+  const dr = t(locale).review;
 
   return (
     <main className="mx-auto max-w-shell px-5 sm:px-8">
@@ -234,6 +242,31 @@ export async function PluginView({
             <li>{d.notAReview}</li>
           </ul>
         </section>
+
+        {review ? (
+          // Above the overview on purpose: it is the shortest thing on the
+          // page and the only part a reader can act on immediately. The
+          // disclaimer is inside the panel rather than in a footnote — a
+          // generated verdict that has to be hunted for is one that gets
+          // quoted without it.
+          <section className="space-y-3">
+            <h2 className="display flex items-center gap-2 text-xl">
+              <Sparkles className="h-4 w-4 text-copper" aria-hidden />
+              {dr.heading}
+            </h2>
+            <div className="border-l-2 border-copper bg-paper-sunken px-5 py-4">
+              <div
+                className="prose prose-sm dark:prose-invert max-w-none prose-p:my-2.5 prose-strong:text-copper prose-code:before:content-none prose-code:after:content-none prose-code:font-normal"
+                dangerouslySetInnerHTML={{ __html: review }}
+              />
+              <p className="mt-4 border-t border-border pt-3 text-xs leading-relaxed text-muted-foreground">
+                {plugin.reviewModel
+                  ? dr.disclaimerWithModel(plugin.reviewModel)
+                  : dr.disclaimer}
+              </p>
+            </div>
+          </section>
+        ) : null}
 
         {overview ? (
           <section className="space-y-4">

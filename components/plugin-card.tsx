@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Star, ArrowUpRight, ShieldAlert, MessagesSquare } from "lucide-react";
 
 import { CopyCommand } from "@/components/copy-command";
+import { ReviewDialog } from "@/components/review-dialog";
 import { primaryInstall, installKindLabel } from "@/lib/install";
 import { t } from "@/lib/dict";
 import { localePath, relativeTime, riskList, type Locale } from "@/lib/i18n";
@@ -33,6 +34,13 @@ export function PluginCard({
   // the Chinese card is never a translation of the English one.
   const summary =
     locale === "zh" ? (plugin.summaryZh ?? plugin.summary) : plugin.summary;
+
+  // Only the locale's copy crosses to the client. Shipping both doubles the
+  // payload of a 24-card grid for a panel most readers will never open.
+  const reviewHtml =
+    locale === "zh"
+      ? (plugin.reviewHtmlZh ?? plugin.reviewHtml)
+      : (plugin.reviewHtml ?? plugin.reviewHtmlZh);
 
   return (
     <article className="group flex flex-col border border-border bg-card transition-colors hover:border-rule-strong">
@@ -104,6 +112,15 @@ export function PluginCard({
         </div>
 
         <div className="flex shrink-0 items-center gap-2">
+          {reviewHtml ? (
+            <ReviewDialog
+              name={plugin.name}
+              html={reviewHtml}
+              model={plugin.reviewModel}
+              sourceUrl={plugin.repoUrl}
+              locale={locale}
+            />
+          ) : null}
           {plugin.linuxdoUrl ? (
             // A visible badge, not just an icon: this is the strongest signal
             // on a card and the only one no competitor can generate.
