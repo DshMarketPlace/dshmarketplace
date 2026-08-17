@@ -63,6 +63,14 @@ jobs:
       # A listing that was fine last month can stop being one: the repository
       # goes away, or gets archived. Re-reading the oldest-synced rows first
       # means the whole catalogue cycles without any run being expensive.
+      # Discovery records a listing but does not read its README, and the
+      # refresh below runs oldest-synced first — which puts a plugin admitted
+      # tonight dead last, six nights from its first read. Nothing downstream
+      # works without a README: no review is written, and the newest entries,
+      # the ones worth arriving for, would be the emptiest. So they go first.
+      - name: Fetch READMEs for listings that have never had one
+        run: pnpm tsx scripts/sync-github.ts --missing-readme 300
+
       - name: Refresh listing metadata
         run: pnpm tsx scripts/sync-github.ts ${{ inputs.refresh || '400' }}
 
