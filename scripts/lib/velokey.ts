@@ -27,11 +27,15 @@ function key(): string {
   return k;
 }
 
-async function request(path: string, init?: RequestInit) {
-  const res = await fetch(`${BASE}${path}`, {
+async function request(
+  path: string,
+  init?: RequestInit,
+  endpoint?: { base: string; apiKey: string },
+) {
+  const res = await fetch(`${endpoint?.base ?? BASE}${path}`, {
     ...init,
     headers: {
-      Authorization: `Bearer ${key()}`,
+      Authorization: `Bearer ${endpoint?.apiKey ?? key()}`,
       "Content-Type": "application/json",
       ...(init?.headers ?? {}),
     },
@@ -50,6 +54,12 @@ export type ChatOptions = {
   maxTokens?: number;
   /** Retries cover the gateway's occasional 5xx and truncated JSON. */
   retries?: number;
+  /**
+   * Another OpenAI-shaped gateway. The reviews run on a different provider
+   * from the overviews, so one going down does not take both with it — the
+   * same reason the image endpoint is separate.
+   */
+  endpoint?: { base: string; apiKey: string };
 };
 
 export async function chat(prompt: string, opts: ChatOptions = {}) {
@@ -58,6 +68,7 @@ export async function chat(prompt: string, opts: ChatOptions = {}) {
     system,
     maxTokens = 12000,
     retries = 3,
+    endpoint,
   } = opts;
 
   const messages = [
@@ -68,10 +79,14 @@ export async function chat(prompt: string, opts: ChatOptions = {}) {
   let lastError: unknown;
   for (let attempt = 0; attempt < retries; attempt++) {
     try {
-      const data = await request("/v1/chat/completions", {
-        method: "POST",
-        body: JSON.stringify({ model, messages, max_tokens: maxTokens }),
-      });
+      const data = await request(
+        "/v1/chat/completions",
+        {
+          method: "POST",
+          body: JSON.stringify({ model, messages, max_tokens: maxTokens }),
+        },
+        endpoint,
+      );
       const text: string | undefined = data?.choices?.[0]?.message?.content;
       if (!text?.trim()) throw new Error("empty completion");
       return text;

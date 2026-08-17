@@ -113,6 +113,21 @@ function renderReadme(md: string, owner: string, repo: string) {
   });
 }
 
+/** Is this name actually on the registry, or only claimed in a package.json? */
+async function published(name: string) {
+  try {
+    const res = await fetch(
+      `https://registry.npmjs.org/${name.replace("/", "%2f")}`,
+      { method: "HEAD", headers: { "User-Agent": "dshmarketplace-sync" } },
+    );
+    return res.ok;
+  } catch {
+    // A registry hiccup must not silently strip a working command from every
+    // listing it touches. Unknown means keep what we had.
+    return true;
+  }
+}
+
 /** Machine-detectable concerns worth surfacing before someone runs `add`. */
 function detectRisks(readme: string, pkg: Record<string, unknown> | null) {
   const flags: string[] = [];
@@ -160,8 +175,14 @@ async function syncOne(row: {
     pkg = null;
   }
 
-  const npmPackage =
+  const declared =
     pkg && typeof pkg.name === "string" && !pkg.private ? pkg.name : null;
+
+  // A `name` in package.json is an intention, not a publication. Taking it as
+  // one put 29 install commands into the catalogue for packages that are not
+  // on npm — found by installing them, not by reading them. The command a
+  // listing publishes has to be one that resolves, so ask the registry.
+  const npmPackage = declared && (await published(declared)) ? declared : null;
 
   const readmeHtml = readmeMd
     ? renderReadme(readmeMd, row.owner, row.repo)

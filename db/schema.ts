@@ -125,6 +125,25 @@ export const plugins = sqliteTable(
     linuxdoTitle: text("linuxdo_title"),
     linuxdoVerifiedAt: integer("linuxdo_verified_at", { mode: "timestamp" }),
 
+    // What happened when the plugin was actually installed, in a throwaway
+    // container on a machine that had never seen it. `installStatus` is one of
+    // passed / needs-approval / failed / timeout, and it is the one field here
+    // that no competitor can scrape: it is the record of a run, not of a repo.
+    installStatus: text("install_status"),
+    installDetail: text("install_detail"),
+    blockedBuilds: text("blocked_builds"),
+    installCheckedAt: integer("install_checked_at", { mode: "timestamp" }),
+
+    // The written verdict. Generated from the README, the repository signals
+    // and — where one exists — the install result above, which is what keeps
+    // it from being the same paragraph every other directory can generate.
+    review: text("review"),
+    reviewZh: text("review_zh"),
+    reviewHtml: text("review_html"),
+    reviewHtmlZh: text("review_html_zh"),
+    reviewModel: text("review_model"),
+    reviewedAt: integer("reviewed_at", { mode: "timestamp" }),
+
     // SEO rollout
     visibility: text("visibility").notNull().default("hidden"),
     indexedAt: integer("indexed_at", { mode: "timestamp" }),
