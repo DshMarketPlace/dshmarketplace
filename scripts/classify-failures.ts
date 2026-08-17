@@ -88,7 +88,7 @@ async function main() {
   // written, so classifying is only half of it: 31 rows kept a `failed` from
   // before the gate existed while every later run was correctly discarded.
   const ours = sorted.filter(([, b]) => b.ours).flatMap(([, b]) => b.names);
-  const out = process.argv.find((a) => a.startsWith("--write-ours="))?.slice(14);
+  const out = process.argv.find((a) => a.startsWith("--write-ours="))?.split("=")[1];
   if (out) {
     writeFileSync(out, ours.join("\n") + "\n");
     console.log(`\n${ours.length} of ${latest.size} are ours — written to ${out}`);
