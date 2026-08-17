@@ -205,58 +205,58 @@ function Hero({
   return (
     <section className="border-b border-border">
       <div className="mx-auto max-w-shell px-5 pb-14 pt-16 sm:px-8 sm:pb-20 sm:pt-24">
-        <div className="grid gap-10 lg:grid-cols-[1.35fr_1fr] lg:items-start lg:gap-16">
-          <div className="space-y-6">
-            <p className="eyebrow">{d.eyebrow}</p>
-            {/* The head term leads the H1 verbatim in both languages. */}
-            <h1
-              className={
-                locale === "zh"
-                  ? "display max-w-[26ch] text-hero"
-                  : "display max-w-[16ch] text-hero"
-              }
-            >
-              {locale === "zh" ? (
-                // Keeps the product name off a line break. It is the head
-                // term; splitting "DeepSeek" from "Harness" across two lines
-                // is the one break this headline cannot take.
-                <span className="whitespace-nowrap">{d.h1a}</span>
-              ) : (
-                d.h1a
-              )}{" "}
-              <span className="text-copper">{d.h1b}</span>
-            </h1>
-            <p className="max-w-xl text-base leading-relaxed text-muted-foreground text-pretty">
-              {d.lede(stats.total.toLocaleString())}{" "}
-              <code className="whitespace-nowrap font-mono text-[0.9em] text-foreground">
-                dsh-plugin
-              </code>
-              {d.ledeTail}
-            </p>
-          </div>
+        {/* Stacked and centred rather than split. Against a headline this
+            size a sidebar reads as a leftover column, and the command is the
+            one thing the page is asking you to take — it belongs on the
+            centre line, directly under the sentence that promises it. */}
+        <div className="mx-auto flex max-w-4xl flex-col items-center text-center">
+          <p className="eyebrow">{d.eyebrow}</p>
+          {/* The head term leads the H1 verbatim in both languages. The two
+              halves are separate blocks so the break always lands at the
+              comma: balanced wrapping picked "plugins, one" instead, which
+              splits the sentence at its weakest joint. */}
+          <h1 className="display mt-5 max-w-[24ch] text-hero">
+            {locale === "zh" ? (
+              // Keeps the product name off a line break. It is the head
+              // term; splitting "DeepSeek" from "Harness" across two lines
+              // is the one break this headline cannot take.
+              <span className="block whitespace-nowrap">{d.h1a}</span>
+            ) : (
+              <span className="block text-balance">{d.h1a}</span>
+            )}
+            <span className="block text-balance text-copper">{d.h1b}</span>
+          </h1>
+          <p className="mt-6 max-w-[46ch] text-base leading-relaxed text-muted-foreground text-pretty">
+            {d.lede(stats.total.toLocaleString())}{" "}
+            <code className="whitespace-nowrap font-mono text-[0.9em] text-foreground">
+              dsh-plugin
+            </code>
+            {d.ledeTail}
+          </p>
 
-          <div id="install" className="space-y-3 scroll-mt-20">
+          <div id="install" className="mt-10 w-full max-w-xl scroll-mt-20">
             <p className="eyebrow">{d.installEyebrow}</p>
             <CopyCommand
               size="lg"
               locale={locale}
               command="npx dshmarketplace-cli add owner/repo"
-              className="bg-card"
+              className="mt-3 bg-card"
             />
-            <p className="text-xs leading-relaxed text-muted-foreground">
+            <p className="mt-3 text-xs leading-relaxed text-muted-foreground">
               {d.installNote}
             </p>
-            <Link
-              href={localePath(locale, "/plugins")}
-              className="inline-flex items-center gap-1.5 pt-1 text-sm text-foreground transition-colors hover:text-copper"
-            >
-              {d.browse}
-              <ArrowRight className="h-3.5 w-3.5" aria-hidden />
-            </Link>
           </div>
+
+          <Link
+            href={localePath(locale, "/plugins")}
+            className="mt-7 inline-flex items-center gap-1.5 text-sm text-foreground transition-colors hover:text-copper"
+          >
+            {d.browse}
+            <ArrowRight className="h-3.5 w-3.5" aria-hidden />
+          </Link>
         </div>
 
-        <dl className="mt-14 grid grid-cols-2 gap-px border border-border bg-border sm:grid-cols-4">
+        <dl className="mt-16 grid grid-cols-2 gap-px border border-border bg-border sm:grid-cols-4">
           <Stat label={d.statPlugins} value={stats.total.toLocaleString()} />
           <Stat label={d.statCategories} value="14" />
           <Stat label={d.statPages} value={stats.indexed.toLocaleString()} />

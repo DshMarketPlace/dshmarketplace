@@ -59,7 +59,7 @@ const en = {
     lede: (n: string) =>
       `Browse ${n} DeepSeek Harness plugins indexed from the community registry and the`,
     ledeTail:
-      "GitHub topic. Every listing shows the install command, the source repo, the licence, and what the plugin can reach — before you run anything.",
+      " GitHub topic. Every listing shows the install command, the source repo, the licence, and what the plugin can reach — before you run anything.",
     installEyebrow: "Install any plugin",
     installNote:
       "Resolves the plugin, picks npm over a full clone when it can, and hands DSH the right command. No global install.",

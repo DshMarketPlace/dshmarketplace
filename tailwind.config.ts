@@ -71,8 +71,10 @@ const config: Config = {
       },
       fontSize: {
         // Fluid display sizes — the hero should breathe on a wide screen
-        // without needing a breakpoint for every step.
-        hero: ["clamp(2.75rem, 1.6rem + 5.2vw, 5.5rem)", { lineHeight: "0.95" }],
+        // without needing a breakpoint for every step. Centred, the ceiling
+        // has to come down: at 5.5rem the headline stopped reading as a
+        // sentence and started reading as a wall.
+        hero: ["clamp(2.5rem, 1.7rem + 3.4vw, 4rem)", { lineHeight: "0.98" }],
         section: ["clamp(1.75rem, 1.3rem + 1.8vw, 2.75rem)", { lineHeight: "1.05" }],
       },
       borderRadius: {

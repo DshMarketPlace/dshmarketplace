@@ -157,7 +157,7 @@
    breaking the product name in half. */
 :lang(zh) .text-hero,
 :lang(zh-Hans) .text-hero {
-  font-size: clamp(2.125rem, 1.35rem + 3.1vw, 3.5rem);
+  font-size: clamp(2rem, 1.5rem + 2.2vw, 3.25rem);
   line-height: 1.2;
 }
 
