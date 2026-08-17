@@ -14,6 +14,12 @@ on:
         description: "Re-apply the admission bar to existing topic rows"
         type: boolean
         default: true
+      validate:
+        description: "How many listings to install in the sandbox (0 skips it)"
+        default: "150"
+      reviews:
+        description: "How many reviews to write afterwards"
+        default: "40"
 
 # Two syncs writing the same rows is not a race worth having, and a queued run
 # has nothing to add that the next scheduled one will not.
@@ -73,9 +79,113 @@ jobs:
         if: ${{ inputs.prune != 'false' }}
         run: pnpm tsx scripts/prune-topic.ts
 
-  # The catalogue counts are baked into prerendered pages, so a sync that does
-  # not redeploy leaves the site quoting yesterday's numbers.
-  deploy:
+      # Which listings still need running is a database question, so it is
+      # answered here, where the credentials already are. The answer crosses
+      # to the sandbox as a plain file.
+      - name: Export what still needs an install check
+        run: |
+          pnpm tsx scripts/export-validation-specs.ts \
+            --limit ${{ inputs.validate || '150' }} > specs.jsonl
+          echo "count=$(wc -l < specs.jsonl)" >> "$GITHUB_OUTPUT"
+        id: specs
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: validation-specs
+          path: specs.jsonl
+          retention-days: 1
+
+    outputs:
+      specs: ${{ steps.specs.outputs.count }}
+
+  # Runs other people's install scripts, so it holds no secrets at all — not
+  # the database token, not the review key. That is the whole reason it is a
+  # separate job: a postinstall that can reach TURSO_AUTH_TOKEN owns the
+  # catalogue. Nothing here can be stolen, because nothing here is secret.
+  validate:
     needs: sync
+    if: ${{ needs.sync.outputs.specs != '0' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 300
+
+    steps:
+      # Checkout before the download: it cleans the path it writes to, and the
+      # spec file must not be standing there when it does.
+      - name: Fetch the validator
+        uses: actions/checkout@v4
+        with:
+          repository: DshMarketPlace/dsh-plugin-validator
+          path: validator
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: validation-specs
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      # One throwaway container per plugin: non-root, every capability
+      # dropped, memory and pids capped, no host mount. `dsh plugin add`
+      # exits 0 even when it installed nothing, so the verdict comes from
+      # the profile manifest the harness writes, never from an exit code.
+      - name: Install every plugin
+        working-directory: validator
+        run: |
+          docker build -t dsh-validator .
+          node run.mjs ../specs.jsonl ../results.jsonl 3
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: validation-results
+          path: results.jsonl
+          retention-days: 7
+
+  # Back on the trusted side. Never runs a plugin, only reads what happened.
+  apply:
+    needs: [sync, validate]
+    if: ${{ always() && needs.validate.result == 'success' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+
+    env:
+      TURSO_DATABASE_URL: ${{ secrets.TURSO_DATABASE_URL }}
+      TURSO_AUTH_TOKEN: ${{ secrets.TURSO_AUTH_TOKEN }}
+      REVIEW_API_KEY: ${{ secrets.REVIEW_API_KEY }}
+      REVIEW_API_BASE: ${{ secrets.REVIEW_API_BASE }}
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: validation-results
+
+      # Drops any verdict whose command changed while the batch was running.
+      - name: Record what happened
+        run: pnpm tsx scripts/apply-validations.ts results.jsonl
+
+      # A review is only ours because it carries the install result, so it is
+      # written after the verdict lands and regenerates whenever the verdict
+      # moves. Skipped when no key is configured rather than failing the run.
+      - name: Write the reviews
+        if: ${{ env.REVIEW_API_KEY != '' }}
+        run: pnpm tsx scripts/write-review.ts --limit ${{ inputs.reviews || '40' }}
+
+  # The catalogue counts are baked into prerendered pages, so a sync that does
+  # not redeploy leaves the site quoting yesterday's numbers. It runs even when
+  # validation was skipped or failed — the day's new listings still deserve to
+  # ship, and their verdicts will land tomorrow.
+  deploy:
+    needs: [sync, apply]
+    if: ${{ always() && needs.sync.result == 'success' }}
     uses: ./.github/workflows/deploy.yml
     secrets: inherit
