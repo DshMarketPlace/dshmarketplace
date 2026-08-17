@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Star, ArrowUpRight, ShieldAlert, MessagesSquare } from "lucide-react";
 
 import { CopyCommand } from "@/components/copy-command";
+import { InstallCheck } from "@/components/install-check";
 import { ReviewDialog } from "@/components/review-dialog";
 import { primaryInstall, installKindLabel } from "@/lib/install";
 import { t } from "@/lib/dict";
@@ -75,9 +76,12 @@ export function PluginCard({
           <p className="text-sm italic text-ink-faint">{d.noDescription}</p>
         )}
 
-        <div className="mt-auto pt-1">
+        <div className="mt-auto space-y-1.5 pt-1">
           {install ? (
-            <CopyCommand command={install.cmd} locale={locale} />
+            <>
+              <CopyCommand command={install.cmd} locale={locale} />
+              <InstallCheck status={plugin.installStatus} locale={locale} />
+            </>
           ) : (
             <p className="border border-dashed border-border px-3 py-2 text-xs leading-relaxed text-muted-foreground">
               {d.noInstallCommand}

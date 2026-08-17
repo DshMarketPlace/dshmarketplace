@@ -3,11 +3,13 @@ import { Star, GitFork, ExternalLink, MessagesSquare, Sparkles } from "lucide-re
 
 import { PluginCard } from "@/components/plugin-card";
 import { CopyCommand } from "@/components/copy-command";
+import { InstallCheck } from "@/components/install-check";
 import { installOptions, installKindLabel } from "@/lib/install";
 import { t } from "@/lib/dict";
 import {
   absoluteUrl,
   localePath,
+  relativeTime,
   riskList,
   HTML_LANG,
   type Locale,
@@ -104,6 +106,7 @@ export async function PluginView({
   const related = await getRelatedPlugins(plugin);
   const flags: string[] = plugin.riskFlags ? JSON.parse(plugin.riskFlags) : [];
   const commands = installOptions(plugin, locale);
+  const checkedAgo = relativeTime(plugin.installCheckedAt, locale);
   const summary = summaryFor(plugin, locale);
   const overview = overviewFor(plugin, locale);
   const docs = docsFor(plugin, locale);
@@ -209,6 +212,30 @@ export async function PluginView({
               ) : null}
             </div>
           ))}
+
+          {plugin.installStatus ? (
+            <div className="space-y-2 border border-border bg-card p-4">
+              <p className="eyebrow">{t(locale).installCheck.heading}</p>
+              <InstallCheck
+                status={plugin.installStatus}
+                locale={locale}
+                className="text-xs"
+              />
+              {plugin.installStatus === "needs-approval" ? (
+                // The one verdict a reader can act on, so it says how rather
+                // than leaving them to find `allowBuilds` themselves.
+                <p className="text-xs leading-relaxed text-muted-foreground">
+                  {t(locale).installCheck.approvalHelp}
+                </p>
+              ) : null}
+              <p className="text-xs leading-relaxed text-ink-faint">
+                {t(locale).installCheck.method}
+                {checkedAgo
+                  ? ` ${t(locale).installCheck.checkedAt(checkedAgo)}.`
+                  : null}
+              </p>
+            </div>
+          ) : null}
         </section>
 
         <section className="space-y-4">

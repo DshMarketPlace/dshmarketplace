@@ -46,6 +46,13 @@ export async function GET(request: Request) {
     install: primaryInstall(p)?.cmd ?? null,
     installable: isInstallable(p),
     installOptions: installOptions(p),
+    // What happened when the command above was actually run, in a throwaway
+    // container against a clean profile: passed | needs-approval | failed |
+    // timeout, or null where it has not been run since the command last
+    // changed. `needs-approval` is not a defect — pnpm blocks a build script
+    // until it is allowlisted, and one `allowBuilds` entry fixes it.
+    installCheck: p.installStatus,
+    installCheckedAt: p.installCheckedAt,
     riskFlags: p.riskFlags ? JSON.parse(p.riskFlags) : [],
     inRegistry: p.inRegistry,
     // Only promoted plugins have a page worth linking to.
