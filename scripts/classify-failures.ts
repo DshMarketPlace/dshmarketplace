@@ -35,7 +35,7 @@ const CAUSES: Array<[string, RegExp, boolean]> = [
 ];
 
 async function main() {
-  const paths = process.argv.slice(2);
+  const paths = process.argv.slice(2).filter((a) => !a.startsWith("--"));
   if (!paths.length) {
     console.error("usage: pnpm tsx scripts/classify-failures.ts results.jsonl [...]");
     process.exit(1);
