@@ -34,6 +34,7 @@ import { plugins, type Plugin } from "../db/schema";
 import { primaryInstall } from "../lib/install";
 import { chatBlocks } from "./lib/velokey";
 import { persist } from "./lib/persist";
+import { joinIdentifiers } from "./lib/text";
 
 const README_BUDGET = 6000;
 
@@ -167,12 +168,15 @@ function render(parts: Record<string, string>, locale: "zh" | "en") {
     : { what: "What it is", who: "Who it is for", caveat: "Watch out", take: "The verdict" };
   const p = locale === "zh" ? "ZH" : "EN";
 
-  return [
-    `**${L.what}** — ${parts[`${p}_WHAT`]}`,
-    `**${L.who}** — ${parts[`${p}_WHO`]}`,
-    `**${L.caveat}** — ${parts[`${p}_CAVEAT`]}`,
-    `**${L.take}** — ${parts[`${p}_TAKE`]}`,
-  ].join("\n\n");
+  return joinIdentifiers(
+    [
+      `**${L.what}** — ${parts[`${p}_WHAT`]}`,
+      `**${L.who}** — ${parts[`${p}_WHO`]}`,
+      `**${L.caveat}** — ${parts[`${p}_CAVEAT`]}`,
+      `**${L.take}** — ${parts[`${p}_TAKE`]}`,
+    ].join("\n\n"),
+    locale,
+  );
 }
 
 /** A section that admits it has no content is worse than an absent review. */
