@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="DSH Marketplace">
+  <title>DSH Marketplace</title>
+  <!--
+    Letterpress slug: a solid ink block with the glyph cut out in negative
+    space, and one molten-copper stripe along the foot where the ink catches.
+
+    The glyph is a bracket and a socket — a module going in. Authored by hand
+    rather than traced, so it stays crisp at 16px and weighs under a kilobyte.
+  -->
+  <rect width="64" height="64" fill="#241f1a" />
+  <path d="M0 58h64v6H0z" fill="#c0561d" />
+  <g fill="#f7f4ed">
+    <!-- Left bracket: an open chevron. -->
+    <path d="M27.5 16.5v6.4L18.4 32l9.1 9.1v6.4L12 32z" />
+    <!-- Right socket: a triangle with a circular bite out of its back edge. -->
+    <path d="M36.5 16.5 52 32 36.5 47.5v-8.9a6.6 6.6 0 0 1 0-13.2z" />
+  </g>
+</svg>

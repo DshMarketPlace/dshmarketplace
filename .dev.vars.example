@@ -1,0 +1,26 @@
+# Copy to .dev.vars, which is gitignored. Nothing here has a default.
+
+# The catalogue. Required by the Worker and by every script.
+TURSO_DATABASE_URL=libsql://<your-db>.turso.io
+TURSO_AUTH_TOKEN=<your-token>
+
+# Admin area. ADMIN_SECRET signs the session cookie — any long random string,
+# e.g. `openssl rand -hex 32`. Changing it logs everyone out.
+ADMIN_SECRET=
+ADMIN_PASSWORD=
+
+# Raises the GitHub API limit from 60 requests an hour to 5,000. sync-github.ts
+# walks a thousand repositories, so without it the sync stalls almost at once.
+GITHUB_TOKEN=
+
+# Content generation, scripts only — the Worker never reads these. Two gateways
+# because they failed separately: this one still answers chat completions,
+# its image endpoint did not.
+VELOKEY_API_KEY=
+VELOKEY_BASE_URL=https://api.velokey.ai
+VELOKEY_TEXT_MODEL=
+
+# Illustrations and banners. Any OpenAI-shaped endpoint that returns b64_json.
+IMAGE_API_BASE=
+IMAGE_API_KEY=
+IMAGE_MODEL=gpt-image-2
