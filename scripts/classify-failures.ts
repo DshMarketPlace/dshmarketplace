@@ -32,6 +32,10 @@ const CAUSES: Array<[string, RegExp, boolean]> = [
   ["malformed registry metadata", /ERR_PNPM_MALFORMED_METADATA/, false],
   ["package or version does not exist", /ERR_PNPM_FETCH_404|ERR_PNPM_NO_MATCHING_VERSION/, false],
   ["peer or engine refusal", /ERR_PNPM_(PEER|UNSUPPORTED)/, false],
+  // A package.json saved with a UTF-8 BOM parses nowhere: pnpm cannot prepare
+  // the package, or the harness throws out of `readProfileManifest` and takes
+  // the command down with it. Windows editors add it invisibly.
+  ["a UTF-8 BOM in package.json", /Unexpected token '﻿'/, false],
 ];
 
 async function main() {
@@ -74,10 +78,16 @@ async function main() {
   const unexplained = [...wanted].filter((n) => !latest.has(n));
   const sorted = [...buckets].sort((a, b) => b[1].names.length - a[1].names.length);
 
+  // Names are opt-in so nothing downstream has a reason to filter this output.
+  // The first version indented them, callers piped it through `grep -v "^ "`,
+  // and that swallowed the unexplained-cause logs below — the one thing here
+  // that exists to be read.
+  const names = process.argv.includes("--names");
+
   console.log(`${wanted.size} listings published as failed, ${latest.size} found in these files`);
-  for (const [label, { ours, names }] of sorted) {
-    console.log(`\n${String(names.length).padStart(4)}  ${ours ? "OURS  " : "THEIRS"}  ${label}`);
-    for (const n of names) console.log(`        ${n}`);
+  for (const [label, bucket] of sorted) {
+    console.log(`${String(bucket.names.length).padStart(4)}  ${bucket.ours ? "OURS  " : "THEIRS"}  ${label}`);
+    if (names) for (const n of bucket.names) console.log(`      · ${n}`);
   }
 
   // A cause with no pattern here is retracted, which is safe and endless: the
@@ -87,11 +97,11 @@ async function main() {
   // ever ask for it.
   const nameless = buckets.get("no cause in the log");
   if (nameless) {
-    console.log(`\n${nameless.names.length} failures match no cause above. They will be`);
-    console.log(`retracted and re-run nightly until CAUSES learns them:`);
+    console.log(`\n!! ${nameless.names.length} failures match no cause above. They will be`);
+    console.log(`!! retracted and re-run nightly until CAUSES learns them:`);
     for (const n of nameless.names.slice(0, 5)) {
-      const log = (latest.get(n)?.log ?? "").split("\n").slice(-6).join("\n        ");
-      console.log(`\n        ${n}\n        ${log}`);
+      const log = (latest.get(n)?.log ?? "(no log)").split("\n").slice(-8).join("\n!!   ");
+      console.log(`\n!! ${n}\n!!   ${log}`);
     }
   }
   if (unexplained.length) {

@@ -67,8 +67,16 @@ function installProse(p: Plugin) {
       return `实测：能装进去，但有构建脚本被 pnpm 拦下${named}，导致 harness 没有完成注册。用户需要手动允许该构建才能真正装好`;
     case "not-a-layer":
       return "实测：装是装上了，但它的 package.json 里没有 dsh.bundle，所以 harness 把它当普通依赖收下，没有变成 profile layer。这不是安装失败，是它本来就不是 bundle 型插件";
-    case "failed":
-      return `实测失败：装完之后 harness 没有把它注册进 profile${named}`;
+    case "failed": {
+      // The stored detail names the cause when the probe recognised one — a
+      // BOM in package.json, say — and a named cause is worth far more than
+      // the catch-all, which only restates the verdict. Used only when it is
+      // not that catch-all, so the common case keeps its written sentence.
+      const generic = "installed but not registered as a profile bundle";
+      return p.installDetail && p.installDetail !== generic
+        ? `实测失败，具体原因：${p.installDetail}${named}`
+        : `实测失败：装完之后 harness 没有把它注册进 profile${named}`;
+    }
     case "timeout":
       return "实测超时：安装在 3 分钟内没有结束";
     default:
