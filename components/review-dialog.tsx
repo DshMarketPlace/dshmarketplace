@@ -63,9 +63,11 @@ export function ReviewDialog({
         onClick={(event) => {
           if (event.target === ref.current) setOpen(false);
         }}
-        // Capped and scrolled: a long review otherwise runs off the viewport
-        // with no way back to the close button.
-        className="flex max-h-[85vh] w-[min(34rem,calc(100vw-2rem))] flex-col overflow-hidden border border-rule-strong bg-card p-0 text-foreground backdrop:bg-ink/40"
+        // `open:flex`, never a bare `flex`. A closed <dialog> is hidden by a UA
+        // rule of lower specificity than any class, so `display: flex` from a
+        // utility overrides it and every dialog on the page renders inline —
+        // which is exactly what shipped, stacking six panels down the homepage.
+        className="max-h-[85vh] w-[min(34rem,calc(100vw-2rem))] flex-col overflow-hidden border border-rule-strong bg-card p-0 text-foreground backdrop:bg-ink/40 open:flex"
       >
         <div className="flex shrink-0 items-start justify-between gap-4 border-b border-border px-5 py-4">
           <div className="min-w-0">

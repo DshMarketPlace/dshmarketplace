@@ -1,4 +1,4 @@
-# Status — 17 August 2026
+# Status — 17 August 2026 (evening)
 
 Live, seeded, and holding the name. A long way from finished.
 
@@ -8,7 +8,7 @@ Live, seeded, and holding the name. A long way from finished.
 | --- | --- |
 | Site | <https://dshmarketplace.dev> — Next.js 16 on Cloudflare Workers via OpenNext |
 | Languages | English at `/`, Chinese at `/zh` — separate root layouts, bidirectional hreflang |
-| Database | Turso (libSQL), 1,002 plugins with GitHub metadata, all with bilingual summaries |
+| Database | Turso (libSQL), 2,356 plugins with GitHub metadata |
 | Detail pages | 28 written bilingually, each with a documentation section; 25 illustrated |
 | LINUX DO | 6 plugins verified against the thread their author posted |
 | Content pipeline | `write-content.ts` → `promote.ts`. Text on one gateway, images on another |
@@ -16,6 +16,9 @@ Live, seeded, and holding the name. A long way from finished.
 | Python | `pip install dshmarketplace` — [PyPI](https://pypi.org/project/dshmarketplace/) · repo **public, MIT**. Zero dependencies, `dshm` CLI, agent tools, 3.9–3.13 |
 | In-DSH plugin | `dsh plugin --profile web add dshmarketplace-plugin` — [npm](https://www.npmjs.com/package/dshmarketplace-plugin) · repo **public, MIT**. Verified running in a real harness |
 | Userscript | [DSH Plugin Radar](https://greasyfork.org/scripts/591735-dsh-plugin-radar) — marks plugins on GitHub and npm · [repo](https://github.com/DshMarketPlace/dsh-plugin-radar) **public, MIT**. Live on Greasy Fork 17 Aug 2026 |
+| Validator | [dsh-plugin-validator](https://github.com/DshMarketPlace/dsh-plugin-validator) — installs each plugin in a throwaway container on an Oracle ARM box · **public, MIT** |
+| AI review | Pre-generated bilingual verdict per plugin, grounded in the sandbox result. Button on every card, section on every detail page |
+| Nightly sync | `.github/workflows/sync.yml` — discover, refresh, re-apply the bar, then redeploy |
 | This repo | **Public, MIT**, history squashed to one commit |
 | Analytics | GA4 `G-R6HWVQVVVB`, all pages |
 | Launch | [LINUX DO thread](https://linux.do/t/topic/2765838), 17 Aug 2026 |
@@ -38,8 +41,41 @@ Two public endpoints, both CORS-open:
   `/api/v1/plugins` until the next push.
 
 Pages, each in both languages: `/` (hero, catalogue, how-it-works, FAQ),
-`/p/[slug]`, `/about`, `/submit`, `/contact`, `/terms`, `/privacy`. English-only:
-`/admin`, `/api/v1/*`. Sitemap: 56 URLs.
+`/p/[slug]`, `/api-docs`, `/about`, `/submit`, `/contact`, `/terms`, `/privacy`.
+English-only: `/admin`, `/api/v1/*`.
+
+## The admission bar, and why it is published
+
+The catalogue was 1,002 while topic-crawlers claimed 4,143. Ingesting the topic
+verbatim closes that gap and destroys the reason to prefer us: it is full of
+other harnesses, agent clients and empty scaffolds whose manifests are
+perfectly valid. So `ingest-topic.ts` gates on three things, and `/api-docs`
+states them so the filter can be checked rather than merely claimed:
+
+- a DSH plugin marker (`dsh` manifest, `@deepseek-ai/*` or Cordis dependency,
+  or a `cordis.patch.yml`)
+- **ten commits or more**, taken from `awesome-dsh-plugin`'s own published bar
+  so the number is checkable against someone else's rules
+- a repository description at all
+
+The first pass removed 1,415 rows (754 of them under five commits). Commit
+distribution across 2,024 candidates: 1–4 → 754, 5–9 → 380, 10–24 → 476,
+25–99 → 120, 100+ → 13.
+
+## Sandbox validation
+
+`dsh-plugin-validator` installs a plugin into a fresh profile inside a
+throwaway container — non-root, all capabilities dropped, memory and pid
+capped, no host mount — and reports what the harness recorded rather than what
+the CLI returned. Verdicts: `passed`, `needs-approval`, `failed`, `timeout`,
+`rejected`.
+
+It found our own defect within the first 150 runs. 29 listings published
+`dsh plugin --profile web add <name>` for packages that are not on npm, because
+`sync-github.ts` read `package.json`'s `name` as proof of publication and never
+asked the registry. Fixed. **This is the second time this project shipped
+install commands that cannot run**, and both times reading the code did not
+catch it and installing it did.
 
 ## The strategy this is built around
 
@@ -114,12 +150,20 @@ parts are recorded, not guessed.
 
 | | Them | Us |
 | --- | --- | --- |
-| Listings | 2,820 | 1,002 |
-| Discovery | GitHub Search API, `dsh-plugin` **and** `deepseek-harness` topics, partitioned to beat the 1,000-result cap | CC0 registry seed plus one topic |
-| Public API | `catalog.json`, one prerendered blob | `/api/v1/plugins`, filterable — **exists but is undocumented and unlinked** |
-| npm | a DSH plugin (`npm:dsh-plugins-store`) | a CLI (`dshmarketplace-cli`) |
-| Validation | real Docker sandbox, eight steps, network gated per phase, failure attributed to plugin vs infrastructure | heuristic README scan only |
-| Per-plugin writing | none | bilingual overview, docs section, illustration |
+| Listings | 2,820 | 2,356, against a published bar |
+| Discovery | both topics, partitioned to beat the 1,000-result cap | same, bisected on creation time |
+| Public API | `catalog.json`, one prerendered blob | `/api/v1/plugins` + `/api/v1/index`, **documented at `/api-docs`** |
+| npm | a DSH plugin (`npm:dsh-plugins-store`) | a CLI, a Python package, an in-DSH plugin, a userscript |
+| Validation | real Docker sandbox | real Docker sandbox — **shipped**, and it caught a defect of ours in its first 150 runs |
+| Per-plugin writing | none | bilingual overview, docs section, illustration, AI review |
+
+**The field is far bigger than "six or more".** One search pass in August found
+sixteen: dshbase.com (1,912), dshplugin.online (4,143), deepseekplugin.org
+(2,894), dshfind.com, dshplugin.io, dshplugin.dev, dshplugin.world,
+dshplugin.app, dshhub.dev, dsh.tools, dshplugins.xyz,
+deepseek-harness-plugin.com, dsh.so, mydsh.dev, dshmk.com, dshplugins.com.
+**dshmarketplace.dev appeared in none of those searches.** Competing on listing
+count is not winnable; the answer is what the count is *worth*.
 
 What that implies, in order of effort against payoff:
 
@@ -146,8 +190,10 @@ What that implies, in order of effort against payoff:
    listing page, the repo link in the description is dofollow and
    `dshmarketplace.dev` is `nofollow`, so Greasy Fork runs a trusted-domain
    allowlist. The equity arrives one hop later, via the repo's README.
-7. **Real validation.** Most expensive; needs a Docker runner in CI, cannot run
-   on Workers.
+7. ~~**Real validation.**~~ **Shipped** as `dsh-plugin-validator`, running on
+   the user's Oracle ARM box. Correct as of this session: it is the one signal
+   here that is a record of a run rather than a reading of a repo, and it is
+   what makes the AI review non-commodity.
 
 Depth stays the moat. Their listings are metadata; ours are written. Do not
 trade that away chasing their feature list.
@@ -288,3 +334,32 @@ Scaffold derived from [9d8dev/directory](https://github.com/9d8dev/directory)
 [awesome-dsh-plugin](https://github.com/awesome-dsh-plugin/awesome-dsh-plugin)
 (CC0). Both credited in `NOTICE`. Independent project, not affiliated with
 DeepSeek — stated on every page, and the brand mark shares nothing with theirs.
+
+- **`dsh plugin add` exits 0 when nothing installed.** On a machine without
+  pnpm it printed the reason and returned success. Any check built on its exit
+  code is measuring nothing; the profile's own `dsh.profile.bundles` is the
+  only record of whether a plugin registered.
+- **`@deepseek-ai/dsh` has no arm64 prebuild for `node-pty`.** npm falls
+  through to node-gyp, so an image without python and a C++ toolchain dies at
+  `gyp ERR! not ok` — which reads like a broken package and is a missing
+  compiler. `node:22-bookworm` works, `-slim` does not.
+- **A blocked build script is not a broken plugin, and the pnpm version
+  decides.** pnpm 11 exits non-zero on `ERR_PNPM_IGNORED_BUILDS`, so `dsh`
+  reads the install as failed and never registers the bundle; pnpm 10 warns and
+  succeeds. Installing from a git spec hits the same wall through
+  `ERR_PNPM_GIT_DEP_PREPARE_NOT_ALLOWED`. Both are one `allowBuilds` entry from
+  working, and reporting them as failures marks working software broken.
+- **A `name` in `package.json` is not a publication.** Reading it as one put 29
+  install commands into the catalogue for packages that are not on npm. Sync
+  now asks the registry.
+- **Drizzle's migration journal drifted from the live database.** `db:generate`
+  emitted `ADD COLUMN` for eight columns that already existed, and the whole
+  migration failed on the first duplicate. Check `PRAGMA table_info` before
+  trusting a generated migration here.
+- **A constrained model retreats into tautology; an unconstrained one invents
+  grounds.** Told not to overstate, the review wrote "people who need a sidebar
+  should install a sidebar plugin". Told to be decisive, it rejected an
+  image-reading plugin because "text models handle most of this already". The
+  fix for the second was not a better rule: `verdictConstraint()` derives a
+  binding instruction from the sandbox status in code, because whether to
+  recommend something we watched fail is not a judgement call.

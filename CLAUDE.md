@@ -96,6 +96,27 @@ tarball succeeds. That repo publishes via `scripts/publish.mjs`; the full
 investigation and everything it rules out is in its workflow. Do not re-derive
 it, and do not change account settings hoping to fix it.
 
+## What gets listed, and what gets claimed
+
+**The admission bar is published, so it can be checked.** `ingest-topic.ts`
+admits a repository only with a DSH plugin marker, ten commits or more, and a
+description. The commit number is `awesome-dsh-plugin`'s, not ours, so the
+standard is checkable against someone else's rules. `/api-docs` states all
+three. A filter nobody can check is not a filter.
+
+**Never claim a plugin is broken on evidence weaker than an install.** The
+sandbox distinguishes `passed`, `needs-approval`, `failed` and `timeout`; a
+blocked build script is `needs-approval`, not a defect, and 29 "failures" in
+the first batch were our own bad data. Reading the code has now twice failed to
+catch commands that cannot run, and installing them caught both.
+
+**The AI review judges fit, never people.** It is labelled as generated, says
+which parts were observed in a real install and which were read off the repo,
+and never uses our own heuristic risk flags as a stick. When the sandbox says a
+plugin does not install, `verdictConstraint()` forbids recommending it — in
+code, because that is not a judgement call. Regenerate with `--force` after any
+prompt change.
+
 ## Content rules
 
 **Visibility is three-tier.** `hidden` generates no route at all; `listed`
