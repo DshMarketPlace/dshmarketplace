@@ -56,6 +56,22 @@ const EPOCH = Date.UTC(2026, 6, 1);
  */
 const MIN_COMMITS = 10;
 
+/**
+ * Hosts, not plugins.
+ *
+ * They carry the topic and every marker a plugin does, and one of them is the
+ * most-starred repository in the ecosystem by two orders of magnitude — so it
+ * sat at the top of the catalogue offering
+ * `dsh plugin add github:deepseek-ai/deepseek-harness`. The sandbox even
+ * passed it, because installing the harness into a profile does technically
+ * work. A directory of plugins for a harness must not list the harness as one
+ * of them.
+ */
+const IS_A_HOST = new Set([
+  "deepseek-ai/deepseek-harness",
+  "sandbaseai/sandbase-harness",
+]);
+
 type SearchRepo = {
   full_name: string;
   name: string;
@@ -316,6 +332,7 @@ async function main() {
           // other directory already gives you.
           if (repo.archived) return reject("archived");
           if (!repo.description?.trim()) return reject("no description");
+          if (IS_A_HOST.has(repo.full_name.toLowerCase())) return reject("a harness, not a plugin");
 
           const verdict = await classify(repo.owner.login, repo.name);
           if (!verdict.ok) return reject(verdict.why);

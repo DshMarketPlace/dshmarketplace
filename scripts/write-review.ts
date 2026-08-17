@@ -163,6 +163,17 @@ function render(parts: Record<string, string>, locale: "zh" | "en") {
   ].join("\n\n");
 }
 
+/** A section that admits it has no content is worse than an absent review. */
+const NON_ANSWER = [
+  /未提供/,
+  /未说明/,
+  /未提及/,
+  /没有提供/,
+  /信息不足/,
+  /not (?:provided|specified|stated)/i,
+  /no (?:specific )?(?:use case|information|details) (?:provided|given|available)/i,
+];
+
 function toHtml(md: string) {
   return sanitizeHtml(marked.parse(md, { async: false }) as string, {
     allowedTags: ["p", "strong", "em", "code", "br"],
@@ -254,6 +265,18 @@ async function main() {
 
           const zh = render(parts, "zh");
           const en = render(parts, "en");
+
+          // The shape guarantees four sections, so a model with nothing to say
+          // fills one in rather than leaving it out — "未提供具体的适用场景"
+          // was published under the most-visible card on the site. An empty
+          // section is not a review; no review is better than a form with the
+          // blanks read aloud.
+          const hollow = NON_ANSWER.find((p) => p.test(zh) || p.test(en));
+          if (hollow) {
+            failed++;
+            console.log(`  ✗ ${row.fullName}: hollow section (${hollow.source})`);
+            continue;
+          }
 
           if (dryRun) {
             console.log(`\n--- ${row.fullName} zh\n${zh}\n--- en\n${en}\n`);
