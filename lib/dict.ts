@@ -63,8 +63,11 @@ const en = {
     ledeTail:
       " GitHub topic. Every listing shows the install command, the source repo, the licence, and what the plugin can reach — before you run anything.",
     installEyebrow: "Install any plugin",
+    installSectionHeading: "Install any plugin",
     installNote:
       "Resolves the plugin, picks npm over a full clone when it can, and hands DSH the right command. No global install.",
+    searchPlaceholder: "Search plugins by name, capability or author…",
+    searchAction: "Search",
     browse: "Browse the catalogue",
     statPlugins: "Plugins indexed",
     statCategories: "Categories",
@@ -124,13 +127,17 @@ const en = {
     urlHelp:
       "Use the repository root URL. Private, archived and disabled projects cannot be listed.",
     inspect: "Inspect repository",
-    noDescription: "No repository description — this becomes your card summary, so it is worth adding.",
+    noDescription:
+      "No repository description — this becomes your card summary, so it is worth adding.",
     topicYes: "Tagged dsh-plugin, so the next sync would find it anyway.",
-    topicNo: "Not tagged dsh-plugin. Adding the topic lists you automatically, here and in every other DSH plugin market.",
+    topicNo:
+      "Not tagged dsh-plugin. Adding the topic lists you automatically, here and in every other DSH plugin market.",
     licenceYes: (l: string) => `Licensed under ${l}.`,
-    licenceNo: "No licence file. Code without one is all-rights-reserved by default, and the listing says so.",
+    licenceNo:
+      "No licence file. Code without one is all-rights-reserved by default, and the listing says so.",
     descriptionYes: "Has a repository description.",
-    descriptionNo: "No description set. One sentence about the capability reads better than a blank card.",
+    descriptionNo:
+      "No description set. One sentence about the capability reads better than a blank card.",
     alreadyListed: "This repository is already in the catalogue.",
     viewListing: "View the listing",
     noteLabel: "Anything we should know (optional)",
@@ -341,8 +348,11 @@ const zh: Dict = {
     ledeTail:
       " topic。每条记录都写清安装命令、源码仓库、开源协议，以及这个插件能碰到什么——在你运行它之前。",
     installEyebrow: "安装任意 DSH 插件",
+    installSectionHeading: "安装任意插件",
     installNote:
       "自动解析插件来源，能走 npm 就不克隆整个仓库，然后把命令交给 DSH。不用全局安装。",
+    searchPlaceholder: "搜索插件名称、能力或作者…",
+    searchAction: "搜索",
     browse: "浏览全部插件",
     statPlugins: "已收录插件",
     statCategories: "分类",
@@ -368,7 +378,8 @@ const zh: Dict = {
     pagination: "分页",
     prev: "← 上一页",
     next: "下一页 →",
-    emptyTitle: (q?: string) => (q ? `没有匹配「${q}」的插件` : "没有匹配的插件"),
+    emptyTitle: (q?: string) =>
+      q ? `没有匹配「${q}」的插件` : "没有匹配的插件",
     emptyBodyA: "插件名基本都遵循",
     emptyBodyB:
       "的命名习惯，描述有中文也有英文。与其搜产品名，不如搜能力——比如「记忆」「视觉」「终端」。",
@@ -406,14 +417,14 @@ const zh: Dict = {
     topicNo:
       "没有打 dsh-plugin topic。打上之后会被自动收录，这边和其他所有 DSH 插件市场都一样。",
     licenceYes: (l: string) => `开源协议：${l}。`,
-    licenceNo:
-      "没有协议文件。没有协议的代码默认保留全部权利，记录上会照实写。",
+    licenceNo: "没有协议文件。没有协议的代码默认保留全部权利，记录上会照实写。",
     descriptionYes: "仓库有描述。",
     descriptionNo: "没有设置描述。写一句这插件能干什么，比留空好看得多。",
     alreadyListed: "这个仓库已经在收录里了。",
     viewListing: "看看这条记录",
     noteLabel: "有什么要说明的（选填）",
-    notePlaceholder: "针对哪个 DSH 版本、需要哪些权限、会不会替换掉某个内置插件……",
+    notePlaceholder:
+      "针对哪个 DSH 版本、需要哪些权限、会不会替换掉某个内置插件……",
     emailLabel: "联系邮箱（选填）",
     emailHelp: "只用来就这次提交联系你，不会订阅任何东西。",
     submit: "提交审核",

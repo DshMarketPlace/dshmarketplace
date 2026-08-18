@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, Search } from "lucide-react";
 
 import { PluginCard } from "@/components/plugin-card";
 import { CopyCommand } from "@/components/copy-command";
@@ -20,12 +20,14 @@ import {
  * string was attached.
  */
 export async function HomeView({ locale }: { locale: Locale }) {
-  const [{ plugins: featured }, categories, stats, linuxdo] = await Promise.all([
-    getPlugins({ sort: "stars", perPage: 24, page: 1 }),
-    getCategoriesWithCounts(),
-    getCatalogStats(),
-    getLinuxDoPlugins(6),
-  ]);
+  const [{ plugins: featured }, categories, stats, linuxdo] = await Promise.all(
+    [
+      getPlugins({ sort: "stars", perPage: 24, page: 1 }),
+      getCategoriesWithCounts(),
+      getCatalogStats(),
+      getLinuxDoPlugins(6),
+    ],
+  );
 
   const d = t(locale);
 
@@ -81,6 +83,7 @@ export async function HomeView({ locale }: { locale: Locale }) {
 
       <HowItWorks locale={locale} />
       <Faq locale={locale} />
+      <InstallSection locale={locale} />
     </main>
   );
 }
@@ -220,33 +223,49 @@ function Hero({
               // Keeps the product name off a line break. It is the head
               // term; splitting "DeepSeek" from "Harness" across two lines
               // is the one break this headline cannot take.
-              <span className="block whitespace-nowrap">{d.h1a}</span>
+              <span className="block sm:whitespace-nowrap">{d.h1a}</span>
             ) : (
               <span className="block text-balance">{d.h1a}</span>
             )}
             <span className="block text-balance text-copper">{d.h1b}</span>
           </h1>
-          <p className="mt-6 max-w-[46ch] text-base leading-relaxed text-muted-foreground text-pretty">
+          <p className="mt-6 max-w-[46ch] text-pretty text-base leading-relaxed text-muted-foreground">
             {d.lede(stats.total.toLocaleString())}{" "}
             <code className="whitespace-nowrap font-mono text-[0.9em] text-foreground">
               dsh-plugin
             </code>
             {d.ledeTail}
           </p>
+        </div>
 
-          <div id="install" className="mt-10 w-full max-w-xl scroll-mt-20">
-            <p className="eyebrow">{d.installEyebrow}</p>
-            <CopyCommand
-              size="lg"
-              locale={locale}
-              command="npx dshmarketplace-cli add owner/repo"
-              className="mt-3 bg-card"
+        {/* Search box: the primary action for discovery. Moved outside the
+            centred max-w-4xl container so it aligns with the stats grid. */}
+        <div className="mt-10 flex w-full justify-center">
+          <form
+            action={localePath(locale, "/plugins")}
+            className="relative w-full"
+          >
+            <Search
+              className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-copper"
+              aria-hidden
             />
-            <p className="mt-3 text-xs leading-relaxed text-muted-foreground">
-              {d.installNote}
-            </p>
-          </div>
+            <input
+              type="search"
+              name="q"
+              placeholder={d.searchPlaceholder}
+              aria-label={d.searchPlaceholder}
+              className="hover:border-copper/50 focus:ring-copper/20 h-14 w-full border-2 border-border bg-card pl-12 pr-32 text-base font-medium outline-none transition-all placeholder:font-normal placeholder:text-muted-foreground focus:border-copper focus:ring-2"
+            />
+            <button
+              type="submit"
+              className="hover:bg-copper/90 absolute right-2 top-1/2 -translate-y-1/2 bg-copper px-6 py-2.5 text-sm font-medium text-paper transition-colors focus:outline-none focus:ring-2 focus:ring-copper focus:ring-offset-2"
+            >
+              {d.searchAction}
+            </button>
+          </form>
+        </div>
 
+        <div className="mx-auto flex max-w-4xl flex-col items-center text-center">
           <Link
             href={localePath(locale, "/plugins")}
             className="mt-7 inline-flex items-center gap-1.5 text-sm text-foreground transition-colors hover:text-copper"
@@ -308,6 +327,36 @@ function HowItWorks({ locale }: { locale: Locale }) {
             </p>
           </div>
         ))}
+      </div>
+    </section>
+  );
+}
+
+function InstallSection({ locale }: { locale: Locale }) {
+  const d = t(locale).hero;
+
+  return (
+    <section
+      id="install"
+      className="mx-auto max-w-shell scroll-mt-16 px-5 pt-20 sm:px-8"
+    >
+      <div className="space-y-2 border-b border-border pb-5">
+        <p className="eyebrow">{d.installEyebrow}</p>
+        <h2 className="display max-w-2xl text-section">
+          {d.installSectionHeading}
+        </h2>
+      </div>
+
+      <div className="pb-12 pt-8">
+        <CopyCommand
+          size="lg"
+          locale={locale}
+          command="npx dshmarketplace-cli add owner/repo"
+          className="max-w-xl bg-card"
+        />
+        <p className="mt-4 max-w-xl text-sm leading-relaxed text-muted-foreground">
+          {d.installNote}
+        </p>
       </div>
     </section>
   );
