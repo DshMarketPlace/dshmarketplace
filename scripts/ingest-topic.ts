@@ -86,7 +86,23 @@ type SearchRepo = {
   topics?: string[];
 };
 
+/**
+ * A short rate limit is worth waiting out; a long one is worth surrendering to.
+ *
+ * The secondary limit clears in seconds. The hourly quota does not, and this
+ * step is first in a nine-step nightly — so sleeping until it resets does not
+ * cost discovery, it costs the README fetch, the sandbox, the reviews and the
+ * deploy that were queued behind it. The first scheduled run slept 109 of its
+ * 120 minutes and was cancelled having accomplished nothing at all.
+ */
+const MAX_WAIT_MS = 120_000;
+
+/** Set when the quota is gone. Nothing may be judged after this is true. */
+let exhausted = false;
+
 async function gh<T>(path: string, raw = false): Promise<T | null> {
+  if (exhausted) return null;
+
   const res = await fetch(`${API}${path}`, {
     headers: {
       Accept: raw ? "application/vnd.github.raw" : "application/vnd.github+json",
@@ -100,6 +116,16 @@ async function gh<T>(path: string, raw = false): Promise<T | null> {
   if (res.status === 403 || res.status === 429) {
     const reset = Number(res.headers.get("x-ratelimit-reset") ?? 0) * 1000;
     const waitMs = Math.max(reset - Date.now(), 30_000);
+
+    if (waitMs > MAX_WAIT_MS) {
+      exhausted = true;
+      console.warn(
+        `  out of API quota, ${Math.round(waitMs / 60_000)} min to reset — ` +
+          `stopping discovery so the rest of the night can run`,
+      );
+      return null;
+    }
+
     console.warn(`  rate limited — sleeping ${Math.round(waitMs / 1000)}s`);
     await new Promise((r) => setTimeout(r, waitMs));
     return gh<T>(path, raw);
@@ -178,7 +204,15 @@ async function commitCount(owner: string, repo: string) {
 
   if (res.status === 403 || res.status === 429) {
     const reset = Number(res.headers.get("x-ratelimit-reset") ?? 0) * 1000;
-    await new Promise((r) => setTimeout(r, Math.max(reset - Date.now(), 30_000)));
+    const waitMs = Math.max(reset - Date.now(), 30_000);
+    // Same surrender as `gh()`, and it matters more here: a zero returned to a
+    // caller that reads it as "fewer than ten commits" would write a rejection
+    // for a repository we never actually looked at.
+    if (waitMs > MAX_WAIT_MS) {
+      exhausted = true;
+      return 0;
+    }
+    await new Promise((r) => setTimeout(r, waitMs));
     return commitCount(owner, repo);
   }
   if (!res.ok) return 0;
@@ -377,10 +411,19 @@ async function main() {
             return;
           }
 
+          // Both branches below read a null or a zero as evidence, and once
+          // the quota is gone that is exactly what a failed request returns.
+          // Judging past this point would write rejections for repositories
+          // nobody looked at, and `pushed_at` would then keep them out until
+          // their next push — a wrong answer with a long half-life.
+          if (exhausted) return;
+
           const verdict = await classify(repo.owner.login, repo.name);
+          if (exhausted) return;
           if (!verdict.ok) return reject(verdict.why, true);
 
           const commits = await commitCount(repo.owner.login, repo.name);
+          if (exhausted) return;
           histogram[bucket(commits)] = (histogram[bucket(commits)] ?? 0) + 1;
           if (commits < minCommits) return reject(`under ${minCommits} commits`, true);
 
@@ -418,6 +461,7 @@ async function main() {
     };
 
     for await (const repo of discover(topic)) {
+      if (exhausted) break;
       seen++;
       if (repo.fork) continue;
       if (known.has(repo.full_name.toLowerCase())) continue;
@@ -445,6 +489,13 @@ async function main() {
   // The saving is printed rather than assumed. If it ever falls back toward
   // zero the topic has started churning, and the run is about to get expensive
   // again in exactly the way that cancelled the first scheduled one.
+  if (exhausted) {
+    console.log(
+      "\nstopped early: the API quota ran out. Discovery resumes tomorrow " +
+        "where the rejection table leaves off, and every step after this one " +
+        "still ran.",
+    );
+  }
   console.log(`admitted   ${admitted}`);
   console.log(`skipped    ${skipped} judged before, unchanged since`);
   console.log("rejected");
