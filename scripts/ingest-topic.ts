@@ -28,7 +28,7 @@ import "dotenv/config";
 import { sql } from "drizzle-orm";
 
 import { db } from "../db/client";
-import { plugins } from "../db/schema";
+import { ingestRejections, plugins } from "../db/schema";
 import { displayName } from "./seed-catalog";
 
 const TOKEN = process.env.GITHUB_TOKEN;
@@ -80,6 +80,9 @@ type SearchRepo = {
   stargazers_count: number;
   archived: boolean;
   fork: boolean;
+  // The invalidator for `ingest_rejections`: nothing the bar checks can
+  // change without a push, and search hands this over for free.
+  pushed_at: string;
   topics?: string[];
 };
 
@@ -304,9 +307,19 @@ async function main() {
       r.fullName.split("#")[0].toLowerCase(),
     ),
   );
-  console.log(`${known.size} repositories already in the catalogue\n`);
+  console.log(`${known.size} repositories already in the catalogue`);
+
+  // What the bar has already turned away, keyed by the push it was judged at.
+  const refused = new Map(
+    (await db.select().from(ingestRejections)).map((r) => [
+      r.fullName.toLowerCase(),
+      r.pushedAt.getTime(),
+    ]),
+  );
+  console.log(`${refused.size} already turned away, and not paid for again\n`);
 
   const rejects: Record<string, number> = {};
+  let skipped = 0;
   const histogram: Record<string, number> = {};
   const bucket = (n: number) =>
     n < 5 ? "  1-4" : n < 10 ? "  5-9" : n < 25 ? " 10-24" : n < 100 ? " 25-99" : "100+";
@@ -322,8 +335,29 @@ async function main() {
       const batch = queue.splice(0, CONCURRENCY);
       await Promise.all(
         batch.map(async (repo) => {
-          const reject = (why: string) => {
+          const pushed = new Date(repo.pushed_at);
+
+          /**
+           * Records the rejections that cost API calls, so tomorrow is free.
+           *
+           * The three checks above it are not recorded, because they are free
+           * to repeat and a description can be added without a push — writing
+           * those down would strand a repository that had just fixed the one
+           * thing we asked for.
+           */
+          const reject = (why: string, paidFor = false) => {
             rejects[why] = (rejects[why] ?? 0) + 1;
+            if (paidFor && !dryRun) {
+              return persist(() =>
+                db
+                  .insert(ingestRejections)
+                  .values({ fullName: repo.full_name, reason: why, pushedAt: pushed })
+                  .onConflictDoUpdate({
+                    target: ingestRejections.fullName,
+                    set: { reason: why, pushedAt: pushed, checkedAt: new Date() },
+                  }),
+              );
+            }
           };
 
           // Free signals first — no point spending two API calls on a repo
@@ -334,12 +368,21 @@ async function main() {
           if (!repo.description?.trim()) return reject("no description");
           if (IS_A_HOST.has(repo.full_name.toLowerCase())) return reject("a harness, not a plugin");
 
+          // Already judged, and nothing has been pushed since. Neither the
+          // manifest nor the commit count can have moved, so re-deciding would
+          // spend two requests to reach the same answer.
+          const at = refused.get(repo.full_name.toLowerCase());
+          if (at !== undefined && pushed.getTime() <= at) {
+            skipped++;
+            return;
+          }
+
           const verdict = await classify(repo.owner.login, repo.name);
-          if (!verdict.ok) return reject(verdict.why);
+          if (!verdict.ok) return reject(verdict.why, true);
 
           const commits = await commitCount(repo.owner.login, repo.name);
           histogram[bucket(commits)] = (histogram[bucket(commits)] ?? 0) + 1;
-          if (commits < minCommits) return reject(`under ${minCommits} commits`);
+          if (commits < minCommits) return reject(`under ${minCommits} commits`, true);
 
           admitted++;
           if (dryRun) {
@@ -389,14 +432,21 @@ async function main() {
     }
 
     while (queue.length) await drain();
-    console.log(`  ${topic}: ${seen} seen, ${fresh} new, ${admitted} admitted\n`);
+    console.log(
+      `  ${topic}: ${seen} seen, ${fresh} new, ${admitted} admitted, ` +
+        `${skipped} skipped without a request\n`,
+    );
   }
 
   const [{ total }] = await db
     .select({ total: sql<number>`count(*)` })
     .from(plugins);
 
+  // The saving is printed rather than assumed. If it ever falls back toward
+  // zero the topic has started churning, and the run is about to get expensive
+  // again in exactly the way that cancelled the first scheduled one.
   console.log(`admitted   ${admitted}`);
+  console.log(`skipped    ${skipped} judged before, unchanged since`);
   console.log("rejected");
   for (const [why, n] of Object.entries(rejects).sort((a, b) => b[1] - a[1])) {
     console.log(`  ${String(n).padStart(5)}  ${why}`);

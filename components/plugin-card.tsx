@@ -8,7 +8,9 @@ import { primaryInstall, installKindLabel } from "@/lib/install";
 import { t } from "@/lib/dict";
 import { localePath, relativeTime, riskList, type Locale } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
-import type { Plugin } from "@/db/schema";
+// A list row, not a full `Plugin`: browse queries leave the README and the
+// long-form copy in the database, and a full row still satisfies this.
+import type { PluginCardRow } from "@/lib/data";
 
 function compact(n: number) {
   if (n < 1000) return String(n);
@@ -19,7 +21,7 @@ export function PluginCard({
   plugin,
   locale = "en",
 }: {
-  plugin: Plugin;
+  plugin: PluginCardRow;
   locale?: Locale;
 }) {
   const d = t(locale).card;

@@ -1,6 +1,61 @@
 import { db } from "@/db/client";
 import { plugins, categories, type Plugin, type Category } from "@/db/schema";
-import { and, asc, desc, eq, like, or, sql, count, ne, isNotNull } from "drizzle-orm";
+import {
+  and,
+  asc,
+  desc,
+  eq,
+  like,
+  or,
+  sql,
+  count,
+  ne,
+  isNotNull,
+  getTableColumns,
+} from "drizzle-orm";
+
+/**
+ * The long-form text a card never shows.
+ *
+ * `db.select()` returns all 62 columns, and the stored README is around 30 KB
+ * a row: one page of 24 cards pulled **750 KB** out of Turso to render
+ * summaries, of which 706 KB was `readme_md` and `readme_html` alone. It cost
+ * about 0.7s of the catalogue's ~0.9s server time.
+ *
+ * Written as an exclusion rather than a list of wanted columns on purpose. A
+ * new column then appears in list views by default, and the failure mode of
+ * forgetting to update this is a slightly larger payload — not a card that
+ * silently renders without its new field.
+ */
+const LONG_FORM = [
+  "readmeMd",
+  "readmeHtml",
+  "overview",
+  "overviewZh",
+  "overviewHtml",
+  "overviewHtmlZh",
+  "docs",
+  "docsZh",
+  "docsHtml",
+  "docsHtmlZh",
+  "review",
+  "reviewZh",
+] as const;
+
+type ListColumns = Omit<
+  ReturnType<typeof getTableColumns<typeof plugins>>,
+  (typeof LONG_FORM)[number]
+>;
+
+/** Everything a card, the API and `primaryInstall()` read — and nothing else. */
+const listColumns = Object.fromEntries(
+  Object.entries(getTableColumns(plugins)).filter(
+    ([name]) => !(LONG_FORM as readonly string[]).includes(name),
+  ),
+) as ListColumns;
+
+/** A row from a list view: a `Plugin` minus the long-form text. */
+export type PluginCardRow = Omit<Plugin, (typeof LONG_FORM)[number]>;
 
 export type SortKey = "stars" | "updated" | "new" | "name" | "installs";
 
@@ -71,7 +126,7 @@ export async function getPlugins(params: BrowseParams = {}) {
 
   const [rows, totalRow] = await Promise.all([
     db
-      .select()
+      .select(listColumns)
       .from(plugins)
       .where(where)
       .orderBy(orderFor(params.sort))
@@ -173,7 +228,7 @@ export async function getRelatedPlugins(plugin: Plugin, limit = 6) {
   if (!plugin.categoryId) return [];
 
   return db
-    .select()
+    .select(listColumns)
     .from(plugins)
     .where(
       and(
@@ -195,7 +250,7 @@ export async function getRelatedPlugins(plugin: Plugin, limit = 6) {
  */
 export async function getLinuxDoPlugins(limit = 12) {
   return db
-    .select()
+    .select(listColumns)
     .from(plugins)
     .where(and(isNotNull(plugins.linuxdoUrl), eq(plugins.isArchived, false)))
     .orderBy(desc(plugins.linuxdoVerifiedAt), desc(plugins.stars))

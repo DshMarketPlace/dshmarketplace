@@ -189,6 +189,30 @@ export const pluginStats = sqliteTable(
   }),
 );
 
+/**
+ * Repositories the admission bar has already turned away, so it does not pay
+ * for them again.
+ *
+ * The `dsh-plugin` topic holds thousands of repositories and admits about one
+ * in twenty. Deciding costs two API calls — the manifest and the commit count
+ * — and without this table every rejected repository was re-examined every
+ * night. The bill grows with the topic, not with our catalogue, and it grew
+ * past the hourly ceiling: the first scheduled run spent 109 of its 120
+ * minutes asleep waiting for a quota reset, and was cancelled.
+ *
+ * `pushedAt` is the invalidator, and it is exact rather than a heuristic:
+ * neither the manifest nor the commit count can change without a push. Search
+ * results carry it, so re-checking costs nothing.
+ */
+export const ingestRejections = sqliteTable("ingest_rejections", {
+  fullName: text("full_name").primaryKey(),
+  reason: text("reason").notNull(),
+  pushedAt: integer("pushed_at", { mode: "timestamp" }).notNull(),
+  checkedAt: integer("checked_at", { mode: "timestamp" })
+    .notNull()
+    .default(sql`(unixepoch())`),
+});
+
 /** Community submissions awaiting review. */
 export const submissions = sqliteTable("submissions", {
   id: integer("id").primaryKey({ autoIncrement: true }),
