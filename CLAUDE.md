@@ -5,8 +5,14 @@
 A bilingual directory of DeepSeek Harness (DSH) plugins. English at `/`,
 Chinese at `/zh`. Live at <https://dshmarketplace.dev>, on Cloudflare Workers.
 
-`STATUS.md` holds the live inventory and the full trap list. This file holds
-the rules — read it before changing anything.
+Four documents, and they do not overlap:
+
+- **This file** — the design rules. Read it before changing anything.
+- **`CONTRIBUTING.md`** — which scripts are destructive, what must run before
+  them, and what looks like an improvement but is not. Read it before running
+  anything in `scripts/`.
+- **`ops/README.md`** — what runs where, the CI credential boundary, the VPS.
+- **`STATUS.md`** — the live inventory and the full trap list.
 
 ## The one thing to understand first
 

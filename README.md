@@ -210,6 +210,12 @@ or open an issue. Submissions are reviewed by hand before they appear.
 If you wrote the plugin and posted it on LINUX DO, include the thread and it
 can carry the verified badge.
 
+Working on the code? Read [CONTRIBUTING.md](CONTRIBUTING.md) first. The scripts
+in `scripts/` write to a live catalogue that publishes install commands people
+copy and verdicts under other people's names, so which ones are destructive and
+what has to run before them is not guesswork. [ops/README.md](ops/README.md)
+says what runs where and why one CI job deliberately holds no secrets.
+
 ## Safety
 
 Plugins are third-party code running with your agent's permissions.
