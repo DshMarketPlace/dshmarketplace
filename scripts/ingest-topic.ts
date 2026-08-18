@@ -30,6 +30,14 @@ import { sql } from "drizzle-orm";
 import { db } from "../db/client";
 import { ingestRejections, plugins } from "../db/schema";
 import { displayName } from "./seed-catalog";
+import { commitCount as ghCommitCount, exhausted, gh as ghFetch } from "./lib/github";
+
+/** The shared client, with this script's User-Agent already applied. */
+const gh = <T,>(path: string, raw = false) =>
+  ghFetch<T>(path, { agent: "dshmarketplace-ingest", raw });
+
+const commitCount = (owner: string, repo: string) =>
+  ghCommitCount(owner, repo, "dshmarketplace-ingest");
 
 const TOKEN = process.env.GITHUB_TOKEN;
 const API = "https://api.github.com";
@@ -86,55 +94,6 @@ type SearchRepo = {
   topics?: string[];
 };
 
-/**
- * A short rate limit is worth waiting out; a long one is worth surrendering to.
- *
- * The secondary limit clears in seconds. The hourly quota does not, and this
- * step is first in a nine-step nightly — so sleeping until it resets does not
- * cost discovery, it costs the README fetch, the sandbox, the reviews and the
- * deploy that were queued behind it. The first scheduled run slept 109 of its
- * 120 minutes and was cancelled having accomplished nothing at all.
- */
-const MAX_WAIT_MS = 120_000;
-
-/** Set when the quota is gone. Nothing may be judged after this is true. */
-let exhausted = false;
-
-async function gh<T>(path: string, raw = false): Promise<T | null> {
-  if (exhausted) return null;
-
-  const res = await fetch(`${API}${path}`, {
-    headers: {
-      Accept: raw ? "application/vnd.github.raw" : "application/vnd.github+json",
-      "User-Agent": "dshmarketplace-ingest",
-      ...(TOKEN ? { Authorization: `Bearer ${TOKEN}` } : {}),
-    },
-  });
-
-  if (res.status === 404) return null;
-
-  if (res.status === 403 || res.status === 429) {
-    const reset = Number(res.headers.get("x-ratelimit-reset") ?? 0) * 1000;
-    const waitMs = Math.max(reset - Date.now(), 30_000);
-
-    if (waitMs > MAX_WAIT_MS) {
-      exhausted = true;
-      console.warn(
-        `  out of API quota, ${Math.round(waitMs / 60_000)} min to reset — ` +
-          `stopping discovery so the rest of the night can run`,
-      );
-      return null;
-    }
-
-    console.warn(`  rate limited — sleeping ${Math.round(waitMs / 1000)}s`);
-    await new Promise((r) => setTimeout(r, waitMs));
-    return gh<T>(path, raw);
-  }
-
-  if (!res.ok) return null;
-  return raw ? ((await res.text()) as T) : ((await res.json()) as T);
-}
-
 const iso = (ms: number) => new Date(ms).toISOString().replace(/\.\d+Z$/, "Z");
 
 /**
@@ -182,46 +141,6 @@ async function* discover(topic: string): AsyncGenerator<SearchRepo> {
       }
     }
   }
-}
-
-/**
- * Commit count, read from the pagination header rather than by walking the
- * history — one request whatever the repository's size.
- *
- * This is the cheapest honest proxy for "someone actually built this". The
- * topic fills up with repositories created minutes before they are tagged, and
- * a marker check cannot tell those apart from real work: a scaffold has a
- * valid `dsh.bundle` on its first commit.
- */
-async function commitCount(owner: string, repo: string) {
-  const res = await fetch(`${API}/repos/${owner}/${repo}/commits?per_page=1`, {
-    headers: {
-      Accept: "application/vnd.github+json",
-      "User-Agent": "dshmarketplace-ingest",
-      ...(TOKEN ? { Authorization: `Bearer ${TOKEN}` } : {}),
-    },
-  });
-
-  if (res.status === 403 || res.status === 429) {
-    const reset = Number(res.headers.get("x-ratelimit-reset") ?? 0) * 1000;
-    const waitMs = Math.max(reset - Date.now(), 30_000);
-    // Same surrender as `gh()`, and it matters more here: a zero returned to a
-    // caller that reads it as "fewer than ten commits" would write a rejection
-    // for a repository we never actually looked at.
-    if (waitMs > MAX_WAIT_MS) {
-      exhausted = true;
-      return 0;
-    }
-    await new Promise((r) => setTimeout(r, waitMs));
-    return commitCount(owner, repo);
-  }
-  if (!res.ok) return 0;
-
-  const last = res.headers.get("link")?.match(/[?&]page=(\d+)>;\s*rel="last"/);
-  if (last) return Number(last[1]);
-
-  const body = (await res.json()) as unknown[];
-  return Array.isArray(body) ? body.length : 0;
 }
 
 /**
@@ -416,14 +335,18 @@ async function main() {
           // Judging past this point would write rejections for repositories
           // nobody looked at, and `pushed_at` would then keep them out until
           // their next push — a wrong answer with a long half-life.
-          if (exhausted) return;
+          if (exhausted()) return;
 
           const verdict = await classify(repo.owner.login, repo.name);
-          if (exhausted) return;
+          if (exhausted()) return;
           if (!verdict.ok) return reject(verdict.why, true);
 
           const commits = await commitCount(repo.owner.login, repo.name);
-          if (exhausted) return;
+          // Null is "we could not find out", which the shared client keeps
+          // distinct from zero on purpose. Recording a rejection on it would
+          // hold the repository out until its next push, over a request that
+          // simply failed.
+          if (exhausted() || commits === null) return;
           histogram[bucket(commits)] = (histogram[bucket(commits)] ?? 0) + 1;
           if (commits < minCommits) return reject(`under ${minCommits} commits`, true);
 
@@ -461,7 +384,7 @@ async function main() {
     };
 
     for await (const repo of discover(topic)) {
-      if (exhausted) break;
+      if (exhausted()) break;
       seen++;
       if (repo.fork) continue;
       if (known.has(repo.full_name.toLowerCase())) continue;
@@ -489,7 +412,7 @@ async function main() {
   // The saving is printed rather than assumed. If it ever falls back toward
   // zero the topic has started churning, and the run is about to get expensive
   // again in exactly the way that cancelled the first scheduled one.
-  if (exhausted) {
+  if (exhausted()) {
     console.log(
       "\nstopped early: the API quota ran out. Discovery resumes tomorrow " +
         "where the rejection table leaves off, and every step after this one " +

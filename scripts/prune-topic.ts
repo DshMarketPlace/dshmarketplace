@@ -18,42 +18,10 @@ import { and, eq, inArray, isNull, or, sql } from "drizzle-orm";
 
 import { db } from "../db/client";
 import { plugins } from "../db/schema";
+import { commitCount, exhausted } from "./lib/github";
 
-const TOKEN = process.env.GITHUB_TOKEN;
-const API = "https://api.github.com";
 const CONCURRENCY = 6;
 const MIN_COMMITS = 10;
-
-async function commitCount(owner: string, repo: string): Promise<number | null> {
-  const res = await fetch(`${API}/repos/${owner}/${repo}/commits?per_page=1`, {
-    headers: {
-      Accept: "application/vnd.github+json",
-      "User-Agent": "dshmarketplace-prune",
-      ...(TOKEN ? { Authorization: `Bearer ${TOKEN}` } : {}),
-    },
-  });
-
-  // Gone or empty. Either way it cannot be listed.
-  if (res.status === 404 || res.status === 409) return 0;
-
-  if (res.status === 403 || res.status === 429) {
-    const reset = Number(res.headers.get("x-ratelimit-reset") ?? 0) * 1000;
-    const wait = Math.max(reset - Date.now(), 30_000);
-    console.warn(`  rate limited — sleeping ${Math.round(wait / 1000)}s`);
-    await new Promise((r) => setTimeout(r, wait));
-    return commitCount(owner, repo);
-  }
-
-  // A transient failure must not be read as "no commits", or a blip deletes
-  // a good listing. Null means "unknown", and unknown is kept.
-  if (!res.ok) return null;
-
-  const last = res.headers.get("link")?.match(/[?&]page=(\d+)>;\s*rel="last"/);
-  if (last) return Number(last[1]);
-
-  const body = (await res.json()) as unknown[];
-  return Array.isArray(body) ? body.length : 0;
-}
 
 async function main() {
   const dryRun = process.argv.includes("--dry-run");
@@ -97,7 +65,7 @@ async function main() {
           return;
         }
 
-        const commits = await commitCount(row.owner, row.repo);
+        const commits = await commitCount(row.owner, row.repo, "dshmarketplace-prune");
         if (commits === null) {
           reasons["unreachable, kept"] = (reasons["unreachable, kept"] ?? 0) + 1;
           return;
@@ -115,6 +83,13 @@ async function main() {
 
     if (checked % 200 < CONCURRENCY) {
       console.log(`  …${checked}/${rows.length}, ${doomed.length} failing`);
+    }
+
+    // Every remaining row could only answer "unknown, kept". Walking them
+    // costs minutes the sandbox and the reviews are waiting on.
+    if (exhausted()) {
+      console.log(`  stopped at ${checked}/${rows.length}: out of API quota`);
+      break;
     }
   }
 

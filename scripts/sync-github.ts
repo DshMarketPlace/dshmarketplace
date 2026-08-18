@@ -14,6 +14,7 @@ import { marked } from "marked";
 import sanitizeHtml from "sanitize-html";
 import { eq, asc, desc, isNotNull, isNull } from "drizzle-orm";
 
+import { gh as ghFetch, exhausted } from "./lib/github";
 import { db } from "../db/client";
 import { plugins } from "../db/schema";
 import { scoreContent } from "../lib/plugin-scoring";
@@ -35,28 +36,9 @@ type Repo = {
   description: string | null;
 };
 
-async function gh<T>(path: string, raw = false): Promise<T | null> {
-  const res = await fetch(`${API}${path}`, {
-    headers: {
-      Accept: raw ? "application/vnd.github.raw" : "application/vnd.github+json",
-      "User-Agent": "dshmarketplace-sync",
-      ...(TOKEN ? { Authorization: `Bearer ${TOKEN}` } : {}),
-    },
-  });
-
-  if (res.status === 404) return null;
-
-  if (res.status === 403 || res.status === 429) {
-    const reset = Number(res.headers.get("x-ratelimit-reset") ?? 0) * 1000;
-    const waitMs = Math.max(reset - Date.now(), 60_000);
-    console.warn(`rate limited — sleeping ${Math.round(waitMs / 1000)}s`);
-    await new Promise((r) => setTimeout(r, waitMs));
-    return gh<T>(path, raw);
-  }
-
-  if (!res.ok) return null;
-  return raw ? ((await res.text()) as T) : ((await res.json()) as T);
-}
+/** The shared client, with this script's User-Agent already applied. */
+const gh = <T,>(path: string, raw = false) =>
+  ghFetch<T>(path, { agent: "dshmarketplace-sync", raw });
 
 /**
  * Absolute-URL rewriting matters: READMEs use repo-relative links and images,
@@ -153,6 +135,11 @@ async function syncOne(row: {
 }) {
   const repo = await gh<Repo>(`/repos/${row.owner}/${row.repo}`);
   if (!repo) {
+    // Null means "gone" *or* "we could not ask", and the two must not share a
+    // consequence: archiving on a spent quota would retire every remaining
+    // listing in the batch, silently, in a run that reports success.
+    if (exhausted()) return "skipped";
+
     await db
       .update(plugins)
       .set({ isArchived: true, syncedAt: new Date() })
@@ -257,12 +244,14 @@ async function main() {
   let gone = 0;
 
   async function worker() {
-    while (cursor < rows.length) {
+    // Out of quota means every remaining repo would read as "unreachable",
+    // and `syncOne` treats that as a listing to retire. Stop instead.
+    while (cursor < rows.length && !exhausted()) {
       const row = rows[cursor++];
       try {
         const result = await syncOne(row);
         if (result === "ok") ok++;
-        else gone++;
+        else if (result === "gone") gone++;
       } catch (err) {
         console.warn(`  ${row.owner}/${row.repo}: ${(err as Error).message}`);
       }
@@ -274,6 +263,9 @@ async function main() {
     Array.from({ length: CONCURRENCY }, () => worker()),
   );
 
+  if (exhausted()) {
+    console.log(`  stopped at ${cursor}/${rows.length}: out of API quota`);
+  }
   console.log(`\ndone: ${ok} updated, ${gone} unreachable`);
 }
 
