@@ -1,4 +1,4 @@
-# Status — 17 August 2026 (evening)
+# Status — 18 August 2026
 
 Live, seeded, and holding the name. A long way from finished.
 
@@ -8,7 +8,7 @@ Live, seeded, and holding the name. A long way from finished.
 | --- | --- |
 | Site | <https://dshmarketplace.dev> — Next.js 16 on Cloudflare Workers via OpenNext |
 | Languages | English at `/`, Chinese at `/zh` — separate root layouts, bidirectional hreflang |
-| Database | Turso (libSQL), 2,348 plugins with GitHub metadata; 2,341 carry a README |
+| Database | Turso (libSQL, `aws-ap-northeast-1`), 2,545 plugins with GitHub metadata |
 | Detail pages | 28 written bilingually, each with a documentation section; 25 illustrated |
 | Install check | 1,820 listings installed in a sandbox; the verdict is printed under the command it is about, and served as `installCheck` |
 | LINUX DO | 6 plugins verified against the thread their author posted |
@@ -19,7 +19,8 @@ Live, seeded, and holding the name. A long way from finished.
 | Userscript | [DSH Plugin Radar](https://greasyfork.org/scripts/591735-dsh-plugin-radar) — marks plugins on GitHub and npm · [repo](https://github.com/DshMarketPlace/dsh-plugin-radar) **public, MIT**. Live on Greasy Fork 17 Aug 2026 |
 | Validator | [dsh-plugin-validator](https://github.com/DshMarketPlace/dsh-plugin-validator) — installs each plugin in a throwaway container on an Oracle ARM box · **public, MIT** |
 | AI review | Pre-generated bilingual verdict per plugin, grounded in the sandbox result where there is one. Button on every card, section on every detail page |
-| Nightly sync | `.github/workflows/sync.yml` — ten steps, discovery through redeploy, no human in the loop |
+| Nightly sync | `.github/workflows/sync.yml` — ten steps, discovery through redeploy, no human in the loop. First completed 18 Aug |
+| Docs for a second developer | `CONTRIBUTING.md` (which scripts destroy what), `ops/README.md` (what runs where, the CI credential boundary) |
 | This repo | **Public, MIT**, history squashed to one commit |
 | Analytics | GA4 `G-R6HWVQVVVB`, all pages |
 | Launch | [LINUX DO thread](https://linux.do/t/topic/2765838), 17 Aug 2026 |
@@ -97,13 +98,37 @@ mostly monorepo and workspace resolution errors.
 
 ## What runs itself, and what never will
 
-`sync.yml` runs nightly at 03:00 Asia/Shanghai and needs nobody:
+`sync.yml` runs nightly at 03:00 Asia/Shanghai and needs nobody. **It first
+completed on 18 August**; every run before that was cancelled on the two-hour
+timeout, and the automation was real in the repository and imaginary in
+practice for a day. The `sync` job now finishes in about ten minutes.
+
 
 ```
 discover → README for anything new → refresh metadata → verify every npm claim
 → re-apply the bar → export unchecked → install in a sandbox → record verdicts
 → retract the failures that are ours → write reviews → deploy
 ```
+
+**Why it never used to finish, in two layers.** Discovery re-examined every
+repository the bar had already turned away — thousands of them, two API calls
+each — so the bill grew with the topic rather than with our catalogue and blew
+the 1,000/hour ceiling five minutes in. `ingest_rejections` now remembers a
+refusal against the `pushed_at` it was judged at, and 4,001 repositories were
+skipped without a request on the first run that used it.
+
+The second layer mattered more. Discovery is step one of nine, so sleeping
+until an hourly quota resets does not cost discovery — it costs the sandbox,
+the reviews and the deploy queued behind it. `scripts/lib/github.ts` surrenders
+past a two-minute wait, and it is **the only GitHub client**: the same
+sleep-until-reset had been written three times, and fixing one just moved the
+hang to the next.
+
+**A spent quota returns the same `null` a deleted repository does**, and
+`sync-github.ts` read that as "gone" and set `isArchived` — one rate limit
+would have retired every remaining listing in the batch, silently, in a run
+reporting success. Every branch that reads an absence now asks `exhausted()`
+first, and `commitCount` returns `number | null` so the compiler asks too.
 
 It is **three jobs, split on one line that cannot be crossed**: the job that
 runs other people's install scripts holds no secrets at all. A `postinstall`
@@ -135,6 +160,37 @@ Caps to remember: 150 installs and 40 reviews a night, and a 400-listing
 metadata refresh, so the catalogue cycles in six days. That keeps up with new
 arrivals; it does not clear a backlog. Sandbox concurrency stays at 3 — going
 faster got the whole batch throttled and every plugin in it looked broken.
+
+## Serving it
+
+Measured 18 August, and the method matters as much as the numbers: take the
+minimum of several samples and subtract a `select 1` ping, because the database
+is in Tokyo and one round trip from a laptop is 252 ms. A single sample said
+`count(*)` cost 1,205 ms. It costs 2.
+
+| | before | after |
+| --- | --- | --- |
+| `/zh/about` (static baseline) | 0.20s | 0.19s |
+| Homepage | 0.96s | 0.20s |
+| A detail page | — | 0.20s |
+| `/plugins` | 0.91s | 0.46s |
+| `/api/v1/plugins` | 2.8s | 0.41s |
+
+Two causes, both invisible in the code until measured.
+
+**`db.select()` returns all 62 columns.** The stored README is around 30 KB a
+row, so one page of 24 cards pulled 750 KB out of Turso to render summaries —
+706 KB of it `readme_md` and `readme_html`, which no card has ever shown. Use
+`listColumns` in `lib/data.ts`; it is written as an exclusion so a new column
+joins list views by default.
+
+**No incremental cache was configured**, so every ISR page re-rendered on every
+request — the homepage and 2,500 detail pages, for content that changes when a
+nightly job writes. R2 (`dshmarketplace-cache`) behind a regional Cache API
+layer put both at the static baseline.
+
+`/plugins` stays dynamic because it takes search and filter parameters. Its
+0.46s is the 0.19s baseline plus one round trip, which is the floor.
 
 ## The strategy this is built around
 
