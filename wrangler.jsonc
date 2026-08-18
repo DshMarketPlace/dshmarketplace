@@ -32,13 +32,16 @@
 
   // The zone is already on Cloudflare nameservers, so a custom-domain route
   // provisions the hostname and its certificate directly.
-  "routes": [{ "pattern": "dshmarketplace.dev", "custom_domain": true }]
+  "routes": [{ "pattern": "dshmarketplace.dev", "custom_domain": true }],
 
-  // Added once the base deploy is green:
-  //
-  // "r2_buckets": [
-  //   { "binding": "NEXT_INC_CACHE_R2_BUCKET", "bucket_name": "dshmarketplace-cache" }
-  // ]
+  // Where OpenNext keeps rendered pages. Without it every ISR page re-rendered
+  // on every request — the homepage answered in 0.50s of server time against a
+  // 0.23s static baseline, and it was doing that for 2,500 detail pages too.
+  // The binding name is fixed by the adapter, not chosen here.
+  "r2_buckets": [
+    { "binding": "NEXT_INC_CACHE_R2_BUCKET", "bucket_name": "dshmarketplace-cache" }
+  ]
+
   //
   // Cron lives in the separate `sync` Worker rather than here — the OpenNext
   // entry owns `fetch` and wrapping it to add `scheduled` is more fragile than
