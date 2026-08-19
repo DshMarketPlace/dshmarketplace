@@ -260,7 +260,11 @@ export async function PluginView({
               >
                 {plugin.owner}/{plugin.repo}
               </a>
-              {plugin.inRegistry ? d.inRegistry : d.notInRegistry}
+              {plugin.inRegistry
+                ? d.inRegistry
+                : plugin.provenance === "submitted"
+                  ? d.submittedByHand
+                  : d.notInRegistry}
             </li>
             {plugin.license ? (
               <li>{d.licensed(plugin.license)}</li>

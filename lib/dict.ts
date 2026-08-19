@@ -258,6 +258,8 @@ const en = {
       " — present in the community registry that DSH's own plugin market installs from.",
     notInRegistry:
       " — discovered via the dsh-plugin GitHub topic; not in the curated registry.",
+    submittedByHand:
+      " — added by hand from a community post; not in the curated registry.",
     licensed: (l: string) => `Licensed under ${l}.`,
     noLicence:
       "No licence file detected. Code without a licence is all-rights-reserved by default.",
@@ -539,6 +541,8 @@ const zh: Dict = {
     inRegistry: "——已进入社区精选库，DSH 自带的插件市场就是从这儿装的。",
     notInRegistry:
       "——从 GitHub 的 dsh-plugin topic 发现，没有进入人工审过的精选库。",
+    submittedByHand:
+      "——从社区帖子人工收录，没有进入 DSH 自带市场的那个精选库。",
     licensed: (l: string) => `开源协议：${l}。`,
     noLicence: "没检测到协议文件。没有协议的代码，默认保留全部权利。",
     detected: (f: string) => `自动识别到：${f}。授权之前请先读一遍源码。`,

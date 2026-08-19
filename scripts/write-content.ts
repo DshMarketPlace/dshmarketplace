@@ -26,6 +26,7 @@ import sanitizeHtml from "sanitize-html";
 
 import { db } from "../db/client";
 import { plugins } from "../db/schema";
+import { primaryInstall } from "../lib/install";
 import { scoreContent } from "../lib/plugin-scoring";
 import { chatBlocks, generateImageSync } from "./lib/velokey";
 
@@ -237,9 +238,12 @@ async function main() {
   let done = 0;
   for (const p of candidates) {
     const flags: string[] = p.riskFlags ? JSON.parse(p.riskFlags) : [];
-    const installCmd = p.npmPackage
-      ? `dsh plugin add ${p.npmPackage}`
-      : `dsh plugin add github:${p.owner}/${p.repo}${p.subpath ? `#${p.subpath}` : ""}`;
+    // Whatever the page will show, verbatim — never a second copy of the rule.
+    // The two drifted: this built `dsh plugin add <pkg>` without `--profile`,
+    // and a `#subpath` form that pnpm resolves as a git ref and fails on, for
+    // listings the site itself declines to give a command at all.
+    const installCmd =
+      primaryInstall(p)?.cmd ?? "none — this plugin has no one-line install";
 
     process.stdout.write(`→ ${p.fullName} … `);
 

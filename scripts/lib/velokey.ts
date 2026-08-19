@@ -169,9 +169,10 @@ export async function chatBlocks<K extends string>(
 }
 
 /**
- * Images. OpenAI-shaped and synchronous: one POST returns `b64_json`, and it
- * honours the requested size — the previous gateway queued a task, had to be
- * polled, normalised everything to a square, and eventually stopped answering.
+ * Images. OpenAI-shaped and synchronous: one POST returns the image, either
+ * inline as `b64_json` or as a hosted `url`, and it honours the requested size
+ * — the previous gateway queued a task, had to be polled, normalised
+ * everything to a square, and eventually stopped answering.
  */
 export async function generateImageSync(
   prompt: string,
@@ -202,9 +203,19 @@ export async function generateImageSync(
   }
 
   const data = await res.json();
-  const b64 = data?.data?.[0]?.b64_json;
-  if (!b64) throw new Error(`no image in response: ${JSON.stringify(data).slice(0, 200)}`);
-  return Buffer.from(b64, "base64");
+  const first = data?.data?.[0];
+  if (first?.b64_json) return Buffer.from(first.b64_json, "base64");
+
+  // The gateway may answer with a hosted URL instead. Both are valid for this
+  // endpoint and it has switched between them without notice, so handle both
+  // rather than pinning `response_format` and trusting it to be honoured.
+  if (first?.url) {
+    const img = await fetch(first.url);
+    if (!img.ok) throw new Error(`image url → ${img.status}`);
+    return Buffer.from(await img.arrayBuffer());
+  }
+
+  throw new Error(`no image in response: ${JSON.stringify(data).slice(0, 200)}`);
 }
 
 export function sleep(ms: number) {
