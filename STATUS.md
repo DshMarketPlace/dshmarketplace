@@ -1,4 +1,4 @@
-# Status — 18 August 2026
+# Status — 19 August 2026
 
 Live, seeded, and holding the name. A long way from finished.
 
@@ -8,10 +8,10 @@ Live, seeded, and holding the name. A long way from finished.
 | --- | --- |
 | Site | <https://dshmarketplace.dev> — Next.js 16 on Cloudflare Workers via OpenNext |
 | Languages | English at `/`, Chinese at `/zh` — separate root layouts, bidirectional hreflang |
-| Database | Turso (libSQL, `aws-ap-northeast-1`), 2,545 plugins with GitHub metadata |
-| Detail pages | 28 written bilingually, each with a documentation section; 25 illustrated |
-| Install check | 1,820 listings installed in a sandbox; the verdict is printed under the command it is about, and served as `installCheck` |
-| LINUX DO | 6 plugins verified against the thread their author posted |
+| Database | Turso (libSQL, `aws-ap-northeast-1`), 2,851 plugins with GitHub metadata |
+| Detail pages | 49 written bilingually, each with a documentation section; 46 illustrated. All 49 indexed |
+| Install check | 2,435 listings installed in a sandbox; the verdict is printed under the command it is about, and served as `installCheck` |
+| LINUX DO | 7 plugins verified against the thread their author posted |
 | Content pipeline | `write-content.ts` → `promote.ts`. Text on one gateway, images on another |
 | CLI | `npx dshmarketplace-cli` — [npm](https://www.npmjs.com/package/dshmarketplace-cli) · repo **public, MIT** |
 | Python | `pip install dshmarketplace` — [PyPI](https://pypi.org/project/dshmarketplace/) · repo **public, MIT**. Zero dependencies, `dshm` CLI, agent tools, 3.9–3.13 |
@@ -19,7 +19,7 @@ Live, seeded, and holding the name. A long way from finished.
 | Userscript | [DSH Plugin Radar](https://greasyfork.org/scripts/591735-dsh-plugin-radar) — marks plugins on GitHub and npm · [repo](https://github.com/DshMarketPlace/dsh-plugin-radar) **public, MIT**. Live on Greasy Fork 17 Aug 2026 |
 | Validator | [dsh-plugin-validator](https://github.com/DshMarketPlace/dsh-plugin-validator) — installs each plugin in a throwaway container on an Oracle ARM box · **public, MIT** |
 | AI review | Pre-generated bilingual verdict per plugin, grounded in the sandbox result where there is one. Button on every card, section on every detail page |
-| Nightly sync | `.github/workflows/sync.yml` — ten steps, discovery through redeploy, no human in the loop. First completed 18 Aug |
+| Nightly sync | `.github/workflows/sync.yml` — ten steps, discovery through redeploy, no human in the loop. First completed 18 Aug; two consecutive clean runs since |
 | Docs for a second developer | `CONTRIBUTING.md` (which scripts destroy what), `ops/README.md` (what runs where, the CI credential boundary) |
 | This repo | **Public, MIT**, history squashed to one commit |
 | Analytics | GA4 `G-R6HWVQVVVB`, all pages |
@@ -243,6 +243,22 @@ Chinese developer writes. All 1,002 catalogue summaries were already bilingual
 upstream, so no card is machine-translated.
 
 ## Not done
+
+**Next up, with the evidence already gathered**
+
+- **Give the 49 subpath listings an install command.** `#path:` is proven; the
+  change is in `lib/install.ts`, which five surfaces read, so per the rule
+  above every client re-runs against live data afterwards. Audit the `subpath`
+  column first — it is not trustworthy on its own.
+- **Two replies drafted for DSH Discussions, not posted.** #1597 (what 2,312
+  real installs teach that reading `package.json` does not) and #1846 (feedback
+  on the registry-contract RFC: a boolean `verified` cannot carry six states,
+  and the exit codes need one for *inconclusive*). Both are argued from our own
+  numbers rather than pitching the site.
+- **`awesome-dsh-plugin` PR
+  [#1570](https://github.com/awesome-dsh-plugin/awesome-dsh-plugin/pull/1570)**
+  is open and green — "All 1 submitted entry passes" — awaiting a maintainer
+  reading the repository by hand.
 
 **Blocking on someone else**
 
@@ -471,6 +487,40 @@ The general question worth asking of any new filter, gate or sort order:
   of a 40-request burst before the first 429, because counting is per-location
   and converges late. It raises the cost of a sustained attack; it does not cap
   attempts at the configured number. Do not describe it as if it does.
+- **A documented certainty was wrong, and only an install found it.** This file
+  and `CLAUDE.md` both stated that `github:owner/repo#subpath` "cannot work".
+  The bare form does fail, which is what made the claim believable for weeks —
+  but pnpm splits the fragment on `::` and honours a `path:` part, so
+  `#path:sub` installs. It was caught only because an upstream RFC asserted the
+  opposite and both claims could not be true; reading pnpm's parser suggested
+  it, and a real container install settled it. **49 listings still say no
+  install exists when one does**, the two highest-starred among them. Also
+  learned: two of the first three `subpath` values tested pointed at
+  directories that do not exist, so that column needs auditing before it can
+  drive a published command.
+- **A second copy of a rule drifts, and nothing reports it.** `write-content.ts`
+  built its own install command instead of calling `lib/install.ts`. The copy
+  had rotted into both known-bad shapes at once — `dsh plugin add <pkg>` with
+  no `--profile`, the exact form that produced 1,002 broken commands, and the
+  `#subpath` form above — and fed them to the generator as fact. No published
+  page had copied them, so the damage was zero and the warning free. The rule
+  now lives in one place; prefer importing the helper over restating what it
+  does.
+- **A boolean with no third branch quietly lies.** The provenance line on a
+  detail page chose between "in the curated registry" and "discovered via the
+  dsh-plugin topic" on `inRegistry` alone. Hand-curated listings are neither,
+  so every one of them told readers it had been found by crawling a topic.
+  Whenever a page states *how* we know something, the branches have to cover
+  every way we can know it.
+- **An upstream gateway can change its response shape without notice.** The
+  image endpoint switched from returning `b64_json` to a hosted `url`
+  mid-batch, failing every illustration. Both are valid for that endpoint, so
+  the client accepts either rather than pinning `response_format` and trusting
+  it to be honoured.
+- **Piping a check into `tail` reports `tail`'s exit code.** Hit twice in one
+  session: `awesome-lint … | tail && echo PASS` printed PASS for a command
+  whose status was never examined, and the same shape hid a rejected
+  `git push`. Capture the status before the pipe, or do not pipe.
 
 ## Provenance
 

@@ -73,9 +73,19 @@ has the full set.
 - **`dsh plugin` forwards to pnpm inside a profile directory**, so
   `--profile <name>` is mandatory. Without it nothing installs. Every command
   the site emits carries `--profile web`.
-- **`github:owner/repo#subpath` cannot work** — pnpm reads everything after
-  `#` as a git ref. Monorepo plugins with no npm package have no one-line
-  install, and the listing says so rather than printing a command that fails.
+- **`github:owner/repo#subpath` fails, but a subpath install is possible.**
+  This file asserted the opposite until 19 Aug 2026, when an install disproved
+  it. The bare form is read as a git ref and fails with `Could not resolve
+  <sub> to a commit`, which is where the belief came from. pnpm's own parser
+  splits the fragment on `::` and treats a `path:` part as a subdirectory, so
+  `github:owner/repo#path:sub` resolves — verified end to end in the sandbox
+  (`+ dsh-pet github:PC2005-cloud/dsh-pet#path:dsh-pet`, 9.2s), with and
+  without a leading slash. `lib/install.ts` still emits no command for these,
+  which is now an understatement rather than a fact: **49 listings say no
+  install exists when one does**, including the two highest-starred in the
+  catalogue. Before switching it on, validate the `subpath` column — two of
+  the first three tested pointed at directories that do not exist in the repo,
+  so the stored value is not trustworthy on its own.
 - **A GitHub install runs the project's build script**, which pnpm blocks
   until it is allowlisted. That, not download size, is why npm is offered
   first.

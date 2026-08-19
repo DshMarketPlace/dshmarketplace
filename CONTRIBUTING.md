@@ -88,12 +88,31 @@ round `null` down to `0`.
   repo's `scripts/publish.mjs`.
 - **Do not machine-translate into `lib/dict.ts`.** The Chinese is written, not
   translated. If you cannot write it, say so and leave the slot.
+- **Do not restate a rule that already has a home — import it.** A script grew
+  its own copy of the install-command rule instead of calling
+  `lib/install.ts`, and the copy silently rotted into both shapes we already
+  know are broken. Nothing failed and nothing warned; it was found by reading.
+  If you are about to write the same logic twice, the second one is a bug with
+  a delay on it.
+- **Do not quote a number from these docs without checking it.** The catalogue
+  grew from 1,004 to 2,851 in two days. Counts here are true on their date and
+  stale soon after — `STATUS.md` carries one at the top.
 
 ## Before you push
 
 ```bash
 pnpm build          # must pass — it type-checks as well as compiles
 ```
+
+**Fetch first.** More than one person pushes to `main`, and a deploy runs on
+every push. Rebase onto `origin/main`, then re-run `pnpm build` — you are
+shipping your change combined with theirs, which is not what either of you
+tested alone.
+
+**Beware `cmd | tail` when you are checking whether something passed.** The
+pipeline reports `tail`'s status, not the command's. This has produced a
+confident "PASS" for a failing lint and hidden a rejected `git push` in the
+same session.
 
 **If you touched `lib/install.ts` or the API shape, re-run every client against
 live data.** This project's recurring bug is producer/consumer drift and
