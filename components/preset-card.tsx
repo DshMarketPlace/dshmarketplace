@@ -49,7 +49,7 @@ export function PresetCard({
   const v = preset.verified;
 
   return (
-    <article className="border border-border">
+    <article id={preset.id} className="scroll-mt-20 border border-border">
       <header className="border-b border-border p-5">
         <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
           <h2 className="m-0 text-xl font-semibold">{preset.name[locale]}</h2>

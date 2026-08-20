@@ -6,6 +6,7 @@ import { CopyCommand } from "@/components/copy-command";
 import { CategoryChip, categoryName } from "@/components/views/catalogue-view";
 import { t } from "@/lib/dict";
 import { localePath, type Locale } from "@/lib/i18n";
+import { PRESETS } from "@/lib/presets";
 import {
   getPlugins,
   getCategoriesWithCounts,
@@ -81,6 +82,7 @@ export async function HomeView({ locale }: { locale: Locale }) {
         <LinuxDo locale={locale} plugins={linuxdo} />
       ) : null}
 
+      <Presets locale={locale} />
       <HowItWorks locale={locale} />
       <Faq locale={locale} />
       <InstallSection locale={locale} />
@@ -302,6 +304,79 @@ function Stat({ label, value }: { label: string; value: string }) {
   );
 }
 
+/**
+ * Sets, on the page where people are deciding what to install.
+ *
+ * Reads the static PRESETS rather than the joined view the /presets page uses —
+ * the homepage needs the names and the evidence, not each member's summary, and
+ * this way the section costs no extra query on the busiest route.
+ */
+function Presets({ locale }: { locale: Locale }) {
+  const d = t(locale).presets;
+
+  return (
+    <section
+      id="presets"
+      className="mx-auto max-w-shell scroll-mt-16 px-5 pt-20 sm:px-8"
+    >
+      <div className="flex flex-wrap items-end justify-between gap-4 border-b border-border pb-5">
+        <div className="space-y-2">
+          <p className="eyebrow">{d.eyebrow}</p>
+          <h2 className="display max-w-2xl text-section">{d.heading}</h2>
+          <p className="max-w-2xl text-sm leading-relaxed text-muted-foreground">
+            {d.lede}
+          </p>
+        </div>
+        <Link
+          href={localePath(locale, "/presets")}
+          className="inline-flex items-center gap-1.5 text-sm text-foreground transition-colors hover:text-copper"
+        >
+          {d.viewAll}
+          <ArrowRight className="h-3.5 w-3.5" aria-hidden />
+        </Link>
+      </div>
+
+      <div className="grid gap-px border-x border-b border-border bg-border sm:grid-cols-3">
+        {PRESETS.map((preset) => (
+          <Link
+            key={preset.id}
+            href={`${localePath(locale, "/presets")}#${preset.id}`}
+            className="group bg-background p-5 transition-colors hover:bg-card"
+          >
+            <div className="flex items-baseline justify-between gap-3">
+              <h3 className="text-base font-semibold group-hover:text-copper">
+                {preset.name[locale]}
+              </h3>
+              <span className="font-mono text-xs text-muted-foreground">
+                {d.countLabel(preset.plugins.length)}
+              </span>
+            </div>
+            <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+              {preset.blurb[locale]}
+            </p>
+            <p className="mt-3 font-mono text-xs text-muted-foreground">
+              {d.verifiedOn} {preset.verified.at} · dsh {preset.verified.dsh}
+            </p>
+          </Link>
+        ))}
+      </div>
+
+      <div className="pt-8">
+        <p className="mb-2 text-sm font-medium">{d.installAll}</p>
+        <CopyCommand
+          size="lg"
+          locale={locale}
+          command="npx dshmarketplace-cli preset essentials"
+          className="max-w-xl bg-card"
+        />
+        <p className="mt-4 max-w-xl text-sm leading-relaxed text-muted-foreground">
+          {d.installNote}
+        </p>
+      </div>
+    </section>
+  );
+}
+
 function HowItWorks({ locale }: { locale: Locale }) {
   const d = t(locale).how;
 
@@ -356,24 +431,6 @@ function InstallSection({ locale }: { locale: Locale }) {
         />
         <p className="mt-4 max-w-xl text-sm leading-relaxed text-muted-foreground">
           {d.installNote}
-        </p>
-
-        <p className="mt-10 text-sm font-medium">{d.installPresetLead}</p>
-        <CopyCommand
-          size="lg"
-          locale={locale}
-          command="npx dshmarketplace-cli preset essentials"
-          className="mt-2 max-w-xl bg-card"
-        />
-        <p className="mt-4 max-w-xl text-sm leading-relaxed text-muted-foreground">
-          {d.installPresetNote}{" "}
-          <Link
-            href={localePath(locale, "/presets")}
-            className="underline underline-offset-2 hover:text-foreground"
-          >
-            {d.installPresetLink}
-          </Link>
-          .
         </p>
       </div>
     </section>

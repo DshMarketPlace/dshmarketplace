@@ -28,6 +28,24 @@ const en = {
       "Browse 1,000+ DeepSeek Harness plugins. Every listing shows the install command, the source repo, the licence and what the plugin can reach. Free, no sign-up.",
   },
 
+  presets: {
+    eyebrow: "Presets",
+    // The head term on both sides of the language split is "plugin market" —
+    // Google completes `deepseek harness plugin market`, Baidu completes
+    // `deepseek harness 插件市场` and `dsh插件商店`. There is no preset or
+    // "best plugins" long-tail in either language yet, so this section is
+    // about sets and earns its traffic on market and install intent instead of
+    // on a term nobody types.
+    heading: "DeepSeek Harness plugin sets, installed together first",
+    lede: "The rest of this DeepSeek Harness plugin market lists one plugin at a time, and a verdict on a single plugin says nothing about the company it keeps. Each set below went into one clean profile as a single install, and every plugin in it had to register before the set was published.",
+    verifiedOn: "verified",
+    countLabel: (n: number) => `${n} plugin${n === 1 ? "" : "s"}`,
+    installAll: "Install a set with one command",
+    installNote:
+      "Installs into whichever profile DeepSeek Harness actually created on your machine, skips anything the sandbox could not install, and allowlists a blocked build script so nothing lands inert.",
+    viewAll: "All sets, and what is in them",
+  },
+
   nav: {
     plugins: "Plugins",
     presets: "Presets",
@@ -67,10 +85,6 @@ const en = {
     installSectionHeading: "Install any plugin",
     installNote:
       "Resolves the plugin, picks npm over a full clone when it can, and hands DSH the right command. No global install.",
-    installPresetLead: "Or install a whole set at once",
-    installPresetNote:
-      "Curated sets, each installed together in a sandbox before it was published — every plugin in one confirmed to register alongside the others, not checked one at a time and assumed to get along.",
-    installPresetLink: "See what is in each set",
     searchPlaceholder: "Search plugins by name, capability or author…",
     searchAction: "Search",
     browse: "Browse the catalogue",
@@ -320,6 +334,18 @@ const zh: Dict = {
       "收录 1,000+ 个 DeepSeek Harness 插件。每个插件都标好安装命令、源码仓库、开源协议，以及它能碰到什么。免费，免注册。",
   },
 
+  presets: {
+    eyebrow: "预设",
+    heading: "整套装过才发的 DeepSeek Harness 插件组合",
+    lede: "这个 DeepSeek Harness 插件市场其他地方都是一条一条列的，而单个插件的结论说明不了它跟别人处不处得来。下面每一套都是整套当成一次安装、装进干净 profile 的，套里每个插件都得注册上，这套才发得出来。",
+    verifiedOn: "实测",
+    countLabel: (n: number) => `${n} 个插件`,
+    installAll: "一条命令装一套",
+    installNote:
+      "装进你机器上 DeepSeek Harness 真正建出来的那个 profile，沙箱装不上的先跳过，被拦的 build script 自动放行，不会装完是个死的。",
+    viewAll: "全部预设，以及每套装了什么",
+  },
+
   nav: {
     plugins: "插件",
     presets: "预设",
@@ -359,10 +385,6 @@ const zh: Dict = {
     installSectionHeading: "安装任意插件",
     installNote:
       "自动解析插件来源，能走 npm 就不克隆整个仓库，然后把命令交给 DSH。不用全局安装。",
-    installPresetLead: "或者一次装一整套",
-    installPresetNote:
-      "挑好的组合，每套在发布前都整套装进沙箱验过 —— 套里每个插件都确认能和其他几个一起注册上，不是分开测完再假设它们能相处。",
-    installPresetLink: "看看每套装了什么",
     searchPlaceholder: "搜索插件名称、能力或作者…",
     searchAction: "搜索",
     browse: "浏览全部插件",
