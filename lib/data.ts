@@ -11,6 +11,7 @@ import {
   count,
   ne,
   isNotNull,
+  inArray,
   getTableColumns,
 } from "drizzle-orm";
 
@@ -313,4 +314,23 @@ export async function getCatalogStats() {
     indexed: Number(totals?.indexed ?? 0),
     lastSynced: totals?.lastSynced ? new Date(totals.lastSynced * 1000) : null,
   };
+}
+
+/**
+ * The plugins a preset names, fetched by npm package name.
+ *
+ * Deliberately not `getPlugins({ perPage: 96 })` filtered afterwards. A preset
+ * member can sit anywhere in the catalogue — `dsh-tokenledger` is 26 stars —
+ * and taking the top page would drop it silently, leaving a published command
+ * longer than the list of plugins printed beside it. That is this project's
+ * recurring bug in its purest form: a correct rule run over the wrong rows.
+ */
+export async function getPluginsByNpmName(
+  names: string[],
+): Promise<PluginCardRow[]> {
+  if (!names.length) return [];
+  return db
+    .select(listColumns)
+    .from(plugins)
+    .where(inArray(plugins.npmPackage, names));
 }

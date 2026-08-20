@@ -39,7 +39,10 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const STATIC_PAGES = ["about", "submit", "contact", "terms", "privacy"];
   // The API page is a destination in its own right, not boilerplate — it is
   // what a developer searching for a plugin API is looking for.
-  const DOC_PAGES = ["api-docs"];
+  // `presets` sits with the API page rather than the boilerplate: both answer
+  // a search someone actually types, and presets is the one page here that a
+  // competing directory cannot copy without running the installs.
+  const DOC_PAGES = ["api-docs", "presets"];
 
   return [
     ...entry("/", { lastModified: now, changeFrequency: "daily", priority: 1 }),
