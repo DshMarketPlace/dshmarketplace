@@ -190,28 +190,21 @@ profile does technically work. It still sat at the top of the catalogue telling
 readers to install it, and then the review told them not to. `IS_A_HOST` in
 `ingest-topic.ts` rejects hosts by name.
 
-**And that fix has never applied to the two rows that caused it.** `IS_A_HOST`
-gates admission, so it stops new arrivals and did nothing about
-`deepseek-ai/deepseek-harness` (151,755 stars) and `sandbaseai/sandbase-harness`,
-both still present, both `visibility: "hidden"` — which only suppresses the
-detail page. Browse and the API show every tier, so the harness is still the
-first card in the catalogue, and the cart will happily put it in a command.
-This is the scope bug in its usual costume: a correct rule aimed at the wrong
-set of rows. **Removing them needs a decision, not a script** — that is the one
-class of change this project confirms before running.
+**That fix did not apply to the two rows that caused it, for three days.**
+`IS_A_HOST` gates admission, so it stopped new arrivals and left
+`deepseek-ai/deepseek-harness` (151,755 stars) and
+`sandbaseai/sandbase-harness` in place at `visibility: "hidden"` — which only
+suppresses the detail page. Browse and the API show every tier, so the harness
+stayed the first card, and the cart turned it into a one-click install. Deleted
+20 Aug; ingest refuses them on every pass, so they cannot return.
 
-**No verdict is publishable unless it is about us being right.** Four separate
-checks now refuse to publish a measurement: a registry 429 (that measures our
-traffic), a command that changed since the run, a probe with no verdict, and a
-review section that admits it has nothing to say. Each was added after the
-thing it prevents had already reached the live site.
-
-**The AI review judges fit, never people.** It is labelled as generated, says
-which parts were observed in a real install and which were read off the repo,
-and never uses our own heuristic risk flags as a stick. When the sandbox says a
-plugin does not install, `verdictConstraint()` forbids recommending it — in
-code, because that is not a judgement call. Regenerate with `--force` after any
-prompt change.
+**A name list does not catch a category.** The same sweep finds
+`deepseek-harness-desktop` ("desktop host"), `deepseek-harness-tui` ("terminal
+client that speaks the DSH SDK JSON-RPC protocol"),
+`deepseek-harness-cli`, `deepseek-harness-studio` and
+`awesome-deepseek-harness-plugins` — a competing directory. Whether a desktop
+client is a plugin is a taxonomy decision and belongs to the user, not a
+script. **When adding a rule, ask what it does about the rows already there.**
 
 ## Content rules
 

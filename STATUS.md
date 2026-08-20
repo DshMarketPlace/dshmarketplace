@@ -8,7 +8,7 @@ Live, seeded, and holding the name. A long way from finished.
 | --- | --- |
 | Site | <https://dshmarketplace.dev> — Next.js 16 on Cloudflare Workers via OpenNext |
 | Languages | English at `/`, Chinese at `/zh` — separate root layouts, bidirectional hreflang |
-| Database | Turso (libSQL, `aws-ap-northeast-1`), 3,422 plugins with GitHub metadata |
+| Database | Turso (libSQL, `aws-ap-northeast-1`), 3,420 plugins with GitHub metadata |
 | Detail pages | 60 written bilingually, each with a documentation section; 57 illustrated. All 60 indexed |
 | Install check | 2,426 listings installed in a sandbox; the verdict is printed under the command it is about, and served as `installCheck` |
 | LINUX DO | 7 plugins verified against the thread their author posted |
@@ -70,16 +70,31 @@ distribution across 2,024 candidates: 1–4 → 754, 5–9 → 380, 10–24 → 
 25–99 → 120, 100+ → 13.
 
 
-## Two rows the harness rule never removed
+## Two harness rows, removed 20 Aug
 
-`IS_A_HOST` in `ingest-topic.ts` rejects a harness by name, and it works — on
-admission. `deepseek-ai/deepseek-harness` (151,755 stars) and
-`sandbaseai/sandbase-harness` predate it and are still in the catalogue at
-`visibility: "hidden"`, which suppresses only the detail page. Browse and the
-API show every tier, so the harness is still the first card, and the cart will
-put it into a command. **The eighth instance of the same bug family**: a
-correct rule pointed at new rows only. Deleting them is a decision, not a
-script.
+`IS_A_HOST` in `ingest-topic.ts` rejects a harness by name, and it worked — on
+admission only. `deepseek-ai/deepseek-harness` (151,755 stars) and
+`sandbaseai/sandbase-harness` predated it and stayed, at
+`visibility: "hidden"` — which suppresses only the detail page. Browse and the
+API show every tier, so the harness was still the catalogue's first card, and
+the new cart made "install a harness into your harness" a single click. That is
+how it was finally noticed: **the feature found the bug, not a review.**
+
+Both deleted, 3,422 → 3,420. They cannot return: the `IS_A_HOST` check runs
+before the rejection cache, so ingest refuses them on every pass.
+
+**The eighth instance of the family** — a correct rule aimed at the wrong set
+of rows, this time new arrivals rather than existing ones.
+
+**The name list is not the whole problem.** A sweep for harness-shaped rows
+turns up more that describe themselves as hosts rather than plugins:
+`chokwinlee/deepseek-harness-desktop` ("desktop host"),
+`openma-ai/deepseek-harness-tui` ("terminal client that speaks the DSH SDK
+JSON-RPC protocol"), `peiyuwang54/deepseek-harness-cli` ("DeepSeek CLI
+(UnOfficial)"), `fufankeji/deepseek-harness-studio`, and
+`imsai-sh/awesome-deepseek-harness-plugins` — a competing directory. A
+hardcoded list of two was never going to catch a category. Deciding which of
+these are plugins is a taxonomy call, not a script.
 
 ## The pnpm pin that was not applied
 
