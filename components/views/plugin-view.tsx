@@ -391,7 +391,9 @@ export function pluginMetaFor(plugin: Plugin, locale: Locale) {
   const summary = summaryFor(plugin, locale);
   return {
     title: d.metaTitle(plugin.name, plugin.owner),
-    description: summary?.slice(0, 155) ?? d.metaFallback(plugin.name),
+    description: (
+      summary ? `${summary} ${d.metaTail}` : d.metaFallback(plugin.name)
+    ).slice(0, locale === "zh" ? 78 : 155),
     url: `${directory.baseUrl}${localePath(locale, `/plugins/${plugin.slug}`)}`,
   };
 }

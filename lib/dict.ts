@@ -25,7 +25,7 @@ const en = {
   meta: {
     title: "DeepSeek Harness Plugins — Browse & Install DSH Plugins",
     description:
-      "Browse 1,000+ DeepSeek Harness plugins. Every listing shows the install command, the source repo, the licence and what the plugin can reach. Free, no sign-up.",
+      "Browse every DeepSeek Harness plugin. Each listing shows the install command, the source repo, the licence and what the plugin can reach — and whether it actually installs. Free, no sign-up.",
   },
 
   cart: {
@@ -316,6 +316,12 @@ const en = {
     docsSource: "read the README on GitHub",
     relatedEyebrow: "Same category",
     relatedHeading: (name: string) => `Alternatives to ${name}`,
+    // Appended, then truncated. A summary long enough to fill the snippet
+    // pushes this off the end and stays unique; a short one — the Chinese
+    // summaries run to about forty characters — gets the space filled rather
+    // than shipping a near-empty SERP result. One rule, no branch.
+    metaTail:
+      " Install it into DeepSeek Harness with one command, verified in a sandbox.",
     metaTitle: (name: string, owner: string) =>
       `${name} — DeepSeek Harness plugin by ${owner}`,
     metaFallback: (name: string) =>
@@ -354,7 +360,7 @@ const zh: Dict = {
     // and the intent in four characters.
     title: "DeepSeek Harness 插件大全 — DSH 插件搜索与安装",
     description:
-      "收录 1,000+ 个 DeepSeek Harness 插件。每个插件都标好安装命令、源码仓库、开源协议，以及它能碰到什么。免费，免注册。",
+      "DeepSeek Harness 插件大全：每条都标好安装命令、源码仓库、开源协议，以及它能碰到什么——还有它到底装不装得上，是真装过一遍的结论。免费，免注册。",
   },
 
   cart: {
@@ -630,6 +636,7 @@ const zh: Dict = {
     docsSource: "去 GitHub 看原始 README",
     relatedEyebrow: "同一分类",
     relatedHeading: (name: string) => `${name} 的同类插件`,
+    metaTail: "一行命令装进 DeepSeek Harness，安装命令是沙箱里真装过的。",
     metaTitle: (name: string, owner: string) =>
       `${name} — ${owner} 的 DeepSeek Harness 插件`,
     metaFallback: (name: string) =>
