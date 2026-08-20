@@ -3,6 +3,7 @@ import { Star, ArrowUpRight, ShieldAlert, MessagesSquare } from "lucide-react";
 
 import { CopyCommand } from "@/components/copy-command";
 import { InstallCheck } from "@/components/install-check";
+import { CartButton } from "@/components/cart-button";
 import { ReviewDialog } from "@/components/review-dialog";
 import { primaryInstall, installKindLabel } from "@/lib/install";
 import { t } from "@/lib/dict";
@@ -82,7 +83,19 @@ export function PluginCard({
           {install ? (
             <>
               <CopyCommand command={install.cmd} locale={locale} />
-              <InstallCheck status={plugin.installStatus} locale={locale} />
+              <div className="flex items-center justify-between gap-2">
+                <InstallCheck status={plugin.installStatus} locale={locale} />
+                {plugin.npmPackage ? (
+                  <CartButton
+                    locale={locale}
+                    item={{
+                      target: plugin.npmPackage,
+                      fullName: plugin.fullName,
+                      installCheck: plugin.installStatus,
+                    }}
+                  />
+                ) : null}
+              </div>
             </>
           ) : (
             <p className="border border-dashed border-border px-3 py-2 text-xs leading-relaxed text-muted-foreground">

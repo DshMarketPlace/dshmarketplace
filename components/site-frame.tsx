@@ -3,6 +3,7 @@ import Link from "next/link";
 import { ThemeProvider } from "@/components/theme-provider";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { LanguageSwitch } from "@/components/language-switch";
+import { CartBar } from "@/components/cart-bar";
 import { t } from "@/lib/dict";
 import { localePath, type Locale } from "@/lib/i18n";
 import { directory } from "@/directory.config";
@@ -29,6 +30,10 @@ export function SiteFrame({
       <SiteHeader locale={locale} />
       {children}
       <SiteFooter locale={locale} />
+      {/* Site-wide rather than catalogue-only: a selection has to survive
+          opening a detail page to read about a plugin and coming back. Renders
+          nothing at all until something is in it. */}
+      <CartBar locale={locale} />
     </ThemeProvider>
   );
 }

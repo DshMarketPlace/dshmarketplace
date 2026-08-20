@@ -28,6 +28,21 @@ const en = {
       "Browse 1,000+ DeepSeek Harness plugins. Every listing shows the install command, the source repo, the licence and what the plugin can reach. Free, no sign-up.",
   },
 
+  cart: {
+    add: "Add",
+    added: "Added",
+    remove: "Remove",
+    clear: "Clear",
+    count: (n: number) => `${n} plugin${n === 1 ? "" : "s"} selected`,
+    full: (n: number) => `${n} is the limit — past that it stops being a command you paste.`,
+    recommended: "Install them all",
+    recommendedWhy:
+      "Installs into whichever profile DeepSeek Harness actually created on your machine, skips anything the sandbox could not install, and allowlists a blocked build script so nothing lands inert.",
+    manual: "Or paste it yourself",
+    brokenWarning: (names: string) =>
+      `The sandbox could not install ${names}. The command above will skip it; the one below will not.`,
+  },
+
   presets: {
     eyebrow: "Presets",
     // The head term on both sides of the language split is "plugin market" —
@@ -332,6 +347,21 @@ const zh: Dict = {
     title: "DeepSeek Harness 插件大全 — DSH 插件搜索与安装",
     description:
       "收录 1,000+ 个 DeepSeek Harness 插件。每个插件都标好安装命令、源码仓库、开源协议，以及它能碰到什么。免费，免注册。",
+  },
+
+  cart: {
+    add: "加入",
+    added: "已加入",
+    remove: "移除",
+    clear: "清空",
+    count: (n: number) => `已选 ${n} 个插件`,
+    full: (n: number) => `最多 ${n} 个 —— 再多就不是一条能粘的命令了。`,
+    recommended: "一条命令全装上",
+    recommendedWhy:
+      "装进你机器上 DeepSeek Harness 真正建出来的那个 profile，沙箱装不上的跳过，被拦的 build script 自动放行，不会装完是个死的。",
+    manual: "或者自己粘这条",
+    brokenWarning: (names: string) =>
+      `沙箱装不上 ${names}。上面那条命令会跳过它，下面这条不会。`,
   },
 
   presets: {
