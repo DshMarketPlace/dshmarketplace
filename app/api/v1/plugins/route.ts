@@ -55,6 +55,12 @@ export async function GET(request: Request) {
     // `dsh.bundle`, so the harness took it as an ordinary dependency.
     installCheck: p.installStatus,
     installCheckedAt: p.installCheckedAt,
+    // The packages pnpm named when it refused to run their build scripts —
+    // observed in the sandbox, not inferred from the README. This is the whole
+    // content of a `needs-approval` verdict, and without it a client can say
+    // that something needs approving but not what, which is the difference
+    // between a warning and a fix.
+    blockedBuilds: p.blockedBuilds ? JSON.parse(p.blockedBuilds) : [],
     riskFlags: p.riskFlags ? JSON.parse(p.riskFlags) : [],
     inRegistry: p.inRegistry,
     // Only promoted plugins have a page worth linking to.

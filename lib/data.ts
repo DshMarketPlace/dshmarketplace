@@ -118,6 +118,13 @@ export async function getPlugins(params: BrowseParams = {}) {
         like(plugins.summary, needle),
         like(plugins.summaryZh, needle),
         like(plugins.tags, needle),
+        // The npm name is the one string every install command we publish
+        // contains, so it is what people paste back at us — and searching for
+        // `@liustack/modsearch` returned nothing while the plugin sat in the
+        // catalogue under `liustack/modsearch`. A catalogue that cannot find a
+        // package by the name it tells you to install is missing its own
+        // primary key.
+        like(plugins.npmPackage, needle),
       )!,
     );
   }
