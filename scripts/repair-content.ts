@@ -5,12 +5,15 @@
  *   pnpm tsx scripts/repair-content.ts            # only rows with a page
  *   pnpm tsx scripts/repair-content.ts --all      # every row
  *
- * Two fixes:
+ * Three fixes:
  *
  * 1. Display names. A monorepo entry like `strukto-ai/mirage#dsh` was titled
  *    "dsh" — useless as an H1 and as a page title.
  * 2. README heading levels. Imported READMEs kept their own h1 and h2, which
  *    competed with the page's own outline.
+ * 3. `contentScore`, recomputed from the row itself. `sync-github.ts` scored
+ *    with `overview: null` hardcoded, so every nightly run knocked written
+ *    pages down to 20 against a threshold of 70.
  */
 import "dotenv/config";
 import { eq, ne, or, isNotNull } from "drizzle-orm";
@@ -19,6 +22,7 @@ import sanitizeHtml from "sanitize-html";
 
 import { db } from "../db/client";
 import { plugins } from "../db/schema";
+import { scoreContent } from "../lib/plugin-scoring";
 import { displayName } from "./seed-catalog";
 
 /** Kept identical to scripts/sync-github.ts — see the note there. */
@@ -88,6 +92,12 @@ async function main() {
       subpath: plugins.subpath,
       readmeMd: plugins.readmeMd,
       readmeHtml: plugins.readmeHtml,
+      summary: plugins.summary,
+      overview: plugins.overview,
+      overviewZh: plugins.overviewZh,
+      docs: plugins.docs,
+      illustration: plugins.illustration,
+      contentScore: plugins.contentScore,
     })
     .from(plugins)
     .where(
@@ -100,6 +110,7 @@ async function main() {
 
   let renamed = 0;
   let rerendered = 0;
+  let rescored = 0;
 
   for (const r of rows) {
     const patch: Record<string, unknown> = {};
@@ -119,13 +130,22 @@ async function main() {
       }
     }
 
+    const score = scoreContent(r);
+    if (score !== r.contentScore) {
+      patch.contentScore = score;
+      rescored++;
+      console.log(`  rescore ${r.fullName}: ${r.contentScore} → ${score}`);
+    }
+
     if (Object.keys(patch).length > 0) {
       patch.updatedAt = new Date();
       await db.update(plugins).set(patch).where(eq(plugins.id, r.id));
     }
   }
 
-  console.log(`\n${renamed} renamed, ${rerendered} README(s) re-rendered`);
+  console.log(
+    `\n${renamed} renamed, ${rerendered} README(s) re-rendered, ${rescored} rescored`,
+  );
 }
 
 main().catch((err) => {

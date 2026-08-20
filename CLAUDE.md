@@ -81,7 +81,7 @@ has the full set.
   `github:owner/repo#path:sub` resolves — verified end to end in the sandbox
   (`+ dsh-pet github:PC2005-cloud/dsh-pet#path:dsh-pet`, 9.2s), with and
   without a leading slash. `lib/install.ts` still emits no command for these,
-  which is now an understatement rather than a fact: **49 listings say no
+  which is now an understatement rather than a fact: **54 listings say no
   install exists when one does**, including the two highest-starred in the
   catalogue. Before switching it on, validate the `subpath` column — two of
   the first three tested pointed at directories that do not exist in the repo,
@@ -231,7 +231,7 @@ pnpm tsx scripts/apply-validations.ts /tmp/results.jsonl
 pnpm tsx scripts/write-review.ts --limit 10 [--force]
 pnpm tsx scripts/write-content.ts --limit 10 --images
 pnpm tsx scripts/promote.ts --limit 10            # move into the sitemap
-pnpm tsx scripts/repair-content.ts --all          # re-render after a rule change
+pnpm tsx scripts/repair-content.ts --all          # re-render and rescore after a rule change
 pnpm tsx scripts/build-brand.ts                   # icons + social cards from mark.svg
 ```
 

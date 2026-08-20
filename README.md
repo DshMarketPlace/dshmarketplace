@@ -5,7 +5,7 @@
 <p align="center">
   <a href="https://dshmarketplace.dev"><img src="https://img.shields.io/badge/site-dshmarketplace.dev-c0561d?style=flat-square&labelColor=241f1a" alt="Live site"></a>
   <a href="https://github.com/DshMarketPlace/dshmarketplace/actions/workflows/deploy.yml"><img src="https://img.shields.io/github/actions/workflow/status/DshMarketPlace/dshmarketplace/deploy.yml?style=flat-square&color=c0561d&labelColor=241f1a&label=deploy" alt="Deploy"></a>
-  <a href="#the-catalogue"><img src="https://img.shields.io/badge/plugins-2%2C851-c0561d?style=flat-square&labelColor=241f1a" alt="2,851 plugins"></a>
+  <a href="#the-catalogue"><img src="https://img.shields.io/badge/plugins-3%2C422-c0561d?style=flat-square&labelColor=241f1a" alt="3,422 plugins"></a>
   <a href="#public-api"><img src="https://img.shields.io/badge/API-public-c0561d?style=flat-square&labelColor=241f1a" alt="Public API"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-c0561d?style=flat-square&labelColor=241f1a" alt="MIT"></a>
   <a href="https://linux.do"><img src="https://img.shields.io/badge/LINUX%20DO-community-c0561d?style=flat-square&labelColor=241f1a" alt="LINUX DO"></a>
@@ -37,7 +37,7 @@ So the differentiator here is **written depth**. A promoted plugin gets its own
 page carrying an overview, a documentation section and an illustration, in both
 languages. That is slow to produce and cannot be scraped, which is the point.
 
-This is deliberately early. **49 of 2,851 listings have that page today.** The
+This is deliberately early. **60 of 3,422 listings have that page today.** The
 rest carry metadata, a verdict from a real install, and a summary while the
 writing catches up. Nothing is padded with generated filler to make the number
 look better.
@@ -46,17 +46,17 @@ look better.
 
 | | |
 | --- | --- |
-| Listings | **2,851** — 2,846 not archived |
+| Listings | **3,422** — 3,417 not archived |
 | Categories | 14, from Memory and Vision to Themes |
-| Installed and checked | **2,435** — each in its own throwaway container |
-| AI reviews | 2,270, bilingual |
+| Installed and checked | **2,426** — each in its own throwaway container |
+| AI reviews | 2,264, bilingual |
 | Chinese summaries | 1,005 hand-written; the rest are still English-only |
-| Written detail pages | 49, bilingual · 46 illustrated |
+| Written detail pages | 60, bilingual · 57 illustrated |
 | LINUX DO verified | 7 |
 
 **Installed and checked** is the one column no competitor can scrape: it is the
-record of a run, not of a repo. Verdicts are `passed` 2,048,
-`needs-approval` 312, `not-a-layer` 43, `failed` 31, `timeout` 1 — and only the
+record of a run, not of a repo. Verdicts are `passed` 2,043,
+`needs-approval` 311, `not-a-layer` 43, `failed` 28, `timeout` 1 — and only the
 last two are defects. See [Safety](#safety) for what that does and does not
 prove.
 
@@ -147,7 +147,7 @@ directory, so `dsh plugin add x` exits with *required option '--profile
 emits carries it.
 
 **`github:owner/repo#subpath` fails, but `#path:` works.** The bare form is
-read as a git ref — `Could not resolve <sub> to a commit` — which is why 49
+read as a git ref — `Could not resolve <sub> to a commit` — which is why 54
 monorepo plugins here still show no one-line install. That is an
 understatement, not a limitation: pnpm splits the fragment on `::` and treats a
 `path:` part as a subdirectory, so `github:owner/repo#path:sub` installs. We

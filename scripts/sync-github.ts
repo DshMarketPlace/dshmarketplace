@@ -132,6 +132,10 @@ async function syncOne(row: {
   owner: string;
   repo: string;
   summary: string | null;
+  overview: string | null;
+  overviewZh: string | null;
+  docs: string | null;
+  illustration: string | null;
 }) {
   const repo = await gh<Repo>(`/repos/${row.owner}/${row.repo}`);
   if (!repo) {
@@ -195,7 +199,20 @@ async function syncOne(row: {
       npmPackage,
       installKind: npmPackage ? "npm" : "github",
       riskFlags: JSON.stringify(detectRisks(readmeMd, pkg)),
-      contentScore: scoreContent({ overview: null, readmeMd, summary }),
+      // Every field the score is made of, or the sync silently unmakes it.
+      // This passed `overview: null` and omitted the other three, so a nightly
+      // run reset any written page to 20 against a threshold of 70 — no error,
+      // no log line, and `promote.ts` filters on exactly this column, so a page
+      // synced before it was promoted could never be promoted at all. Yesterday's
+      // batch survived only by being written and promoted between two syncs.
+      contentScore: scoreContent({
+        readmeMd,
+        summary,
+        overview: row.overview,
+        overviewZh: row.overviewZh,
+        docs: row.docs,
+        illustration: row.illustration,
+      }),
       syncedAt: new Date(),
       updatedAt: new Date(),
     })
@@ -222,6 +239,10 @@ async function main() {
       owner: plugins.owner,
       repo: plugins.repo,
       summary: plugins.summary,
+      overview: plugins.overview,
+      overviewZh: plugins.overviewZh,
+      docs: plugins.docs,
+      illustration: plugins.illustration,
     })
     .from(plugins)
     .where(

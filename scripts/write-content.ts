@@ -125,11 +125,15 @@ Specifications follow.
   · Then: who it is for and when it is the wrong choice. A real limitation, a dependency, a platform constraint, or the fact that it duplicates something the harness already does.
   · If risk flags are listed above, say plainly what the plugin reaches and why.
   · Two or three short paragraphs. At most one short bullet list, only if the README genuinely enumerates something.
-  · Use the phrase "DeepSeek Harness plugin" once, naturally, and the plugin's name two or three times. Never repeat a phrase to hit a count.
+  · Write "DeepSeek Harness" in full, not "the harness" or "DSH", the first two times it appears. Readers search the words, and "DSH" on its own belongs to an unrelated retail brand that owns that query.
+  · Use the plugin's name where you would otherwise write "it" or "the plugin", whenever the sentence still reads naturally. Never repeat a phrase to hit a count — a sentence that reads as padding has cost more than the term is worth.
   · Do not include a heading, the install command, or a licence line — the page already renders those.
 
 "EN_DOCS" — Markdown, 250-400 words. The reference section, rewritten from the README rather than copied out of it.
   · Structure it with \`###\` headings. Choose them from what the README actually documents — typical set: Configuration, Commands, Requirements, How it behaves, Known limits. Three to five of them.
+  · Every heading in this block is English. "### Commands", never 「命令」 — the Chinese instructions further down do not apply here, and a Chinese heading in this block is a defect.
+  · Name the plugin in at least two of those headings: "### Configuring ${p.name}" rather than "### Configuration". This costs no words and puts the name in the page outline, which is the part a search engine reads first.
+  · Say "DeepSeek Harness" wherever the fact is a harness fact — a version requirement, a hook it registers on, the profile it installs into, a command it adds. It has to be the grammatical subject doing something: "DeepSeek Harness loads the plugin from …". If the sentence still reads correctly with those two words deleted, they were decoration and the sentence is worse for them.
   · Put concrete detail under each: config keys and their defaults, command names and what they take, environment variables, file paths, supported platforms, version requirements. Use a Markdown table when the README lists key/value pairs, and \`inline code\` for every identifier.
   · Omit everything that is repository furniture rather than documentation: badges, star counts, language-switcher links, community and social links, sponsor blocks, contribution guides, changelogs, licence text, and the project's own logo.
   · Lead with what the README does document. Never guess a config key, a default value or a flag — but spend at most one sentence, once, in the whole section on what the source omits. A reader wants the facts that exist, not an inventory of the ones that do not.
@@ -140,12 +144,14 @@ Specifications follow.
   · Written, not translated. Do not mirror the English sentence by sentence; a Chinese developer should not be able to tell which was written first.
   · Keep these in English: DeepSeek Harness, DSH, plugin names, npm, GitHub, topic, Star, tarball, commit, agent, token, API, and any command, file name or config key.
   · Use 插件 for plugin, 开源协议 for licence, 源码仓库 for source repository, 会话 for session, 记忆 for memory, 终端 for terminal.
-  · Include "DeepSeek Harness 插件" once, naturally.
+  · Include "DeepSeek Harness 插件" twice, naturally — the opening sentence and one other place where it is genuinely the subject.
+  · The first sentence has to work as a straight answer to 「${p.name} 是什么」, because that is the shape of the question Chinese readers actually type. Say what it is before saying anything about it.
   · Plain developer register — the way a good Chinese README reads. No 「让您」「轻松」「强大」「赋能」「一站式」. No emoji.
   · Same three beats as the English: what it does, how it works, when not to use it.
 
 "ZH_DOCS" — Markdown, 350-500 Chinese characters, same structure and same exclusions as EN_DOCS.
   · Headings are Chinese（配置、命令、环境要求、行为说明、已知限制），but every key, command, path, flag and value stays verbatim in its original form. Never translate an identifier.
+  · Put ${p.name} into at least two headings — 「${p.name} 的配置」 rather than 「配置」. Zero extra characters, and the name lands in the outline.
   · Written, not translated from EN_DOCS.
 
 "ILLUSTRATION_SUBJECT" — one English sentence describing an abstract technical diagram of this plugin's mechanism, for an illustrator. Describe shapes and flow, not the product: "a lattice of stacked cubes feeding a lens that focuses into a single solid block" rather than "a memory plugin". No text, no UI, no logos.

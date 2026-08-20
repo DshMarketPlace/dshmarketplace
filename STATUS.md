@@ -1,4 +1,4 @@
-# Status — 19 August 2026
+# Status — 20 August 2026
 
 Live, seeded, and holding the name. A long way from finished.
 
@@ -8,9 +8,9 @@ Live, seeded, and holding the name. A long way from finished.
 | --- | --- |
 | Site | <https://dshmarketplace.dev> — Next.js 16 on Cloudflare Workers via OpenNext |
 | Languages | English at `/`, Chinese at `/zh` — separate root layouts, bidirectional hreflang |
-| Database | Turso (libSQL, `aws-ap-northeast-1`), 2,851 plugins with GitHub metadata |
-| Detail pages | 49 written bilingually, each with a documentation section; 46 illustrated. All 49 indexed |
-| Install check | 2,435 listings installed in a sandbox; the verdict is printed under the command it is about, and served as `installCheck` |
+| Database | Turso (libSQL, `aws-ap-northeast-1`), 3,422 plugins with GitHub metadata |
+| Detail pages | 60 written bilingually, each with a documentation section; 57 illustrated. All 60 indexed |
+| Install check | 2,426 listings installed in a sandbox; the verdict is printed under the command it is about, and served as `installCheck` |
 | LINUX DO | 7 plugins verified against the thread their author posted |
 | Content pipeline | `write-content.ts` → `promote.ts`. Text on one gateway, images on another |
 | CLI | `npx dshmarketplace-cli` — [npm](https://www.npmjs.com/package/dshmarketplace-cli) · repo **public, MIT** |
@@ -199,6 +199,27 @@ walls that link straight out to GitHub. **The gap is depth**: a page per plugin
 that carries writing a scraper cannot produce. That is the whole differentiation,
 and it is why `overview` and `contentScore` exist.
 
+**Measured, 20 Aug 2026, rather than assumed.** dshmk.com publishes 8,108 URLs
+and its plugin pages run **148–222 words**; ours run about 2,200. Their `deepseek`
+token density reads 4.5–4.7% only because the page is almost entirely chrome —
+the exact phrase `deepseek harness plugin` appears 0–1 times on them. dshplugins.com,
+the best-executed of the field, lists **80 URLs in total** and no detail pages at
+all. So nobody is competing on the plugin page itself. Two things follow: chasing
+a competitor's density percentage here would mean deleting content, and the
+scaled-content risk is ours alone to manage, because we are the only ones with
+enough words per page to be judged on them.
+
+**Keywords, from autocomplete on the same day.** `deepseek harness plugin` is the
+real term — the plural returns no suggestions of its own. Google also completes
+`deepseek harness` to `agent`, `cli`, `tui`, `ui`, `github`, `open source` and
+`what is deepseek harness`. **`dsh` alone is a poisoned query**: it completes to
+`dsh customer service`, `dsh locations` and `dsh price`, none of them this
+project. So pages spell out "DeepSeek Harness" and never lean on the acronym for
+the head term — the same trap as 线束 on the Chinese side. Chinese autocomplete
+carries no plugin long-tail at all yet; it completes to 是什么, 发布时间, 内测
+and 招聘, so the Chinese copy answers 「X 是什么」 in its first sentence and does
+not chase terms that do not exist.
+
 Three further moats, in build order:
 
 1. **The CLI is aimed at coding agents.** `--json` is a stable contract and
@@ -216,10 +237,11 @@ Three further moats, in build order:
 **Visibility is three-tier, not a noindex flag.** `hidden` generates no route at
 all; `listed` renders with `noindex, follow`; `indexed` enters the sitemap. A
 noindex page is still crawled and still counts toward site-level quality, so
-parking a thousand thin pages there is not free. 28 pages are `indexed` and the
-remaining 976 are `hidden` — nothing sits at `listed`, so Google sees only the
+parking a thousand thin pages there is not free. 60 pages are `indexed` and the
+remaining 3,362 are `hidden` — nothing sits at `listed`, so Google sees only the
 written pages. `scoreContent` gates promotion and visibility only moves
-forward.
+forward — but note that the gate is only as good as the column it reads, which
+a partial rescore in `sync-github.ts` had been quietly emptying; see the traps.
 
 **Keywords came from autocomplete, not intuition.** English head term is
 `deepseek harness plugins` (plural), from Google. The first landing copy
@@ -246,7 +268,7 @@ upstream, so no card is machine-translated.
 
 **Next up, with the evidence already gathered**
 
-- **Give the 49 subpath listings an install command.** `#path:` is proven; the
+- **Give the 54 subpath listings an install command.** `#path:` is proven; the
   change is in `lib/install.ts`, which five surfaces read, so per the rule
   above every client re-runs against live data afterwards. Audit the `subpath`
   column first — it is not trustworthy on its own.
@@ -376,7 +398,7 @@ both languages after every type change.
 
 Each of these cost real time; they are recorded so they are not rediscovered.
 
-**One family of bug accounts for most of a day.** Five separate defects, none
+**One family of bug accounts for most of a day.** Six separate defects, none
 of which was a logic error — every one was a correct rule applied to the wrong
 scope, and none of them raised an error. They are invisible precisely because
 nothing breaks; some subset of the data simply never gets its turn.
@@ -402,6 +424,17 @@ nothing breaks; some subset of the data simply never gets its turn.
 - **A verdict is about the command that produced it.** 366 results described
   commands that had been retracted mid-batch. `apply-validations.ts` drops any
   result whose command no longer matches what the listing publishes.
+- **A score recomputed from a partial row is a deletion.** `sync-github.ts`
+  called `scoreContent({ overview: null, readmeMd, summary })` — the row it had
+  selected held no written columns, so `null` was passed to satisfy the type and
+  became a destructive write. Every nightly run knocked written pages from 100
+  to 20 against a promotion threshold of 70, and `promote.ts` gates on exactly
+  that column: any page not promoted within a few days of being written could
+  never be promoted at all. Nothing errored, and the admin panel reported 29
+  finished pages as unready. Found on 20 Aug by noticing that pages written the
+  same day scored 100 while identical older ones scored 20. **A function that
+  takes a whole record should be given the whole record** — passing a literal
+  `null` to satisfy a type is the tell.
 
 The general question worth asking of any new filter, gate or sort order:
 **which rows does this exclude, and can they ever come back?**
@@ -493,7 +526,7 @@ The general question worth asking of any new filter, gate or sort order:
   but pnpm splits the fragment on `::` and honours a `path:` part, so
   `#path:sub` installs. It was caught only because an upstream RFC asserted the
   opposite and both claims could not be true; reading pnpm's parser suggested
-  it, and a real container install settled it. **49 listings still say no
+  it, and a real container install settled it. **54 listings still say no
   install exists when one does**, the two highest-starred among them. Also
   learned: two of the first three `subpath` values tested pointed at
   directories that do not exist, so that column needs auditing before it can
