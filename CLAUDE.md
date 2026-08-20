@@ -232,9 +232,36 @@ promotion — a page with no writing of its own tops out at 20 against a
 threshold of 70. Never bypass it. Never demote a page as a side effect.
 
 **Keywords come from autocomplete, never from intuition.** English from Google,
-Chinese from Baidu — they return different sets. Head terms: `deepseek harness
-plugins` and `DeepSeek Harness 插件`. Audit the *rendered* page, never the JSX:
-density, canonical and a missing robots tag are all invisible in source.
+Chinese from Baidu — they return different sets. The head term on both sides is
+now the same: Google completes `deepseek harness plugin market`, Baidu completes
+`deepseek harness 插件市场` and `dsh插件商店`. There is no preset, "best
+plugins" or 搭配 long-tail in either language — that is a finding, not a gap to
+invent terms for. Audit the *rendered* page, never the JSX: density, canonical
+and a missing robots tag are all invisible in source.
+
+**The sitemap and the canonical must agree.** Every `/plugins?category=` URL
+sat in the sitemap while the page canonicalised to `/plugins`, so 28 of 166
+entries were instructions we ourselves contradicted — Search Console files them
+under "alternate page with proper canonical", which reads like a non-event and
+means they can never index. A category page is not a duplicate and now points
+at itself; `sort`, `page` and `q` are the same set reordered and still do not.
+**An unknown facet value must not get a self-canonical**, or any string anyone
+appends mints an indexable URL.
+
+**The on-page audit tool cannot count Chinese.** It read `/zh` as 827 words on
+a page holding 5,198 CJK characters, so every density percentage it prints for
+a Chinese page is inflated roughly fivefold — it reported 5.4% where the real
+figure is near 1%. Never delete Chinese copy on its say-so; count characters.
+
+**A count hardcoded into a meta string goes stale silently and is the first
+thing a searcher reads.** Both homepage descriptions and the catalogue title
+advertised "1,000+" to a catalogue of 3,415. They take the number as a
+parameter now.
+
+**Redirect rules that share a `source` with a query `has` can take the route
+down.** Three rules on `source: "/"` with a named capture group returned 500 for
+the landing page itself, not just the parameter URLs. If this is attempted
+again, deploy it alone and check `/` before anything else.
 
 **The Chinese is written, not translated.**
 

@@ -118,6 +118,40 @@ and an uncalibrated one reports the instrument rather than the subject** — for
 three days this project published 117 working plugins as needing manual
 intervention, with no error anywhere to suggest it.
 
+## What Search Console was actually saying
+
+"备用网页（有适当的规范标记）", 32 URLs — the reassuring-sounding bucket. It
+meant **28 of the sitemap's 166 entries were self-contradictory**: every
+`/plugins?category=` facet was submitted for indexing while the page itself
+named `/plugins` as canonical. Google obeys the page. Those 28 could never
+index and each crawl of them learned nothing. Category pages are self-canonical
+now, with a title naming the category; `sort`, `page` and `q` still collapse to
+`/plugins` and stay out of the sitemap.
+
+"已抓取/已发现-尚未编入索引", 42 + 39 — **not** a noindex problem: zero rows are
+at `listed`, so nothing is serving `noindex`. It is a four-day-old site's queue.
+`/plugins` has no CrUX data at all, which says the same thing from the other
+direction.
+
+Also found and fixed: both homepage meta descriptions still advertised
+"1,000+" to a catalogue of 3,415, and detail pages passed the raw summary
+through as the description — the Chinese summaries run to about forty
+characters, so sixty indexed pages shipped a snippet filling a third of the
+space Google offers.
+
+**One measurement to distrust.** The on-page tool reports `/zh` at 5.4% token
+density, which would be stuffing. It counted 827 "words" on a page holding
+5,198 CJK characters; the real figure is near 1%, and most hits sit inside
+per-plugin summaries rather than boilerplate. Its percentages are unusable for
+Chinese.
+
+## Performance, measured 20 Aug
+
+Nothing worth fixing. Homepage LCP 1.0s lab and **1.85s from real users**, CLS
+**0.00**, INP 30ms, render-blocking savings 0ms. `/plugins` LCP 672ms. The only
+third party is GA4 at 19ms of main thread. TTFB is 658ms of the homepage's LCP
+— the Turso round trip — and still inside the 800ms threshold.
+
 ## Sandbox validation
 
 `dsh-plugin-validator` installs a plugin into a fresh profile inside a
