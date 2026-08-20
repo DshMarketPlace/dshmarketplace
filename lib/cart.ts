@@ -19,6 +19,14 @@ export type CartItem = {
   installCheck: string | null;
 };
 
+/**
+ * npm name or `github:owner/repo[#path:sub]`. Both are things `dsh plugin add`
+ * takes, and gating on npm alone dropped two thirds of the catalogue's top
+ * page — most high-star plugins install from source.
+ */
+const TARGET =
+  /^(?:(?:@[a-z0-9][\w.-]*\/)?[a-z0-9][\w.-]*|github:[\w.-]+\/[\w.-]+(?:#[\w.:/-]+)?)$/i;
+
 const KEY = "dshm.cart.v1";
 export const CART_EVENT = "dshm:cart";
 
@@ -40,7 +48,7 @@ export function readCart(): CartItem[] {
         typeof i === "object" &&
         i !== null &&
         typeof (i as CartItem).target === "string" &&
-        /^(?:@[a-z0-9][\w.-]*\/)?[a-z0-9][\w.-]*$/i.test((i as CartItem).target),
+        TARGET.test((i as CartItem).target),
     );
   } catch {
     return [];

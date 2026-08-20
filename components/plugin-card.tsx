@@ -33,6 +33,10 @@ export function PluginCard({
   const href = hasPage ? localePath(locale, `/plugins/${plugin.slug}`) : plugin.repoUrl;
   const flags: string[] = plugin.riskFlags ? JSON.parse(plugin.riskFlags) : [];
   const install = primaryInstall(plugin, locale);
+  // Taken from the resolved command rather than from `npmPackage`, because
+  // most of the highest-starred plugins install from source and gating on npm
+  // left seventeen of the top twenty-four cards with no way into the cart.
+  const cartTarget = install?.cmd.match(/ add (\S+)$/)?.[1] ?? null;
 
   // The catalogue ships a hand-written Chinese description for every entry, so
   // the Chinese card is never a translation of the English one.
@@ -85,11 +89,11 @@ export function PluginCard({
               <CopyCommand command={install.cmd} locale={locale} />
               <div className="flex items-center justify-between gap-2">
                 <InstallCheck status={plugin.installStatus} locale={locale} />
-                {plugin.npmPackage ? (
+                {cartTarget ? (
                   <CartButton
                     locale={locale}
                     item={{
-                      target: plugin.npmPackage,
+                      target: cartTarget,
                       fullName: plugin.fullName,
                       installCheck: plugin.installStatus,
                     }}
