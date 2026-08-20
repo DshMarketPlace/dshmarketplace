@@ -23,13 +23,24 @@ async function main() {
   const flag = process.argv.indexOf("--limit");
   const limit = flag === -1 ? Infinity : Number(process.argv[flag + 1]);
 
+  // `--status <verdict>` re-runs one class of result regardless of how recently
+  // it was checked. The nightly filter is "unchecked or stale", which is right
+  // when the plugins move and wrong when *the sandbox* moves: pnpm 11 turned a
+  // blocked build script into a failed install, so 311 rows were recorded as
+  // needs-approval by an interpreter we had not meant to use. Nothing about
+  // those listings is stale, and every one of them needs running again.
+  const statusFlag = process.argv.indexOf("--status");
+  const status = statusFlag === -1 ? null : process.argv[statusFlag + 1];
+
   const rows = await db
     .select()
     .from(plugins)
     .where(
       and(
         eq(plugins.isArchived, false),
-        or(isNull(plugins.installCheckedAt), lt(plugins.installCheckedAt, cutoff)),
+        status
+          ? eq(plugins.installStatus, status)
+          : or(isNull(plugins.installCheckedAt), lt(plugins.installCheckedAt, cutoff))!,
       ),
     )
     .orderBy(desc(plugins.stars));
