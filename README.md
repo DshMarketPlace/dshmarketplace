@@ -73,8 +73,8 @@ Building your own: add plugins from any card on the site and the bar composes a
 single command. `GET /api/v1/presets` serves the sets as JSON.
 
 **Installed and checked** is the one column no competitor can scrape: it is the
-record of a run, not of a repo. Verdicts are `passed` 2,043,
-`needs-approval` 311, `not-a-layer` 43, `failed` 28, `timeout` 1 — and only the
+record of a run, not of a repo. Verdicts are `passed` 2,158,
+`needs-approval` 194, `not-a-layer` 43, `failed` 28, `timeout` 1 — and only the
 last two are defects. See [Safety](#safety) for what that does and does not
 prove.
 

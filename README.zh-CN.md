@@ -67,7 +67,7 @@ DeepSeek 开源的 agent harness，所有能力都以插件形式提供。上线
 JSON。
 
 **真装过并有结论**是这里唯一爬不走的一列：它记的是一次运行，不是一个仓库。
-结论分布：`passed` 2,043、`needs-approval` 311、`not-a-layer` 43、`failed` 28、
+结论分布：`passed` 2,158、`needs-approval` 194、`not-a-layer` 43、`failed` 28、
 `timeout` 1——**只有最后两种算缺陷**。收录不等于安全审计，见最后一节。
 
 **认证**指作者本人在 [LINUX DO](https://linux.do) 上实名发过这个插件，并且在

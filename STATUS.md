@@ -107,10 +107,16 @@ as root, the container runs as `node`, and the cached pnpm 10 sat in
 to latest and **downloaded pnpm over the network on every single run**, which
 also defeats the image comment's stated reason for baking it in.
 
-Fixed with `COREPACK_HOME`. Consequence: **all 2,426 recorded verdicts were
-produced under pnpm 11**, so the 311 `needs-approval` results are conservative
-rather than wrong — an unknown share of them are `passed` on the pinned
-version. The VPS image needs rebuilding before new runs stop inheriting this.
+Fixed with `COREPACK_HOME`, and the VPS image rebuilt. All 310 remaining
+`needs-approval` rows were re-run on the pinned pnpm 10 and re-applied:
+**117 of them — 38% — were never broken**, and are now `passed`. Nothing was
+discarded to throttling this time. The distribution is now `passed` 2,158,
+`needs-approval` 194, `not-a-layer` 43, `failed` 28, `timeout` 1.
+
+The lesson is not the pin. It is that **a sandbox is a measuring instrument,
+and an uncalibrated one reports the instrument rather than the subject** — for
+three days this project published 117 working plugins as needing manual
+intervention, with no error anywhere to suggest it.
 
 ## Sandbox validation
 
