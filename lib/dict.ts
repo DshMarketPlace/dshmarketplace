@@ -151,9 +151,17 @@ const en = {
     heading: "The DeepSeek Harness plugins people actually install",
     lede: "Ranked by GitHub stars, refreshed on every sync. Star counts say a repository is noticed, not that it is maintained — every card carries its last-push date too.",
     viewAll: (n: string) => `Browse all ${n}`,
-    metaTitle: "Browse DeepSeek Harness Plugins — Search 1,000+ DSH Plugins",
+    // Took the count as a parameter after the hardcoded "1,000+" spent three
+    // days understating a catalogue that had passed 3,400 — and it is the
+    // title Google shows.
+    metaTitle: (n: string) =>
+      `Browse DeepSeek Harness Plugins — Search ${n} DSH Plugins`,
     metaDescription:
-      "Search 1,000+ DeepSeek Harness plugins by capability, category or author. Every listing shows the install command, the licence and what the plugin can reach.",
+      "Search every DeepSeek Harness plugin by capability, category or author. Every listing shows the install command, the licence and what the plugin can reach.",
+    categoryMetaTitle: (name: string) =>
+      `${name} — DeepSeek Harness Plugins | DSH Marketplace`,
+    categoryMetaDescription: (name: string) =>
+      `DeepSeek Harness plugins for ${name.toLowerCase()}, each with the install command that works, the licence, and what the plugin can reach.`,
   },
 
   submitForm: {
@@ -467,9 +475,14 @@ const zh: Dict = {
     heading: "大家真正在装的 DeepSeek Harness 插件",
     lede: "按 GitHub Star 排序，每次同步都会刷新。Star 多只说明有人关注，不代表还有人维护——所以每张卡片都带上了最近推送时间。",
     viewAll: (n: string) => `浏览全部 ${n} 个`,
-    metaTitle: "DeepSeek Harness 插件搜索 — 1,000+ DSH 插件按能力筛选",
+    metaTitle: (n: string) =>
+      `DeepSeek Harness 插件搜索 — ${n} 个 DSH 插件按能力筛选`,
     metaDescription:
-      "按能力、分类或作者搜索 1,000+ 个 DeepSeek Harness 插件。每条记录都标好安装命令、开源协议，以及这个插件能碰到什么。",
+      "按能力、分类或作者搜索 DeepSeek Harness 插件。每条记录都标好安装命令、开源协议，以及这个插件能碰到什么。",
+    categoryMetaTitle: (name: string) =>
+      `${name} — DeepSeek Harness 插件 | DSH Marketplace`,
+    categoryMetaDescription: (name: string) =>
+      `${name}方向的 DeepSeek Harness 插件，每条都带真能跑的安装命令、开源协议，以及这个插件能碰到什么。`,
   },
 
   submitForm: {

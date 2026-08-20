@@ -4,16 +4,15 @@ import {
   CatalogueView,
   type CatalogueParams,
 } from "@/components/views/catalogue-view";
-import { t } from "@/lib/dict";
-import { alternatesFor } from "@/lib/i18n";
+import { catalogueMetadata } from "@/lib/catalogue-meta";
 
-const d = t("zh");
-
-export const metadata: Metadata = {
-  title: d.featured.metaTitle,
-  description: d.featured.metaDescription,
-  alternates: alternatesFor("zh", "/plugins"),
-};
+export async function generateMetadata({
+  searchParams,
+}: {
+  searchParams: Promise<CatalogueParams>;
+}): Promise<Metadata> {
+  return catalogueMetadata("zh", await searchParams);
+}
 
 export const revalidate = 3600;
 

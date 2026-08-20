@@ -28,9 +28,32 @@ const nextConfig = {
   // sitemap under that path, so the old URLs redirect permanently rather than
   // 404 — a 404 on a submitted URL is a wasted crawl and a lost signal.
   async redirects() {
+    // The homepage and the catalogue were one page once, so Google still holds
+    // `/?category=…`, `/?sort=…` and `/?page=…` from that era and re-crawls
+    // them. They currently resolve to the landing page and canonicalise to
+    // `/`, which is correct and still wasteful: every one is a crawl that
+    // learns nothing and a signal that lands nowhere. Sending them to the
+    // catalogue with the parameter intact turns each into the page the visitor
+    // was actually asking for, and moves whatever equity they hold.
+    const legacyCatalogue = ["category", "sort", "page"].flatMap((key) => [
+      {
+        source: "/",
+        has: [{ type: "query", key, value: "(?<v>.*)" }],
+        destination: `/plugins?${key}=:v`,
+        permanent: true,
+      },
+      {
+        source: "/zh",
+        has: [{ type: "query", key, value: "(?<v>.*)" }],
+        destination: `/zh/plugins?${key}=:v`,
+        permanent: true,
+      },
+    ]);
+
     return [
       { source: "/p/:slug", destination: "/plugins/:slug", permanent: true },
       { source: "/zh/p/:slug", destination: "/zh/plugins/:slug", permanent: true },
+      ...legacyCatalogue,
     ];
   },
 };
