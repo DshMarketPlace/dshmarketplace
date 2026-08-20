@@ -53,6 +53,24 @@ look better.
 | Chinese summaries | 1,005 hand-written; the rest are still English-only |
 | Written detail pages | 60, bilingual · 57 illustrated |
 | LINUX DO verified | 7 |
+| Verified presets | 3 sets, installed together before publishing |
+
+### Presets, and why they are a separate claim
+
+Three curated sets at [`/presets`](https://dshmarketplace.dev/presets), each
+installable with `npx dshmarketplace-cli preset <id>`.
+
+A listing's verdict comes from installing *that plugin* into an empty profile.
+A preset says its members work **together**, which fails in ways the parts do
+not — incompatible peers, a build script blocked only once another plugin drags
+in its owner, and cordis rejecting a duplicate loader entry id so a plugin
+installs, reports success and is never registered. So each set is run through
+the sandbox as one install of the whole list, every member has to appear in the
+profile's bundles, and the date, verdict and `dsh`/`pnpm` versions of that run
+are published with it. A set that quietly drops a member is worse than no set.
+
+Building your own: add plugins from any card on the site and the bar composes a
+single command. `GET /api/v1/presets` serves the sets as JSON.
 
 **Installed and checked** is the one column no competitor can scrape: it is the
 record of a run, not of a repo. Verdicts are `passed` 2,043,

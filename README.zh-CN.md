@@ -49,6 +49,22 @@ DeepSeek 开源的 agent harness，所有能力都以插件形式提供。上线
 | 手写中文简介 | 1,005 条，其余暂时只有英文 |
 | 写过的详情页 | 60 个，中英双语 · 57 个配图 |
 | LINUX DO 认证 | 7 个 |
+| 实测过的预设 | 3 套，整套一起装过才发 |
+
+### 预设：这是另一种结论
+
+三套挑好的组合放在 [`/presets`](https://dshmarketplace.dev/zh/presets)，
+`npx dshmarketplace-cli preset <id>` 一条命令装完。
+
+单条记录的结论，来自把*那一个插件*装进空 profile。而预设说的是成员**放在一起**能用，
+这会在零件不会失败的地方失败 —— 两个插件要同一个 peer 的不兼容版本、某个 build script
+只有在别的插件把宿主包拖进来之后才被拦、cordis 拒绝重复的 loader entry id 于是插件装上
+了、报成功了、然后从来没被注册。所以每套都是整个列表当成一次安装跑沙箱，每个成员都必须
+出现在 profile 的 bundles 里，那次运行的日期、结论和 `dsh`/`pnpm` 版本跟着一起发。
+一套预设悄悄漏掉一个成员，比没有这套更糟。
+
+想自己配：站上任意卡片都能加入，底部会拼成一条命令。`GET /api/v1/presets` 把这些发成
+JSON。
 
 **真装过并有结论**是这里唯一爬不走的一列：它记的是一次运行，不是一个仓库。
 结论分布：`passed` 2,043、`needs-approval` 311、`not-a-layer` 43、`failed` 28、

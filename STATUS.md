@@ -17,7 +17,9 @@ Live, seeded, and holding the name. A long way from finished.
 | Python | `pip install dshmarketplace` — [PyPI](https://pypi.org/project/dshmarketplace/) · repo **public, MIT**. Zero dependencies, `dshm` CLI, agent tools, 3.9–3.13 |
 | In-DSH plugin | `dsh plugin --profile web add dshmarketplace-plugin` — [npm](https://www.npmjs.com/package/dshmarketplace-plugin) · repo **public, MIT**. Verified running in a real harness |
 | Userscript | [DSH Plugin Radar](https://greasyfork.org/scripts/591735-dsh-plugin-radar) — marks plugins on GitHub and npm · [repo](https://github.com/DshMarketPlace/dsh-plugin-radar) **public, MIT**. Live on Greasy Fork 17 Aug 2026 |
-| Validator | [dsh-plugin-validator](https://github.com/DshMarketPlace/dsh-plugin-validator) — installs each plugin in a throwaway container on an Oracle ARM box · **public, MIT** |
+| Validator | [dsh-plugin-validator](https://github.com/DshMarketPlace/dsh-plugin-validator) — installs each plugin in a throwaway container on an Oracle ARM box · **public, MIT**. `preset.mjs` validates a whole combination in one install |
+| Presets | 3 curated sets, each installed together in the sandbox before publishing. `/presets`, `/zh/presets`, `GET /api/v1/presets`, `npx dshmarketplace-cli preset <id>` |
+| Cart | Pick plugins anywhere on the site; the bar composes one `npx dshmarketplace-cli add …`. localStorage, no dependency, survives navigation |
 | AI review | Pre-generated bilingual verdict per plugin, grounded in the sandbox result where there is one. Button on every card, section on every detail page |
 | Nightly sync | `.github/workflows/sync.yml` — ten steps, discovery through redeploy, no human in the loop. First completed 18 Aug; two consecutive clean runs since |
 | Docs for a second developer | `CONTRIBUTING.md` (which scripts destroy what), `ops/README.md` (what runs where, the CI credential boundary) |
@@ -32,9 +34,12 @@ package's `pytest -m live` enforces that from the outside: it asserts against
 the real catalogue that every published command survives the install guard,
 carries `--profile`, and agrees with its own `installable` flag.
 
-Two public endpoints, both CORS-open:
+Three public endpoints, all CORS-open:
 
 - `/api/v1/plugins?q=&category=&limit=` — the full record for a plugin.
+- `/api/v1/presets` — the curated sets, joined to live catalogue rows, each
+  carrying the date, verdict and `dsh`/`pnpm` versions of the sandbox run that
+  installed the whole combination.
 - `/api/v1/index` — every listing, five positional columns, one request.
   113 KB, 22 KB gzipped. Exists because a client decorating a page full of
   repositories cannot ask about them one at a time. **Deliberately
@@ -63,6 +68,34 @@ states them so the filter can be checked rather than merely claimed:
 The first pass removed 1,415 rows (754 of them under five commits). Commit
 distribution across 2,024 candidates: 1–4 → 754, 5–9 → 380, 10–24 → 476,
 25–99 → 120, 100+ → 13.
+
+
+## Two rows the harness rule never removed
+
+`IS_A_HOST` in `ingest-topic.ts` rejects a harness by name, and it works — on
+admission. `deepseek-ai/deepseek-harness` (151,755 stars) and
+`sandbaseai/sandbase-harness` predate it and are still in the catalogue at
+`visibility: "hidden"`, which suppresses only the detail page. Browse and the
+API show every tier, so the harness is still the first card, and the cart will
+put it into a command. **The eighth instance of the same bug family**: a
+correct rule pointed at new rows only. Deleting them is a decision, not a
+script.
+
+## The pnpm pin that was not applied
+
+The sandbox image pins pnpm 10 because the version changes the verdict — pnpm
+11 exits non-zero on `ERR_PNPM_IGNORED_BUILDS`, `dsh` reads that as a failed
+install, and a plugin with a blocked build script comes back `needs-approval`
+instead of `passed`. The pin did nothing until 20 Aug: `corepack prepare` runs
+as root, the container runs as `node`, and the cached pnpm 10 sat in
+`/root/.cache` unreadable by the only user that invokes it. Corepack re-resolved
+to latest and **downloaded pnpm over the network on every single run**, which
+also defeats the image comment's stated reason for baking it in.
+
+Fixed with `COREPACK_HOME`. Consequence: **all 2,426 recorded verdicts were
+produced under pnpm 11**, so the 311 `needs-approval` results are conservative
+rather than wrong — an unknown share of them are `passed` on the pinned
+version. The VPS image needs rebuilding before new runs stop inheriting this.
 
 ## Sandbox validation
 

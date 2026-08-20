@@ -89,6 +89,28 @@ has the full set.
 - **A GitHub install runs the project's build script**, which pnpm blocks
   until it is allowlisted. That, not download size, is why npm is offered
   first.
+- **`dsh plugin add` takes several targets at once.** `add a b c` installs and
+  registers all three in one pnpm resolution — verified, five plugins in 3.5s.
+  This is what makes a cart or a preset a single command rather than a loop.
+- **An aggregate package works, through the patch layer, not through
+  `bundles`.** A package whose `dependencies` are plugins and whose own
+  `cordis.patch.yml` inserts a row per dependency activates all of them; only
+  the directly-added package appears in `dsh.profile.bundles`. It works because
+  the profile's `pnpm-workspace.yaml` sets `nodeLinker: hoisted`, so the
+  dependencies resolve from the profile root. `@deepseek-ai/dsh-base` is built
+  this way, and so is `dsh-kit`. A meta-package with no `patch` is not a bundle
+  at all and the harness says so.
+- **The pnpm version changes the verdict.** pnpm 11 exits non-zero on
+  `ERR_PNPM_IGNORED_BUILDS`, `dsh` reads that as a failed install and stops
+  before writing the bundle row, so a plugin with a blocked build script is
+  `needs-approval` on 11 and `passed` on 10. The sandbox pins 10 — and did not
+  actually pin it until 20 Aug, because `corepack prepare` ran as root while
+  the container runs as `node`, so every run silently downloaded latest.
+  **The 2,426 recorded verdicts were produced under 11 and are conservative.**
+- **A blocked build script is fixed by `onlyBuiltDependencies` in the
+  profile's `pnpm-workspace.yaml`**, followed by a reinstall. Verified on
+  `dsh-better-sidebar`: node-pty blocked, allowlisted, node-gyp built it,
+  registered. `dshmarketplace-cli` does this automatically.
 - **Nothing about the plugin API is discoverable by reading.** Boot the
   harness; its errors name the missing field precisely.
 
@@ -107,11 +129,21 @@ package's `pytest -m live` exists for this; run it after any change to
 same reason — `promote.ts` and `sync-github.ts` write without a deploy, so a
 prerendered copy would drift from `/api/v1/plugins`.
 
-**`npm publish` does not work for `dshmarketplace-plugin`.** It is refused with
-a bare 403 from every environment and credential, while a raw `PUT` of the same
-tarball succeeds. That repo publishes via `scripts/publish.mjs`; the full
-investigation and everything it rules out is in its workflow. Do not re-derive
-it, and do not change account settings hoping to fix it.
+**Publishing works; which path depends on the package.** `npm publish` is fine
+for `dshmarketplace-cli` — 0.2.0 and 0.3.0 went out that way on 20 Aug.
+`dshmarketplace-plugin` is refused with a bare 403 and publishes from CI via
+`scripts/publish.mjs`, a raw `PUT` of the same tarball; tag `v<version>` and
+push, or run the workflow. The full investigation is in that workflow's
+comments — **read it before touching this, do not re-derive it.**
+
+The cause named there also governs everything else: `NPM_TOKEN` is a granular
+token with Bypass 2FA, and npm restricts those. Publishing survives;
+**deletions do not** — `npm dist-tag rm` returns `403 Granular access tokens
+that bypass two-factor authentication may not perform this action`, and needs
+`--otp`. The restriction widens in January 2027.
+
+Packages are owned by the npm account `leofenn`. A token from any other account
+403s on everything, which is a different failure wearing the same status code.
 
 ## What gets listed, and what gets claimed
 
@@ -158,6 +190,16 @@ profile does technically work. It still sat at the top of the catalogue telling
 readers to install it, and then the review told them not to. `IS_A_HOST` in
 `ingest-topic.ts` rejects hosts by name.
 
+**And that fix has never applied to the two rows that caused it.** `IS_A_HOST`
+gates admission, so it stops new arrivals and did nothing about
+`deepseek-ai/deepseek-harness` (151,755 stars) and `sandbaseai/sandbase-harness`,
+both still present, both `visibility: "hidden"` — which only suppresses the
+detail page. Browse and the API show every tier, so the harness is still the
+first card in the catalogue, and the cart will happily put it in a command.
+This is the scope bug in its usual costume: a correct rule aimed at the wrong
+set of rows. **Removing them needs a decision, not a script** — that is the one
+class of change this project confirms before running.
+
 **No verdict is publishable unless it is about us being right.** Four separate
 checks now refuse to publish a measurement: a registry 429 (that measures our
 traffic), a command that changed since the run, a probe with no verdict, and a
@@ -172,6 +214,24 @@ code, because that is not a judgement call. Regenerate with `--force` after any
 prompt change.
 
 ## Content rules
+
+**A preset is a stronger claim than a listing, so it needs stronger evidence.**
+A listing's verdict comes from installing that plugin into an empty profile. A
+preset says its members work *together*, and combinations fail where the parts
+do not: incompatible peers, a build script blocked only once another plugin
+drags in its owner, and cordis rejecting a duplicate loader entry id so a
+plugin installs, reports success and is never registered. `preset.mjs` in the
+validator installs the whole list as one command and requires every member to
+appear in the profile's bundles. `lib/presets.ts` carries the date, verdict and
+the `dsh`/`pnpm` versions of that run. **There is no field for "we think this
+is fine", and a set that quietly drops a member is worse than no set** — the
+reader believes they have a capability they do not have.
+
+**The cart offers our command first and the raw one underneath.** `npx
+dshmarketplace-cli add a b c` earns its place by reading the profile the
+harness actually created, skipping what the sandbox could not install, and
+allowlisting a blocked build script. Hiding `dsh plugin add` would be the
+opposite of the point of this catalogue; both are shown, with the reason.
 
 **Visibility is three-tier.** `hidden` generates no route at all; `listed`
 renders `noindex, follow`; `indexed` enters the sitemap. `scoreContent` gates
@@ -232,6 +292,10 @@ pnpm tsx scripts/write-review.ts --limit 10 [--force]
 pnpm tsx scripts/write-content.ts --limit 10 --images
 pnpm tsx scripts/promote.ts --limit 10            # move into the sitemap
 pnpm tsx scripts/repair-content.ts --all          # re-render and rescore after a rule change
+
+# In the validator repo — a preset is verified as a combination, not a list:
+docker run --rm --entrypoint node dsh-validator:latest \
+  /usr/local/bin/preset.mjs "essentials" pkg-a pkg-b pkg-c
 pnpm tsx scripts/build-brand.ts                   # icons + social cards from mark.svg
 ```
 
