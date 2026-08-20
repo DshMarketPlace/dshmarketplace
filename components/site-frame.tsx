@@ -37,6 +37,7 @@ function SiteHeader({ locale }: { locale: Locale }) {
   const d = t(locale);
   const nav = [
     { href: localePath(locale, "/plugins"), label: d.nav.plugins },
+    { href: localePath(locale, "/presets"), label: d.nav.presets },
     { href: `${localePath(locale)}#install`, label: d.nav.install },
     { href: `${localePath(locale)}#how`, label: d.nav.how },
     { href: localePath(locale, "/api-docs"), label: d.nav.api },
@@ -108,6 +109,7 @@ function SiteFooter({ locale }: { locale: Locale }) {
           title={d.footer.directory}
           links={[
             { href: p("/plugins"), label: d.footer.explore },
+            { href: p("/presets"), label: d.nav.presets },
             { href: p("/api-docs"), label: d.footer.api },
             { href: p("/submit"), label: d.nav.submit },
             { href: `${p("/")}#faq`, label: d.footer.faq },

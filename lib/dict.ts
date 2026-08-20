@@ -30,6 +30,7 @@ const en = {
 
   nav: {
     plugins: "Plugins",
+    presets: "Presets",
     install: "Install",
     how: "How it works",
     api: "API",
@@ -66,6 +67,10 @@ const en = {
     installSectionHeading: "Install any plugin",
     installNote:
       "Resolves the plugin, picks npm over a full clone when it can, and hands DSH the right command. No global install.",
+    installPresetLead: "Or install a whole set at once",
+    installPresetNote:
+      "Curated sets, each installed together in a sandbox before it was published — every plugin in one confirmed to register alongside the others, not checked one at a time and assumed to get along.",
+    installPresetLink: "See what is in each set",
     searchPlaceholder: "Search plugins by name, capability or author…",
     searchAction: "Search",
     browse: "Browse the catalogue",
@@ -317,6 +322,7 @@ const zh: Dict = {
 
   nav: {
     plugins: "插件",
+    presets: "预设",
     install: "安装",
     how: "怎么用",
     api: "API",
@@ -353,6 +359,10 @@ const zh: Dict = {
     installSectionHeading: "安装任意插件",
     installNote:
       "自动解析插件来源，能走 npm 就不克隆整个仓库，然后把命令交给 DSH。不用全局安装。",
+    installPresetLead: "或者一次装一整套",
+    installPresetNote:
+      "挑好的组合，每套在发布前都整套装进沙箱验过 —— 套里每个插件都确认能和其他几个一起注册上，不是分开测完再假设它们能相处。",
+    installPresetLink: "看看每套装了什么",
     searchPlaceholder: "搜索插件名称、能力或作者…",
     searchAction: "搜索",
     browse: "浏览全部插件",

@@ -357,6 +357,24 @@ function InstallSection({ locale }: { locale: Locale }) {
         <p className="mt-4 max-w-xl text-sm leading-relaxed text-muted-foreground">
           {d.installNote}
         </p>
+
+        <p className="mt-10 text-sm font-medium">{d.installPresetLead}</p>
+        <CopyCommand
+          size="lg"
+          locale={locale}
+          command="npx dshmarketplace-cli preset essentials"
+          className="mt-2 max-w-xl bg-card"
+        />
+        <p className="mt-4 max-w-xl text-sm leading-relaxed text-muted-foreground">
+          {d.installPresetNote}{" "}
+          <Link
+            href={localePath(locale, "/presets")}
+            className="underline underline-offset-2 hover:text-foreground"
+          >
+            {d.installPresetLink}
+          </Link>
+          .
+        </p>
       </div>
     </section>
   );
