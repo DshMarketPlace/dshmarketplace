@@ -18,6 +18,41 @@ import { getRelatedPlugins } from "@/lib/data";
 import { directory } from "@/directory.config";
 import type { Plugin } from "@/db/schema";
 
+/**
+ * Override display names for specific plugins to improve SEO and CTR.
+ * These are based on GSC data showing keyword mismatch or missing capability hints.
+ */
+const DISPLAY_NAME_OVERRIDES: Record<string, { en: string; zh: string }> = {
+  "zhu1090093659/dsh-web-ui#packages/dsh-web-ui-all": {
+    en: "dsh-web-ui: Web UI Plugin Collection",
+    zh: "dsh-web-ui：Web UI 插件集合",
+  },
+  "omdsh-dev/DSH-better-sidebar": {
+    en: "DSH Better Sidebar: File, Terminal & Git Plugin",
+    zh: "DSH Better Sidebar：文件、终端与 Git 插件",
+  },
+  "omdsh-dev/dsh-genui": {
+    en: "dsh-genui: Interactive UI Components",
+    zh: "dsh-genui：交互式 UI 组件",
+  },
+  "volcengine/OpenViking#examples/dsh-memory-plugin": {
+    en: "OpenViking Memory Plugin",
+    zh: "OpenViking Memory 插件",
+  },
+  "liustack/modlens": {
+    en: "ModLens: Vision & OCR Plugin",
+    zh: "ModLens：视觉与 OCR 插件",
+  },
+};
+
+function getDisplayName(plugin: Plugin, locale: Locale): string {
+  const override = DISPLAY_NAME_OVERRIDES[plugin.fullName];
+  if (override) {
+    return locale === "zh" ? override.zh : override.en;
+  }
+  return plugin.name;
+}
+
 /** The Chinese summary is written by the registry, not machine-translated. */
 export function summaryFor(plugin: Plugin, locale: Locale) {
   return locale === "zh" ? (plugin.summaryZh ?? plugin.summary) : plugin.summary;
@@ -140,7 +175,7 @@ export async function PluginView({
           </nav>
 
           <div className="space-y-2">
-            <h1 className="display text-section">{plugin.name}</h1>
+            <h1 className="display text-section">{getDisplayName(plugin, locale)}</h1>
             <p className="font-mono text-sm text-muted-foreground">
               {plugin.fullName}
             </p>
@@ -389,10 +424,11 @@ export async function PluginView({
 export function pluginMetaFor(plugin: Plugin, locale: Locale) {
   const d = t(locale).plugin;
   const summary = summaryFor(plugin, locale);
+  const displayName = getDisplayName(plugin, locale);
   return {
-    title: d.metaTitle(plugin.name, plugin.owner),
+    title: d.metaTitle(displayName, plugin.owner),
     description: (
-      summary ? `${summary} ${d.metaTail}` : d.metaFallback(plugin.name)
+      summary ? `${summary} ${d.metaTail}` : d.metaFallback(displayName)
     ).slice(0, locale === "zh" ? 78 : 155),
     url: `${directory.baseUrl}${localePath(locale, `/plugins/${plugin.slug}`)}`,
   };
