@@ -137,6 +137,7 @@ export async function CatalogueView({
                 category: undefined,
                 page: "1",
               })}
+              rel="nofollow"
               className={
                 sp.linuxdo === "1"
                   ? "flex shrink-0 items-center gap-1.5 border border-copper bg-copper px-2.5 py-1 text-xs text-paper"
@@ -162,6 +163,7 @@ export async function CatalogueView({
               <Link
                 key={key}
                 href={buildHref(locale, sp, { sort: key, page: "1" })}
+                rel="nofollow"
                 className={
                   sort === key
                     ? "whitespace-nowrap text-foreground underline decoration-copper decoration-2 underline-offset-4"
@@ -193,7 +195,7 @@ export async function CatalogueView({
           {page > 1 ? (
             <Link
               href={buildHref(locale, sp, { page: String(page - 1) })}
-              rel="prev"
+              rel="prev nofollow"
               className="transition-colors hover:text-copper"
             >
               {d.browse.prev}
@@ -207,7 +209,7 @@ export async function CatalogueView({
           {page < totalPages ? (
             <Link
               href={buildHref(locale, sp, { page: String(page + 1) })}
-              rel="next"
+              rel="next nofollow"
               className="transition-colors hover:text-copper"
             >
               {d.browse.next}

@@ -3,4 +3,16 @@ Allow: /
 Disallow: /admin
 Disallow: /api/admin
 
+# Faceted navigation. sort, pagination, search, the LINUX DO toggle and page
+# size only ever reorder or slice a set that already canonicalises elsewhere,
+# so they hold nothing unique to index. Left crawlable, they spread a young
+# domain's crawl budget across thousands of permutations instead of the plugin
+# pages the sitemap actually lists. `?category=<id>` is deliberately NOT blocked
+# — a category is a distinct page, self-canonical and in the sitemap.
+Disallow: /*?*sort=
+Disallow: /*?*page=
+Disallow: /*?*q=
+Disallow: /*?*linuxdo=
+Disallow: /*?*per=
+
 Sitemap: https://dshmarketplace.dev/sitemap.xml
