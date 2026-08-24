@@ -14,6 +14,23 @@ import {
   inArray,
   getTableColumns,
 } from "drizzle-orm";
+import { unstable_cache } from "next/cache";
+
+/**
+ * Every catalogue-wide aggregate below (`count`, `sum(case…)`, `GROUP BY`) is
+ * a full scan SQLite answers by visiting every `is_archived = 0` row — no
+ * index helps. Each is identical for every visitor and only moves when a batch
+ * writes, yet it was recomputed on every catalogue, homepage, api-docs and
+ * `/api/v1/index` hit: 5,077 rows read per scan, half a billion rows a month
+ * out of Turso once the crawlers arrived. Caching turns that into one scan per
+ * window per region. A deploy resets the cache and every nightly ends in one,
+ * so this TTL only bounds staleness for a mid-day write that ships no deploy —
+ * on a header count nobody reads to the minute.
+ */
+const CATALOG_TTL = 900;
+
+/** One tag over every catalogue aggregate, so a write can drop them together. */
+const CATALOG_TAG = "catalog";
 
 /**
  * The long-form text a card never shows.
@@ -88,17 +105,10 @@ function orderFor(sort: SortKey = "stars") {
 }
 
 /**
- * Browse listing. Archived repos are excluded but every visibility tier is
- * shown — `hidden` only means "no detail page of its own", not "not a real
- * plugin". The card decides where to link.
+ * The WHERE for a browse query, shared by the listing and its count so the two
+ * can never disagree about what they are counting.
  */
-export async function getPlugins(params: BrowseParams = {}) {
-  const perPage = PER_PAGE_ALLOWED.includes(params.perPage as never)
-    ? (params.perPage as number)
-    : 24;
-  const page = Math.max(1, params.page ?? 1);
-  const offset = (page - 1) * perPage;
-
+function browseFilters(params: BrowseParams) {
   const filters = [eq(plugins.isArchived, false)];
 
   if (params.category) {
@@ -130,9 +140,64 @@ export async function getPlugins(params: BrowseParams = {}) {
     );
   }
 
-  const where = and(...filters);
+  return filters;
+}
 
-  const [rows, totalRow] = await Promise.all([
+/**
+ * The count behind a browse page's header total, for the crawlable facets — the
+ * whole catalogue, each category, the LINUX DO filter. A bounded set, so it is
+ * cached. A `?q=` search count is a full scan too, but it is robots-disallowed
+ * and human-rare, and caching per distinct query would let probing mint
+ * unbounded cache keys — so {@link browseCount} runs a search live instead.
+ */
+const cachedFacetCount = unstable_cache(
+  async (sig: { category: string; linuxdo: boolean }) => {
+    const where = and(
+      ...browseFilters({
+        category: sig.category || undefined,
+        linuxdo: sig.linuxdo,
+      }),
+    );
+    const [row] = await db
+      .select({ value: count() })
+      .from(plugins)
+      .where(where);
+    return row?.value ?? 0;
+  },
+  ["browse-facet-count"],
+  { revalidate: CATALOG_TTL, tags: [CATALOG_TAG] },
+);
+
+/** Header total for a browse query: cached for facets, live for a search. */
+function browseCount(params: BrowseParams): Promise<number> {
+  if (params.q?.trim()) {
+    return db
+      .select({ value: count() })
+      .from(plugins)
+      .where(and(...browseFilters(params)))
+      .then((rows) => rows[0]?.value ?? 0);
+  }
+  return cachedFacetCount({
+    category: params.category ?? "",
+    linuxdo: Boolean(params.linuxdo),
+  });
+}
+
+/**
+ * Browse listing. Archived repos are excluded but every visibility tier is
+ * shown — `hidden` only means "no detail page of its own", not "not a real
+ * plugin". The card decides where to link.
+ */
+export async function getPlugins(params: BrowseParams = {}) {
+  const perPage = PER_PAGE_ALLOWED.includes(params.perPage as never)
+    ? (params.perPage as number)
+    : 24;
+  const page = Math.max(1, params.page ?? 1);
+  const offset = (page - 1) * perPage;
+
+  const where = and(...browseFilters(params));
+
+  const [rows, total] = await Promise.all([
     db
       .select(listColumns)
       .from(plugins)
@@ -140,10 +205,8 @@ export async function getPlugins(params: BrowseParams = {}) {
       .orderBy(orderFor(params.sort))
       .limit(perPage)
       .offset(offset),
-    db.select({ value: count() }).from(plugins).where(where),
+    browseCount(params),
   ]);
-
-  const total = totalRow[0]?.value ?? 0;
 
   return {
     plugins: rows,
@@ -205,24 +268,35 @@ export async function getRoutablePluginSlugs() {
   return rows.map((r) => r.slug);
 }
 
-export async function getCategoriesWithCounts(): Promise<
-  (Category & { pluginCount: number })[]
-> {
-  const rows = await db
-    .select({
-      category: categories,
-      pluginCount: count(plugins.id),
-    })
-    .from(categories)
-    .leftJoin(
-      plugins,
-      and(eq(plugins.categoryId, categories.id), eq(plugins.isArchived, false)),
-    )
-    .groupBy(categories.id)
-    .orderBy(asc(categories.sortOrder), asc(categories.name));
+/**
+ * Category chips with their live counts — a `GROUP BY` over the whole plugins
+ * table, run on every catalogue render. Cached: the set only changes when a
+ * batch writes. (The `Category` timestamp columns ride along unused; the cache
+ * may return them as strings, which nothing that reads this ever touches.)
+ */
+export const getCategoriesWithCounts = unstable_cache(
+  async (): Promise<(Category & { pluginCount: number })[]> => {
+    const rows = await db
+      .select({
+        category: categories,
+        pluginCount: count(plugins.id),
+      })
+      .from(categories)
+      .leftJoin(
+        plugins,
+        and(
+          eq(plugins.categoryId, categories.id),
+          eq(plugins.isArchived, false),
+        ),
+      )
+      .groupBy(categories.id)
+      .orderBy(asc(categories.sortOrder), asc(categories.name));
 
-  return rows.map((r) => ({ ...r.category, pluginCount: r.pluginCount }));
-}
+    return rows.map((r) => ({ ...r.category, pluginCount: r.pluginCount }));
+  },
+  ["categories-with-counts"],
+  { revalidate: CATALOG_TTL, tags: [CATALOG_TAG] },
+);
 
 export async function getAllCategories(): Promise<Category[]> {
   return db
@@ -265,13 +339,17 @@ export async function getLinuxDoPlugins(limit = 12) {
     .limit(limit);
 }
 
-export async function countLinuxDoPlugins() {
-  const [row] = await db
-    .select({ value: count() })
-    .from(plugins)
-    .where(and(isNotNull(plugins.linuxdoUrl), eq(plugins.isArchived, false)));
-  return row?.value ?? 0;
-}
+export const countLinuxDoPlugins = unstable_cache(
+  async () => {
+    const [row] = await db
+      .select({ value: count() })
+      .from(plugins)
+      .where(and(isNotNull(plugins.linuxdoUrl), eq(plugins.isArchived, false)));
+    return row?.value ?? 0;
+  },
+  ["linuxdo-count"],
+  { revalidate: CATALOG_TTL, tags: [CATALOG_TAG] },
+);
 
 /**
  * Every listing, five columns — the payload behind `/api/v1/index`.
@@ -280,56 +358,81 @@ export async function countLinuxDoPlugins() {
  * per repository, so this exists to be fetched once and cached. Star order so
  * a client that truncates keeps the listings anyone is likely to hit.
  */
-export async function getCatalogueIndex() {
-  return db
-    .select({
-      fullName: plugins.fullName,
-      owner: plugins.owner,
-      repo: plugins.repo,
-      subpath: plugins.subpath,
-      npmPackage: plugins.npmPackage,
-      installKind: plugins.installKind,
-      categoryId: plugins.categoryId,
-      slug: plugins.slug,
-      visibility: plugins.visibility,
-    })
-    .from(plugins)
-    .where(eq(plugins.isArchived, false))
-    .orderBy(desc(plugins.stars));
-}
+export const getCatalogueIndex = unstable_cache(
+  async () => {
+    return db
+      .select({
+        fullName: plugins.fullName,
+        owner: plugins.owner,
+        repo: plugins.repo,
+        subpath: plugins.subpath,
+        npmPackage: plugins.npmPackage,
+        installKind: plugins.installKind,
+        categoryId: plugins.categoryId,
+        slug: plugins.slug,
+        visibility: plugins.visibility,
+      })
+      .from(plugins)
+      .where(eq(plugins.isArchived, false))
+      .orderBy(desc(plugins.stars));
+  },
+  ["catalogue-index"],
+  { revalidate: CATALOG_TTL, tags: [CATALOG_TAG] },
+);
 
-/** Header counters. Real numbers, computed — never hardcoded. */
+/**
+ * Header counters. Real numbers, computed — never hardcoded.
+ *
+ * The scan is cached; the wrapper below rebuilds the `Date` outside the cache,
+ * because `unstable_cache` serialises its result and a `Date` returns as a
+ * string that breaks `stats.lastSynced.toISOString()` at the call site.
+ */
+const getCatalogStatsRaw = unstable_cache(
+  async () => {
+    const [totals] = await db
+      .select({
+        total: count(),
+        indexed: sql<number>`sum(case when ${plugins.visibility} = 'indexed' then 1 else 0 end)`,
+        lastSyncedUnix: sql<number | null>`max(${plugins.syncedAt})`,
+        // Installability from real sandbox runs — the one figure no scraper can
+        // produce. `needs-approval` counts as installable: it installs once a
+        // build script is allowlisted, which `dshmarketplace-cli` does on its own.
+        // `not-a-layer` is excluded from both sides (the package installs but is
+        // not a plugin layer), and an untested row counts toward neither, so the
+        // rate is over what was actually run, not over the whole catalogue.
+        installable: sql<number>`sum(case when ${plugins.installStatus} in ('passed','needs-approval') then 1 else 0 end)`,
+        installTested: sql<number>`sum(case when ${plugins.installStatus} in ('passed','needs-approval','failed','timeout') then 1 else 0 end)`,
+      })
+      .from(plugins)
+      .where(eq(plugins.isArchived, false));
+
+    const installTested = Number(totals?.installTested ?? 0);
+    const installable = Number(totals?.installable ?? 0);
+
+    return {
+      total: totals?.total ?? 0,
+      indexed: Number(totals?.indexed ?? 0),
+      lastSyncedUnix: totals?.lastSyncedUnix ?? null,
+      installTested,
+      // Null, not 0, when nothing has been tested — the UI hides the claim
+      // rather than printing "0% install-verified".
+      installRate: installTested
+        ? Math.round((installable / installTested) * 100)
+        : null,
+    };
+  },
+  ["catalog-stats"],
+  { revalidate: CATALOG_TTL, tags: [CATALOG_TAG] },
+);
+
 export async function getCatalogStats() {
-  const [totals] = await db
-    .select({
-      total: count(),
-      indexed: sql<number>`sum(case when ${plugins.visibility} = 'indexed' then 1 else 0 end)`,
-      lastSynced: sql<number | null>`max(${plugins.syncedAt})`,
-      // Installability from real sandbox runs — the one figure no scraper can
-      // produce. `needs-approval` counts as installable: it installs once a
-      // build script is allowlisted, which `dshmarketplace-cli` does on its own.
-      // `not-a-layer` is excluded from both sides (the package installs but is
-      // not a plugin layer), and an untested row counts toward neither, so the
-      // rate is over what was actually run, not over the whole catalogue.
-      installable: sql<number>`sum(case when ${plugins.installStatus} in ('passed','needs-approval') then 1 else 0 end)`,
-      installTested: sql<number>`sum(case when ${plugins.installStatus} in ('passed','needs-approval','failed','timeout') then 1 else 0 end)`,
-    })
-    .from(plugins)
-    .where(eq(plugins.isArchived, false));
-
-  const installTested = Number(totals?.installTested ?? 0);
-  const installable = Number(totals?.installable ?? 0);
-
+  const s = await getCatalogStatsRaw();
   return {
-    total: totals?.total ?? 0,
-    indexed: Number(totals?.indexed ?? 0),
-    lastSynced: totals?.lastSynced ? new Date(totals.lastSynced * 1000) : null,
-    installTested,
-    // Null, not 0, when nothing has been tested — the UI hides the claim
-    // rather than printing "0% install-verified".
-    installRate: installTested
-      ? Math.round((installable / installTested) * 100)
-      : null,
+    total: s.total,
+    indexed: s.indexed,
+    lastSynced: s.lastSyncedUnix ? new Date(s.lastSyncedUnix * 1000) : null,
+    installTested: s.installTested,
+    installRate: s.installRate,
   };
 }
 
