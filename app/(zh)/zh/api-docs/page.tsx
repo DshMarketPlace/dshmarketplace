@@ -215,6 +215,57 @@ export default async function ApiDocsPage() {
         <strong>一个目录的价值在于它排除了什么。</strong>
       </p>
 
+      <h2 id="install-check">每条记录都实际装过一遍</h2>
+      <p>
+        这是爬虫抄不走的东西。每条安装命令都在一个从没见过这插件的一次性容器里真跑一遍，
+        结果绑定到那条命令上——就是 API 里的 <code>installCheck</code>
+        ，也是每张卡片和详情页上的徽章。仓库里写着能装不算数，真装过才算。
+      </p>
+      <table>
+        <thead>
+          <tr>
+            <th>verdict</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>
+              <code>passed</code>
+            </td>
+            <td>装上了，也注册成了插件，不用动手。</td>
+          </tr>
+          <tr>
+            <td>
+              <code>needs-approval</code>
+            </td>
+            <td>
+              allowlist 一个 build script 就能装上，
+              <code>dshmarketplace-cli</code> 会替你做。算作可装。
+            </td>
+          </tr>
+          <tr>
+            <td>
+              <code>not-a-layer</code>
+            </td>
+            <td>包能装，但没声明插件层——不算失败，也不算插件。不计入可装率。</td>
+          </tr>
+          <tr>
+            <td>
+              <code>failed</code> / <code>timeout</code>
+            </td>
+            <td>没装上。这几个百分点我们直接标出来，省得你自己踩。</td>
+          </tr>
+        </tbody>
+      </table>
+      <p>
+        头牌那句「<em>N% 实测可装</em>」= <code>passed</code> 加{" "}
+        <code>needs-approval</code>，分母是所有真跑过的插件——
+        <code>not-a-layer</code> 和还没测的都不算进两边，所以它是「测过的里面多少能装」，
+        不是对整个目录的断言。verdict 都在锁定的 <code>pnpm&nbsp;10</code> 下跑；旧版
+        pnpm 会把被挡的 build script 当成硬失败，只会把这个数往低了报。
+      </p>
+
       <h2>缓存与合理使用</h2>
       <p>
         响应带 <code>Cache-Control</code>，走 Cloudflare 边缘缓存。没有限流也没有

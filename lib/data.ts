@@ -305,14 +305,31 @@ export async function getCatalogStats() {
       total: count(),
       indexed: sql<number>`sum(case when ${plugins.visibility} = 'indexed' then 1 else 0 end)`,
       lastSynced: sql<number | null>`max(${plugins.syncedAt})`,
+      // Installability from real sandbox runs — the one figure no scraper can
+      // produce. `needs-approval` counts as installable: it installs once a
+      // build script is allowlisted, which `dshmarketplace-cli` does on its own.
+      // `not-a-layer` is excluded from both sides (the package installs but is
+      // not a plugin layer), and an untested row counts toward neither, so the
+      // rate is over what was actually run, not over the whole catalogue.
+      installable: sql<number>`sum(case when ${plugins.installStatus} in ('passed','needs-approval') then 1 else 0 end)`,
+      installTested: sql<number>`sum(case when ${plugins.installStatus} in ('passed','needs-approval','failed','timeout') then 1 else 0 end)`,
     })
     .from(plugins)
     .where(eq(plugins.isArchived, false));
+
+  const installTested = Number(totals?.installTested ?? 0);
+  const installable = Number(totals?.installable ?? 0);
 
   return {
     total: totals?.total ?? 0,
     indexed: Number(totals?.indexed ?? 0),
     lastSynced: totals?.lastSynced ? new Date(totals.lastSynced * 1000) : null,
+    installTested,
+    // Null, not 0, when nothing has been tested — the UI hides the claim
+    // rather than printing "0% install-verified".
+    installRate: installTested
+      ? Math.round((installable / installTested) * 100)
+      : null,
   };
 }
 

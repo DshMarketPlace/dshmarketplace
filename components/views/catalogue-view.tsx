@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Search } from "lucide-react";
+import { CircleCheck, Search } from "lucide-react";
 
 import { PluginCard } from "@/components/plugin-card";
 import { t, type Dict } from "@/lib/dict";
@@ -94,11 +94,21 @@ export async function CatalogueView({
             {activeCategory?.description ?? d.browse.lede}
           </p>
         </div>
-        <p className="tabular text-sm text-muted-foreground">
-          <span className="text-foreground">{total.toLocaleString()}</span>{" "}
-          {d.browse.unit(total === 1)}
-          {sp.q ? d.browse.matching(sp.q) : null}
-        </p>
+        <div className="text-right">
+          <p className="tabular text-sm text-muted-foreground">
+            <span className="text-foreground">{total.toLocaleString()}</span>{" "}
+            {d.browse.unit(total === 1)}
+            {sp.q ? d.browse.matching(sp.q) : null}
+          </p>
+          {/* The unscrapeable signal, kept next to the count: not just how many
+              plugins, but how many we actually installed. */}
+          {stats.installRate != null ? (
+            <p className="mt-1 flex items-center justify-end gap-1.5 text-xs text-copper">
+              <CircleCheck className="h-3 w-3 shrink-0" aria-hidden />
+              {d.browse.installVerified(stats.installRate)}
+            </p>
+          ) : null}
+        </div>
       </div>
 
       <div className="sticky top-14 z-30 -mx-5 border-b border-border bg-background/90 px-5 py-3 backdrop-blur-sm sm:-mx-8 sm:px-8">

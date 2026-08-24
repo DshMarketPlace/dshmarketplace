@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowRight, Search } from "lucide-react";
+import { ArrowRight, CircleCheck, Search } from "lucide-react";
 
 import { PluginCard } from "@/components/plugin-card";
 import { CopyCommand } from "@/components/copy-command";
@@ -203,7 +203,13 @@ function Hero({
   stats,
 }: {
   locale: Locale;
-  stats: { total: number; indexed: number; lastSynced: Date | null };
+  stats: {
+    total: number;
+    indexed: number;
+    lastSynced: Date | null;
+    installTested: number;
+    installRate: number | null;
+  };
 }) {
   const d = t(locale).hero;
 
@@ -279,7 +285,10 @@ function Hero({
 
         <dl className="mt-16 grid grid-cols-2 gap-px border border-border bg-border sm:grid-cols-4">
           <Stat label={d.statPlugins} value={stats.total.toLocaleString()} />
-          <Stat label={d.statCategories} value="14" />
+          <Stat
+            label={d.statTested}
+            value={stats.installTested.toLocaleString()}
+          />
           <Stat label={d.statPages} value={stats.indexed.toLocaleString()} />
           <Stat
             label={d.statSynced}
@@ -290,6 +299,23 @@ function Hero({
             }
           />
         </dl>
+
+        {/* The claim that separates this from a GitHub mirror: we ran the
+            installs. Stated in words, with the tested count and a link to how,
+            so the number is auditable rather than asserted. Hidden when nothing
+            has been tested rather than printing a bare 0%. */}
+        {stats.installRate != null ? (
+          <p className="mt-5 flex flex-wrap items-center justify-center gap-x-2 gap-y-1 text-center text-sm text-muted-foreground">
+            <CircleCheck className="h-4 w-4 shrink-0 text-copper" aria-hidden />
+            <span>{d.installVerifiedLead(stats.installRate, stats.installTested.toLocaleString())}</span>
+            <Link
+              href={`${localePath(locale, "/api-docs")}#install-check`}
+              className="whitespace-nowrap text-copper underline underline-offset-4 transition-colors hover:text-foreground"
+            >
+              {d.installMethodologyCta} ›
+            </Link>
+          </p>
+        ) : null}
       </div>
     </section>
   );

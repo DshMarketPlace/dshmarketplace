@@ -105,8 +105,15 @@ const en = {
     browse: "Browse the catalogue",
     statPlugins: "Plugins indexed",
     statCategories: "Categories",
+    statTested: "Install-tested",
     statPages: "Detail pages live",
     statSynced: "Last sync",
+    // The differentiator, stated plainly: a scraper can copy the repo, but not
+    // the record of installing it. Reads over the plugins actually run, never
+    // the whole catalogue.
+    installVerifiedLead: (rate: number, tested: string) =>
+      `${rate}% of the ${tested} plugins we ran through a throwaway install sandbox actually install`,
+    installMethodologyCta: "How we test",
   },
 
   browse: {
@@ -115,6 +122,7 @@ const en = {
     lede: "Synced from the community registry and the dsh-plugin GitHub topic. Star counts and last-push dates come straight from GitHub.",
     unit: (one: boolean): string => (one ? "plugin" : "plugins"),
     matching: (q: string) => ` matching “${q}”`,
+    installVerified: (rate: number) => `${rate}% install-verified`,
     searchPlaceholder: "Search by name, capability or author…",
     searchLabel: "Search plugins",
     categoriesLabel: "Categories",
@@ -434,8 +442,13 @@ const zh: Dict = {
     browse: "浏览全部插件",
     statPlugins: "已收录插件",
     statCategories: "分类",
+    statTested: "已实测安装",
     statPages: "已上线详情页",
     statSynced: "最近同步",
+    // 差异化的一句话：repo 谁都能爬，但「装过一遍」的记录爬不走。分母只算真跑过的。
+    installVerifiedLead: (rate: number, tested: string) =>
+      `我们把 ${tested} 个插件挨个丢进 sandbox 实装了一遍，${rate}% 装得上`,
+    installMethodologyCta: "怎么测的",
   },
 
   browse: {
@@ -444,6 +457,7 @@ const zh: Dict = {
     lede: "这些 DSH 插件同步自社区精选库和 GitHub 的 dsh-plugin topic。Star 数、最近推送时间直接取自 GitHub。",
     unit: () => "个插件",
     matching: (q: string) => `，匹配「${q}」`,
+    installVerified: (rate: number) => `${rate}% 实测可装`,
     searchPlaceholder: "按名称、能力或作者搜索…",
     searchLabel: "搜索插件",
     categoriesLabel: "分类",

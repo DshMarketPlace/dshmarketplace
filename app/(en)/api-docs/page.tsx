@@ -232,6 +232,65 @@ export default async function ApiDocsPage() {
         what it leaves out.
       </p>
 
+      <h2 id="install-check">Every listing is install-tested</h2>
+      <p>
+        This is the one thing a scraper cannot copy. Each install command is run
+        in a throwaway container that has never seen the plugin, and the result
+        is recorded against that exact command — it is{" "}
+        <code>installCheck</code> on the API and a badge on every card and page.
+        A name in a repository is not evidence that it installs; the run is.
+      </p>
+      <table>
+        <thead>
+          <tr>
+            <th>Verdict</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>
+              <code>passed</code>
+            </td>
+            <td>Installed and registered as a plugin, no intervention.</td>
+          </tr>
+          <tr>
+            <td>
+              <code>needs-approval</code>
+            </td>
+            <td>
+              Installs once a build script is allowlisted, which{" "}
+              <code>dshmarketplace-cli</code> does for you. Counted as
+              installable.
+            </td>
+          </tr>
+          <tr>
+            <td>
+              <code>not-a-layer</code>
+            </td>
+            <td>
+              The package installs but declares no plugin layer — not a failure,
+              not a plugin. Left out of the rate entirely.
+            </td>
+          </tr>
+          <tr>
+            <td>
+              <code>failed</code> / <code>timeout</code>
+            </td>
+            <td>Did not install. The few percent we flag instead of letting you find out.</td>
+          </tr>
+        </tbody>
+      </table>
+      <p>
+        The headline <em>N% install-verified</em> is <code>passed</code> plus{" "}
+        <code>needs-approval</code> over everything actually run —{" "}
+        <code>not-a-layer</code> and untested rows are excluded from both sides,
+        so it is a rate over tested plugins, not a claim about the whole
+        catalogue. Verdicts are produced under a pinned <code>pnpm&nbsp;10</code>;
+        an older pnpm reports a blocked build script as a hard failure, which
+        only understates the number.
+      </p>
+
       <h2>Caching and fair use</h2>
       <p>
         Responses carry <code>Cache-Control</code> and are served from
