@@ -33,7 +33,8 @@ app/(zh)/zh/         Chinese routes — root layout sets lang="zh-Hans"
 components/views/    The actual pages, locale-parameterised, shared by both
 lib/dict.ts          Every visible string, both languages
 lib/i18n.ts          Locale type, path helpers, hreflang, relative dates
-db/schema.ts         plugins, categories, plugin_stats, submissions
+db/schema.ts         plugins, categories, plugin_stats, install_runs,
+                     ingest_rejections, submissions
 scripts/             Author-time jobs: seed, sync, write-content, promote
 ```
 
@@ -64,6 +65,13 @@ Violating any of these breaks the deploy or the data, not just the build.
    work — icons and social cards are declared in `lib/social.ts`.
 6. **An undefined CSS variable invalidates the whole declaration.**
    `--font-cjk` is defined at `:root` for this reason. Do not move it.
+7. **A catalogue-wide aggregate is a full-table scan, and Turso bills rows
+   scanned.** Four uncached aggregates on every list render cost ~500M rows a
+   month once crawlers arrived and blew the free tier. Any `count()`,
+   `sum(case…)` or `GROUP BY` over the plugins table that runs per request must
+   be wrapped in `unstable_cache` with the `catalog` tag — the cached helpers
+   in `lib/data.ts` are the pattern. Never cache a `?q=` search count: the keys
+   are attacker-mintable.
 
 ## DSH itself
 
@@ -182,6 +190,14 @@ repositories, and treating that as a collision retracts working commands.
 **A verdict belongs to the command that was run.** `apply-validations.ts`
 drops any result whose install command no longer matches what the listing
 publishes. A batch takes hours, and the catalogue changes underneath it.
+
+**Verdict history is append-only.** `install_runs` records every verdict the
+catalogue actually publishes, with the command it was about; the plugins table
+keeps only the latest. The apply guards are the history's invariant — a
+throttled or stale result is refused history too, or our outages would sit on
+plugins' timelines. Retraction (`retract-verdicts.ts`) marks `retractedAt`
+instead of deleting: the run happened, we just no longer stand behind it.
+Never write install_runs from anywhere but those two scripts.
 
 **The harness is not a plugin.** `deepseek-ai/deepseek-harness` carries the
 topic and every marker a plugin does, has two orders of magnitude more stars

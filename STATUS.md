@@ -1,4 +1,4 @@
-# Status — 20 August 2026
+# Status — 26 August 2026
 
 Live, seeded, and holding the name. A long way from finished.
 
@@ -8,9 +8,11 @@ Live, seeded, and holding the name. A long way from finished.
 | --- | --- |
 | Site | <https://dshmarketplace.dev> — Next.js 16 on Cloudflare Workers via OpenNext |
 | Languages | English at `/`, Chinese at `/zh` — separate root layouts, bidirectional hreflang |
-| Database | Turso (libSQL, `aws-ap-northeast-1`), 3,420 plugins with GitHub metadata |
-| Detail pages | 60 written bilingually, each with a documentation section; 57 illustrated. All 60 indexed |
-| Install check | 2,426 listings installed in a sandbox; the verdict is printed under the command it is about, and served as `installCheck` |
+| Database | Turso (libSQL, `aws-ap-northeast-1`), 5,425 plugins with GitHub metadata — the topic went 4,700 → 11,701 in ten days and ingest is drinking from it nightly |
+| Detail pages | 90 written bilingually, each with a documentation section; 87 illustrated. All 90 indexed |
+| Install check | 2,961 verdicts from sandbox runs; the verdict is printed under the command it is about, served as `installCheck`, aggregated as the install-verified rate on the homepage and catalogue (99% of tested at launch), and embeddable as `GET /badge/<slug>` |
+| Verdict history | `install_runs`, append-only since 26 Aug — every verdict the catalogue publishes, with the exact command it was about. Retraction marks rows, never deletes them |
+| Daily snapshots | `plugin_stats`, one row per plugin per night since 26 Aug (stars, installs, views) — the table sat empty for a week while the schema promised it |
 | LINUX DO | 7 plugins verified against the thread their author posted |
 | Content pipeline | `write-content.ts` → `promote.ts`. Text on one gateway, images on another |
 | CLI | `npx dshmarketplace-cli` — [npm](https://www.npmjs.com/package/dshmarketplace-cli) · repo **public, MIT** |
@@ -21,7 +23,7 @@ Live, seeded, and holding the name. A long way from finished.
 | Presets | 3 curated sets, each installed together in the sandbox before publishing. `/presets`, `/zh/presets`, `GET /api/v1/presets`, `npx dshmarketplace-cli preset <id>` |
 | Cart | Pick plugins anywhere on the site; the bar composes one `npx dshmarketplace-cli add …`. localStorage, no dependency, survives navigation |
 | AI review | Pre-generated bilingual verdict per plugin, grounded in the sandbox result where there is one. Button on every card, section on every detail page |
-| Nightly sync | `.github/workflows/sync.yml` — ten steps, discovery through redeploy, no human in the loop. First completed 18 Aug; two consecutive clean runs since |
+| Nightly sync | `.github/workflows/sync.yml` — discovery through redeploy, no human in the loop, now including the daily stats snapshot. First completed 18 Aug |
 | Docs for a second developer | `CONTRIBUTING.md` (which scripts destroy what), `ops/README.md` (what runs where, the CI credential boundary) |
 | This repo | **Public, MIT**, history squashed to one commit |
 | Analytics | GA4 `G-R6HWVQVVVB`, all pages |
@@ -49,7 +51,58 @@ Three public endpoints, all CORS-open:
 
 Pages, each in both languages: `/` (hero, catalogue, how-it-works, FAQ),
 `/p/[slug]`, `/api-docs`, `/about`, `/submit`, `/contact`, `/terms`, `/privacy`.
-English-only: `/admin`, `/api/v1/*`.
+English-only: `/admin`, `/api/v1/*`, `/badge/[slug]`.
+
+## What changed, 21–26 Aug
+
+**Turso's free read tier blew at ~500M rows/month, on a 5,000-row table.**
+Turso bills rows *scanned*, and the catalogue-wide aggregates — `count()`,
+`sum(case…)`, the category `GROUP BY` — are full scans no index helps, recomputed
+on every catalogue, homepage, api-docs and `/api/v1/index` render. One catalogue
+view read ~18,000 rows; then Google started crawling. **That is a caching bug,
+not a capacity problem**, and moving to a VPS was considered and rejected — a
+single-region database behind an edge-rendered site adds a round trip to every
+page and only relocates the waste. Fixed by wrapping the aggregates in
+`unstable_cache` (15 min TTL, shared `catalog` tag, backed by the R2 regional
+cache that already served ISR). A catalogue view now reads ~24 rows. A `?q=`
+search count stays live on purpose: it is robots-blocked, and caching per query
+would let anyone mint unbounded cache keys.
+
+**The install-verified rate is surfaced as the headline differentiator** —
+homepage hero, catalogue header, methodology at `/api-docs#install-check` —
+answering the "this is just a GitHub mirror" objection with the one number a
+scraper cannot produce. The definition is deliberate and published: installable
+= `passed` + `needs-approval`, denominator = everything actually run;
+`not-a-layer` and untested rows are excluded from both sides.
+
+**The verdict is embeddable: `GET /badge/<slug>`.** A flat-square SVG in the
+site palette; passed/needs-approval render "verified", everything else "not
+verified" — never a red "failing", because the failed bucket has three times
+been our own fault and a README is someone else's front door. Detail pages
+offer the copyable snippet on the two verdicts a maintainer would want to show.
+
+**Two tables stopped lying by omission.** `plugin_stats` had held zero rows
+since the schema landed — a promise in a schema is not a pipeline — and now
+snapshots nightly. And the plugins table kept only the *latest* verdict while
+the nightly re-checked ~150 listings a night, destroying "installed last month,
+broke this month" as it was produced; `install_runs` (migration 0005) now
+records every published verdict append-only, seeded with the 2,961 the table
+was holding. The apply guards are the history's invariant too: a throttled or
+stale result is refused history, or our outages would sit on plugins' timelines.
+
+**Search Console's remaining buckets were crawl budget, not defects.** The
+facet permutations (`sort`, `page`, `q`, `linuxdo`, `per`) are robots-blocked
+and the filter controls carry `rel="nofollow"`; `?category=` stays crawlable.
+The 备用网页/规范标记 bucket is Google agreeing with our canonicals — do not
+re-validate it.
+
+**The growth bottleneck was named: distribution, not product.** At ~300 GA/day
+the differentiation existed but nobody met it — the org's repos sat at 0–4
+stars. The agreed direction: deepen the run-record moat (history → reliability
+timeline, version matrix, supply-chain diff) and put the data where developers
+already are (badge embeds, weekly data report once snapshots accumulate,
+an MCP server as the sixth surface — next up). Semantic search, accounts and
+new categories were explicitly ruled out.
 
 ## The admission bar, and why it is published
 
@@ -194,8 +247,9 @@ practice for a day. The `sync` job now finishes in about ten minutes.
 
 ```
 discover → README for anything new → refresh metadata → verify every npm claim
-→ re-apply the bar → export unchecked → install in a sandbox → record verdicts
-→ retract the failures that are ours → write reviews → deploy
+→ re-apply the bar → snapshot daily stats → export unchecked → install in a
+sandbox → record verdicts (current state + append-only history) → retract the
+failures that are ours → write reviews → deploy
 ```
 
 **Why it never used to finish, in two layers.** Discovery re-examined every
@@ -417,8 +471,9 @@ What that implies, in order of effort against payoff:
    doubles coverage, one script.
 3. **A leaderboard.** `POST /api/v1/installs` is live and the in-DSH plugin
    reports into it, so `installCount` finally has a source. `plugin_stats`
-   daily snapshots are still not running, so star velocity is not computable
-   yet. The leaderboard page itself does not exist.
+   snapshots run nightly since 26 Aug, so star velocity becomes computable as
+   the days accumulate — the weekly-report generator is planned for ≈2 Sep,
+   when there is a week to diff. The leaderboard page itself does not exist.
 4. ~~**The in-DSH plugin.**~~ **Shipped**, now at `dshmarketplace-plugin@0.1.4`
    and verified in a real harness. `/store` in any session, a Settings →
    Plugins tab, and two agent tools with a bundled skill.
@@ -470,17 +525,26 @@ both languages after every type change.
 
 **Infrastructure**
 
-- Sync is manual (`pnpm tsx scripts/sync-github.ts`). Needs a Worker on a cron
-  trigger, plus the daily promote-ten-pages job that `promoteBatch()` already
-  implements but nothing calls.
 - Search is `LIKE`. Turso is SQLite, so FTS5 with bm25 is available and should
   replace it before the catalogue grows.
-- No R2 incremental cache; ISR revalidation is not backed by anything durable.
 - Admin is read-only. `setVisibility` and `saveOverview` exist as server
-  actions with no UI wired to them.
+  actions with no UI wired to them. An admin write could also
+  `revalidateTag("catalog")` so the cached aggregates refresh immediately
+  instead of on the 15-minute TTL — unwired, and rarely needed since every
+  nightly ends in a deploy, which resets the cache anyway.
+- The validator's probe does not yet emit the `dsh`/`pnpm` versions it ran
+  under, so `install_runs.dshVersion/pnpmVersion` are null — the version
+  compatibility matrix needs a probe change in `dsh-plugin-validator` plus an
+  image rebuild on `oracle`.
 - No `/collections`, no RSS, no newsletter beyond the form.
 - Chinese pages have no Chinese category descriptions — `categories.description`
   is English-only and currently null for every row.
+
+Two lines that used to sit here — "sync is manual" and "no R2 incremental
+cache" — were stale the day they were written down: the nightly has run since
+18 Aug and the R2 cache since the 18 Aug performance pass, both described
+earlier in this same file. A status doc that contradicts itself is worse than
+a short one.
 
 ## Traps already hit
 
@@ -573,6 +637,21 @@ The general question worth asking of any new filter, gate or sort order:
 - **`github:owner/repo#subpath` cannot install a monorepo plugin.** pnpm reads
   everything after `#` as a git ref. 54 listings carried a command that could
   not work; they now explain the alternative instead.
+- **Turso bills rows scanned, not rows returned.** A `count()` or `sum(case…)`
+  over 5,000 rows is a 5,000-row read every time, no index helps, and four such
+  aggregates ran on every render of every list page. Crawlers turned that into
+  ~500M rows a month and blew the free tier. Any new catalogue-wide aggregate
+  must go through `unstable_cache` with the `catalog` tag — see `lib/data.ts`.
+- **A schema promise is not a pipeline.** `plugin_stats` said "daily snapshots"
+  and held zero rows for a week; nothing wrote it, and nothing complained,
+  because an empty table looks exactly like a table nobody queried yet. When a
+  table exists to accumulate history, check that something appends to it — the
+  absence has no error.
+- **Keeping only the latest verdict destroyed history nightly.** The 30-day
+  re-check overwrote ~150 verdicts a night, so "worked last month, broke this
+  month" was erased at the moment it became true. `install_runs` now appends;
+  the fix to both this and the snapshot gap was noticing that data produced by
+  the pipeline was being discarded by the pipeline.
 - **Installing from GitHub needs a build allowlist.** pnpm blocks a git-hosted
   package's `prepare` script until its key is added under `allowBuilds`. This
   is why npm is offered first — not because a tarball beats a clone.

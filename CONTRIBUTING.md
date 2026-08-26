@@ -32,7 +32,10 @@ A review that says "the sandbox saw it fail" outlives the measurement unless
 something deletes it. Clearing only `installStatus` is *worse* than leaving it:
 `write-review.ts` rewrites when `reviewedAt < installCheckedAt`, so a null
 timestamp means the false sentence is never revisited. Use
-`scripts/retract-verdicts.ts`, which clears both.
+`scripts/retract-verdicts.ts`, which clears both — and marks the matching
+`install_runs` row `retractedAt` rather than deleting it. History records that
+the run happened; retraction records that we no longer stand behind it. Never
+delete from `install_runs`.
 
 **3. A gate that refuses to write a bad value does not remove one already written.**
 
@@ -52,11 +55,13 @@ round `null` down to `0`.
 
 **Safe — read-only or additive.**
 `verify-catalog.ts`, `classify-failures.ts` (without `--write-ours`),
-`export-validation-specs.ts`, `build-brand.ts`.
+`export-validation-specs.ts`, `build-brand.ts`, `snapshot-stats.ts`
+(idempotent per day: rerunning replaces today's snapshot, never doubles it).
 
 **Writes the catalogue. Run `--dry` or `--dry-run` first, always.**
 `sync-github.ts`, `ingest-topic.ts`, `repair-npm-claims.ts`,
-`apply-validations.ts`, `write-review.ts`, `repair-reviews.ts`,
+`apply-validations.ts` (also appends to `install_runs` — the append is part of
+the contract, not a side effect), `write-review.ts`, `repair-reviews.ts`,
 `repair-content.ts`, `link-linuxdo.ts`.
 
 **Destructive. Read the file before you run it.**

@@ -10,10 +10,13 @@ before running anything in `scripts/`.
 | The install sandbox | Oracle ARM VPS, ssh alias `oracle` | Called by the two above |
 | One-time backlog drains | The same VPS, `ops/drain-backlog.sh` | A person, deliberately |
 
-**The nightly is the system.** Nine steps, no human: discover → README for
-anything new → refresh metadata → verify every npm claim → re-apply the
-admission bar → export unchecked → install in a sandbox → record verdicts →
-retract the failures that are ours → write reviews → deploy.
+**The nightly is the system.** No human: discover → README for anything new →
+refresh metadata → verify every npm claim → re-apply the admission bar →
+snapshot daily stats → export unchecked → install in a sandbox → record
+verdicts (current state, plus an append into `install_runs`) → retract the
+failures that are ours → write reviews → deploy. The snapshot lives in the
+`sync` job on purpose: `apply` is skipped on nights with nothing to validate,
+and a trend series with holes reads as movement that never happened.
 
 `ops/drain-backlog.sh` is not part of it. It exists for a catch-up the
 nightly's caps would take a fortnight to clear, and it writes to the live
