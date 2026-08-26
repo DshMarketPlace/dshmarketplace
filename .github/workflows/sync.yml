@@ -87,6 +87,13 @@ jobs:
         if: ${{ inputs.prune != 'false' }}
         run: pnpm tsx scripts/prune-topic.ts
 
+      # After the refresh and the prune, so the day's row reflects what the
+      # catalogue actually holds tonight. Lives in this job, not `apply`,
+      # because `apply` is skipped on nights with nothing to validate and a
+      # trend series with holes in it reads as movement that never happened.
+      - name: Snapshot daily stats
+        run: pnpm tsx scripts/snapshot-stats.ts
+
       # Which listings still need running is a database question, so it is
       # answered here, where the credentials already are. The answer crosses
       # to the sandbox as a plain file.
