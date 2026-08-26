@@ -232,6 +232,19 @@ export async function getPluginBySlug(slug: string): Promise<Plugin | null> {
   return rows[0] ?? null;
 }
 
+/**
+ * The two columns the badge endpoint reads — never the 62-column row, which
+ * drags the ~30 KB stored README along for a 20px image.
+ */
+export async function getInstallStatusBySlug(slug: string) {
+  const rows = await db
+    .select({ slug: plugins.slug, installStatus: plugins.installStatus })
+    .from(plugins)
+    .where(eq(plugins.slug, slug))
+    .limit(1);
+  return rows[0] ?? null;
+}
+
 /** Any visibility — used by the admin surface and the public JSON API. */
 export async function getPluginBySlugAnyVisibility(
   slug: string,

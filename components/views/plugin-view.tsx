@@ -275,6 +275,33 @@ export async function PluginView({
                   ? ` ${t(locale).installCheck.checkedAt(checkedAgo)}.`
                   : null}
               </p>
+              {/* Offered only on the two verdicts a maintainer would want to
+                  show. The snippet never localises — a README is one artifact
+                  read from everywhere — and it links to the English page. */}
+              {plugin.installStatus === "passed" ||
+              plugin.installStatus === "needs-approval" ? (
+                <div className="space-y-2 border-t border-border pt-3">
+                  <p className="eyebrow">
+                    {t(locale).installCheck.badgeHeading}
+                  </p>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={`/badge/${plugin.slug}`}
+                    alt={t(locale).installCheck.badgeAlt}
+                    width={130}
+                    height={20}
+                    loading="lazy"
+                    decoding="async"
+                  />
+                  <CopyCommand
+                    command={`[![Install check](${directory.baseUrl}/badge/${plugin.slug})](${directory.baseUrl}/plugins/${plugin.slug})`}
+                    locale={locale}
+                  />
+                  <p className="text-xs leading-relaxed text-ink-faint">
+                    {t(locale).installCheck.badgeNote}
+                  </p>
+                </div>
+              ) : null}
             </div>
           ) : null}
         </section>

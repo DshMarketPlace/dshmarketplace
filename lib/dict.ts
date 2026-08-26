@@ -244,6 +244,10 @@ const en = {
     checkedAt: (when: string) => `Last run ${when}`,
     method:
       "Every command here is run in a throwaway container against a clean profile, and the result is whatever the harness recorded — not a guess from the source.",
+    badgeHeading: "Show it in your README",
+    badgeAlt: "install verified — dshmarketplace",
+    badgeNote:
+      "For maintainers: the badge serves this listing's latest sandbox verdict, so a re-run updates it on its own — and it links readers to the full result here.",
   },
 
   how: {
@@ -570,6 +574,10 @@ const zh: Dict = {
     checkedAt: (when: string) => `最近一次 ${when}`,
     method:
       "这里每条命令都在一次性容器里、对着干净 profile 真跑过，结果取自 harness 自己的记录，不是读源码猜的。",
+    badgeHeading: "挂进你的 README",
+    badgeAlt: "实测可装 — dshmarketplace",
+    badgeNote:
+      "给维护者的：badge 取这条 listing 最近一次 sandbox 实测的结果，重跑之后它自己会变，读者点开就是这页的完整记录。",
   },
 
   how: {
