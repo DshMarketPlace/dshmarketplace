@@ -171,6 +171,41 @@ export const plugins = sqliteTable(
   }),
 );
 
+/**
+ * Every verdict the catalogue has ever published, append-only.
+ *
+ * The plugins table keeps only the latest run, and the nightly re-checks ~150
+ * listings a night — so "installed last month, broke this month" was being
+ * destroyed at the moment it was produced. Rows are keyed by fullName rather
+ * than plugin id because a listing can be deleted (two harness rows were) and
+ * its run record should outlive it.
+ *
+ * A retraction marks the row instead of deleting it: the run happened, we
+ * just no longer stand behind what it said about the plugin.
+ */
+export const installRuns = sqliteTable(
+  "install_runs",
+  {
+    id: integer("id").primaryKey({ autoIncrement: true }),
+    fullName: text("full_name").notNull(),
+    // The exact command this verdict is about. Null only on rows backfilled
+    // from before this table existed — the old columns never stored it.
+    install: text("install"),
+    status: text("status").notNull(),
+    detail: text("detail"),
+    blockedBuilds: text("blocked_builds"),
+    // Null until the probe starts emitting them; the pnpm 10/11 split already
+    // proved the interpreter version changes the verdict.
+    dshVersion: text("dsh_version"),
+    pnpmVersion: text("pnpm_version"),
+    ranAt: integer("ran_at", { mode: "timestamp" }).notNull(),
+    retractedAt: integer("retracted_at", { mode: "timestamp" }),
+  },
+  (t) => ({
+    nameRanIdx: index("install_runs_name_ran_idx").on(t.fullName, t.ranAt),
+  }),
+);
+
 /** Daily snapshots, so "trending" is measured rather than guessed. */
 export const pluginStats = sqliteTable(
   "plugin_stats",

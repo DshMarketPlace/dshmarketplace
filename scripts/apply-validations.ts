@@ -12,7 +12,7 @@ import { readFileSync } from "node:fs";
 import { eq } from "drizzle-orm";
 
 import { db } from "../db/client";
-import { plugins } from "../db/schema";
+import { plugins, installRuns } from "../db/schema";
 import { primaryInstall } from "../lib/install";
 import { persist } from "./lib/persist";
 
@@ -93,6 +93,25 @@ async function main() {
         .where(eq(plugins.fullName, r.fullName)),
     );
     applied += Number(result.rowsAffected ?? 1);
+
+    // The same verdict, appended instead of overwritten. The guards above are
+    // the invariant: install_runs holds every verdict the catalogue actually
+    // published, and none it refused — a throttled run recorded as history
+    // would put our outage back on the plugin's timeline.
+    await persist(() =>
+      db.insert(installRuns).values({
+        fullName: r.fullName,
+        install: r.install ?? null,
+        status: r.status,
+        detail: r.detail ?? null,
+        blockedBuilds: r.blockedBuildScripts?.length
+          ? JSON.stringify(r.blockedBuildScripts)
+          : null,
+        dshVersion: r.dshVersion ?? null,
+        pnpmVersion: r.pnpmVersion ?? null,
+        ranAt: now,
+      }),
+    );
   }
 
   console.log(JSON.stringify(tally, null, 2));

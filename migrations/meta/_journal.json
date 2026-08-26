@@ -36,6 +36,13 @@
       "when": 1787015138749,
       "tag": "0004_clean_valkyrie",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "6",
+      "when": 1787752237983,
+      "tag": "0005_fresh_silvermane",
+      "breakpoints": true
     }
   ]
 }

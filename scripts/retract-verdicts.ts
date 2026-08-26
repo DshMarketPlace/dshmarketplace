@@ -18,10 +18,10 @@
  */
 import "dotenv/config";
 import { readFileSync } from "node:fs";
-import { inArray } from "drizzle-orm";
+import { inArray, sql } from "drizzle-orm";
 
 import { db } from "../db/client";
-import { plugins } from "../db/schema";
+import { plugins, installRuns } from "../db/schema";
 import { persist } from "./lib/persist";
 
 async function main() {
@@ -85,6 +85,27 @@ async function main() {
   console.log(
     `\nretracted ${result.rowsAffected ?? found.size}; they re-enter both queues`,
   );
+
+  // History is marked, never deleted: the run happened, we just no longer
+  // stand behind what it said. Only the newest unretracted run per name — that
+  // is the one whose verdict the plugins table was carrying.
+  if (found.size) {
+    const names = sql.join(
+      [...found].map((n) => sql`${n}`),
+      sql`, `,
+    );
+    const marked = await persist(() =>
+      db.run(sql`
+        update install_runs set retracted_at = unixepoch()
+        where id in (
+          select max(id) from install_runs
+          where full_name in (${names}) and retracted_at is null
+          group by full_name
+        )
+      `),
+    );
+    console.log(`marked ${marked.rowsAffected ?? 0} history rows retracted`);
+  }
 }
 
 main();
