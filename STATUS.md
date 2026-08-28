@@ -1,4 +1,4 @@
-# Status — 26 August 2026
+# Status — 28 August 2026
 
 Live, seeded, and holding the name. A long way from finished.
 
@@ -8,16 +8,16 @@ Live, seeded, and holding the name. A long way from finished.
 | --- | --- |
 | Site | <https://dshmarketplace.dev> — Next.js 16 on Cloudflare Workers via OpenNext |
 | Languages | English at `/`, Chinese at `/zh` — separate root layouts, bidirectional hreflang |
-| Database | Turso (libSQL, `aws-ap-northeast-1`), 5,425 plugins with GitHub metadata — the topic went 4,700 → 11,701 in ten days and ingest is drinking from it nightly |
+| Database | Turso (libSQL, `aws-ap-northeast-1`), 5,749 plugins with GitHub metadata — the topic went 4,700 → 11,701 in ten days and ingest is drinking from it nightly |
 | Detail pages | 90 written bilingually, each with a documentation section; 87 illustrated. All 90 indexed |
-| Install check | 2,961 verdicts from sandbox runs; the verdict is printed under the command it is about, served as `installCheck`, aggregated as the install-verified rate on the homepage and catalogue (99% of tested at launch), and embeddable as `GET /badge/<slug>` |
+| Install check | 3,199 verdicts on live listings (2,854 passed / 253 needs-approval / 36 failed / 1 timeout / 55 not-a-layer); the verdict is printed under the command it is about, served as `installCheck`, filterable as `?installCheck=<verdict>`, aggregated as the install-verified rate on the homepage and catalogue (~99% of tested), and embeddable as `GET /badge/<slug>` |
 | Verdict history | `install_runs`, append-only since 26 Aug — every verdict the catalogue publishes, with the exact command it was about. Retraction marks rows, never deletes them |
 | Daily snapshots | `plugin_stats`, one row per plugin per night since 26 Aug (stars, installs, views) — the table sat empty for a week while the schema promised it |
 | LINUX DO | 7 plugins verified against the thread their author posted |
 | Content pipeline | `write-content.ts` → `promote.ts`. Text on one gateway, images on another |
 | CLI | `npx dshmarketplace-cli` — [npm](https://www.npmjs.com/package/dshmarketplace-cli) · repo **public, MIT** |
 | Python | `pip install dshmarketplace` — [PyPI](https://pypi.org/project/dshmarketplace/) · repo **public, MIT**. Zero dependencies, `dshm` CLI, agent tools, 3.9–3.13 |
-| In-DSH plugin | `dsh plugin --profile web add dshmarketplace-plugin` — [npm](https://www.npmjs.com/package/dshmarketplace-plugin) · repo **public, MIT**. Verified running in a real harness |
+| In-DSH plugin | `dsh plugin --profile web add dshmarketplace-plugin` — [npm](https://www.npmjs.com/package/dshmarketplace-plugin) · repo **public, MIT**. Verified running in a real harness. Since 0.1.6 it lists only sandbox-`passed` plugins and identifies itself with an `X-DSHM-Client` header |
 | Userscript | [DSH Plugin Radar](https://greasyfork.org/scripts/591735-dsh-plugin-radar) — marks plugins on GitHub and npm · [repo](https://github.com/DshMarketPlace/dsh-plugin-radar) **public, MIT**. Live on Greasy Fork 17 Aug 2026 |
 | Validator | [dsh-plugin-validator](https://github.com/DshMarketPlace/dsh-plugin-validator) — installs each plugin in a throwaway container on an Oracle ARM box · **public, MIT**. `preset.mjs` validates a whole combination in one install |
 | Presets | 3 curated sets, each installed together in the sandbox before publishing. `/presets`, `/zh/presets`, `GET /api/v1/presets`, `npx dshmarketplace-cli preset <id>` |
@@ -38,7 +38,9 @@ carries `--profile`, and agrees with its own `installable` flag.
 
 Three public endpoints, all CORS-open:
 
-- `/api/v1/plugins?q=&category=&limit=` — the full record for a plugin.
+- `/api/v1/plugins?q=&category=&limit=&installCheck=` — the full record for a
+  plugin. `installCheck` filters by sandbox verdict and is whitelisted against
+  the closed verdict set; unknown values mean "no filter", never an error.
 - `/api/v1/presets` — the curated sets, joined to live catalogue rows, each
   carrying the date, verdict and `dsh`/`pnpm` versions of the sandbox run that
   installed the whole combination.
@@ -53,7 +55,30 @@ Pages, each in both languages: `/` (hero, catalogue, how-it-works, FAQ),
 `/p/[slug]`, `/api-docs`, `/about`, `/submit`, `/contact`, `/terms`, `/privacy`.
 English-only: `/admin`, `/api/v1/*`, `/badge/[slug]`.
 
-## What changed, 21–26 Aug
+## What changed, 28 Aug
+
+**The user's own store refused every install, and the command it printed was
+correct.** Their profile held `dshmarketplace-plugin` 0.1.1 — installed on
+launch day, pinned by the profile's lockfile ever since — whose safety guard
+accepted only the flagless `dsh plugin add <target>`. The catalogue has emitted
+`--profile web` since hours after 0.1.1 shipped; the tolerant guard went out in
+0.1.4 the same afternoon and healed nobody already installed. **A published
+client version is a frozen contract**: profiles pin it, DSH has no update UI,
+and the fetch carried nothing that said which version was asking, so the server
+could not even see the broken cohort. From 0.1.6 the plugin sends
+`X-DSHM-Client: dshmarketplace-plugin/<version>`.
+
+**The store now lists only sandbox-`passed` plugins** — user's call: a row
+whose install button errors reads as our defect, whatever the verdict string
+says. The API gained `installCheck=<verdict>` (whitelisted against the closed
+verdict set so an arbitrary query string cannot mint facet-count cache keys);
+the store UI and the `dshmarketplace_search` agent tool request
+`installCheck=passed` and drop everything else locally as a fallback. Untested
+rows are hidden too — null is not a pass. `needs-approval` is likewise out of
+the store, because inside the store the allowlist step errors rather than
+guides; those 253 still install via the CLI, which performs the step
+automatically. The full catalogue, verdicts and all, stays on the website.
+The parameter is also the foundation the MCP server will stand on.
 
 **Turso's free read tier blew at ~500M rows/month, on a 5,000-row table.**
 Turso bills rows *scanned*, and the catalogue-wide aggregates — `count()`,
@@ -721,6 +746,15 @@ The general question worth asking of any new filter, gate or sort order:
   session: `awesome-lint … | tail && echo PASS` printed PASS for a command
   whose status was never examined, and the same shape hid a rejected
   `git push`. Capture the status before the pipe, or do not pipe.
+- **Fixing a client on npm fixes nobody who already installed it.** The in-DSH
+  plugin's 0.1.1 guard rejected the `--profile` form; 0.1.4 fixed the guard
+  within hours, and eleven days later 0.1.1 was still running in a profile,
+  refusing every install the API correctly sent — lockfiles pin the version,
+  nothing updates it, and the requests were anonymous so the server could not
+  tell old clients from new. Every shipped version of a client that validates
+  our output is a contract we can never revoke; check the oldest shipped guard
+  before changing an output's shape, and make clients identify themselves
+  (`X-DSHM-Client`, since 0.1.6).
 
 ## Provenance
 

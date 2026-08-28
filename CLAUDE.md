@@ -137,6 +137,19 @@ package's `pytest -m live` exists for this; run it after any change to
 same reason — `promote.ts` and `sync-github.ts` write without a deploy, so a
 prerendered copy would drift from `/api/v1/plugins`.
 
+**Fixing a client does not fix its installed copies.** The in-DSH plugin's
+0.1.1 guard rejected the `--profile` command form; the fix shipped in 0.1.4
+within hours, and eleven days later 0.1.1 was still pinned in a profile
+refusing every install — nothing updates an installed plugin, and the requests
+were anonymous. So: every shipped version of a client that validates our
+output is a contract that cannot be revoked — before changing the shape of
+`install` or anything a client parses, check what the *oldest* published guard
+accepts, not the current one. Clients identify themselves with `X-DSHM-Client`
+from plugin 0.1.6 on. The API's `installCheck` filter (what the store uses to
+list only sandbox-passed plugins) is whitelisted against `INSTALL_VERDICTS`
+in `lib/data.ts` because the value reaches the cached facet count's key —
+constraint 7 applies; keep the set closed.
+
 **Publishing works; which path depends on the package.** `npm publish` is fine
 for `dshmarketplace-cli` — 0.2.0 and 0.3.0 went out that way on 20 Aug.
 `dshmarketplace-plugin` is refused with a bare 403 and publishes from CI via
