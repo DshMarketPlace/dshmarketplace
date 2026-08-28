@@ -94,6 +94,18 @@ export default async function ApiDocsPage() {
           </tr>
           <tr>
             <td>
+              <code>installCheck</code>
+            </td>
+            <td>
+              One verdict from the install-check table below.{" "}
+              <code>installCheck=passed</code> returns only plugins whose
+              command was actually run and worked — what the in-DSH store
+              requests, so nothing it offers can fail to install. Unknown
+              values are ignored rather than erroring.
+            </td>
+          </tr>
+          <tr>
+            <td>
               <code>page</code>
             </td>
             <td>1-based</td>

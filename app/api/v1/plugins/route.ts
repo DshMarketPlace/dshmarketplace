@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 
-import { getPlugins } from "@/lib/data";
+import { getPlugins, INSTALL_VERDICTS, type InstallVerdict } from "@/lib/data";
 import { primaryInstall, installOptions, isInstallable } from "@/lib/install";
 import { directory } from "@/directory.config";
 
@@ -17,9 +17,21 @@ export async function GET(request: Request) {
   const category = url.searchParams.get("category") ?? undefined;
   const limit = Math.min(Number(url.searchParams.get("limit")) || 20, 100);
 
+  // Whitelisted against the closed verdict set before it can influence the
+  // query: this value reaches the cached facet count's key, and an arbitrary
+  // string must never mint a cache entry. Unknown values mean "no filter",
+  // not an error — an older client that never sends it keeps working.
+  const installCheckParam = url.searchParams.get("installCheck") ?? "";
+  const installCheck = (INSTALL_VERDICTS as readonly string[]).includes(
+    installCheckParam,
+  )
+    ? (installCheckParam as InstallVerdict)
+    : undefined;
+
   const { plugins, total } = await getPlugins({
     q,
     category,
+    installCheck,
     sort: "stars",
     page: Number(url.searchParams.get("page")) || 1,
     perPage: limit <= 24 ? 24 : limit <= 48 ? 48 : 96,

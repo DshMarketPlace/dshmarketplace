@@ -91,6 +91,16 @@ export default async function ApiDocsPage() {
           </tr>
           <tr>
             <td>
+              <code>installCheck</code>
+            </td>
+            <td>
+              下方 install-check 表里的某个结论。
+              <code>installCheck=passed</code>{" "}
+              只返回安装命令真跑过且装上了的插件——DSH 里的插件商店就是带着这个参数来取的，所以它摆出来的每一个都装得上。传了不认识的值就当没传，不报错。
+            </td>
+          </tr>
+          <tr>
+            <td>
               <code>page</code>
             </td>
             <td>从 1 开始</td>

@@ -77,9 +77,25 @@ export type PluginCardRow = Omit<Plugin, (typeof LONG_FORM)[number]>;
 
 export type SortKey = "stars" | "updated" | "new" | "name" | "installs";
 
+/**
+ * The sandbox's closed verdict set. Closed matters beyond documentation: the
+ * API whitelists its `installCheck` parameter against this, which is what lets
+ * the cached facet count include the value in its key without letting an
+ * arbitrary query string mint cache entries.
+ */
+export const INSTALL_VERDICTS = [
+  "passed",
+  "needs-approval",
+  "not-a-layer",
+  "failed",
+  "timeout",
+] as const;
+export type InstallVerdict = (typeof INSTALL_VERDICTS)[number];
+
 export type BrowseParams = {
   category?: string;
   linuxdo?: boolean;
+  installCheck?: InstallVerdict;
   sort?: SortKey;
   q?: string;
   page?: number;
@@ -119,6 +135,10 @@ function browseFilters(params: BrowseParams) {
     filters.push(isNotNull(plugins.linuxdoUrl));
   }
 
+  if (params.installCheck) {
+    filters.push(eq(plugins.installStatus, params.installCheck));
+  }
+
   const q = params.q?.trim();
   if (q) {
     const needle = `%${q}%`;
@@ -151,11 +171,14 @@ function browseFilters(params: BrowseParams) {
  * unbounded cache keys — so {@link browseCount} runs a search live instead.
  */
 const cachedFacetCount = unstable_cache(
-  async (sig: { category: string; linuxdo: boolean }) => {
+  async (sig: { category: string; linuxdo: boolean; installCheck: string }) => {
     const where = and(
       ...browseFilters({
         category: sig.category || undefined,
         linuxdo: sig.linuxdo,
+        installCheck: (sig.installCheck || undefined) as
+          | InstallVerdict
+          | undefined,
       }),
     );
     const [row] = await db
@@ -180,6 +203,7 @@ function browseCount(params: BrowseParams): Promise<number> {
   return cachedFacetCount({
     category: params.category ?? "",
     linuxdo: Boolean(params.linuxdo),
+    installCheck: params.installCheck ?? "",
   });
 }
 
