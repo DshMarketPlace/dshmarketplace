@@ -9,7 +9,11 @@ import { Bricolage_Grotesque } from "next/font/google";
 export const display = Bricolage_Grotesque({
   subsets: ["latin"],
   weight: ["600", "700", "800"],
-  display: "swap",
+  // On a throttled mobile connection the late swap moved the entire hero and
+  // stats grid (CLS ~0.15). `optional` keeps the metric-adjusted fallback for
+  // that first slow visit; the preloaded brand face is used whenever it is
+  // available in time and on subsequent visits.
+  display: "optional",
   variable: "--font-display",
 });
 
@@ -17,7 +21,7 @@ export const sans = localFont({
   src: "../app/fonts/GeistVF.woff",
   variable: "--font-sans",
   weight: "100 900",
-  display: "swap",
+  display: "optional",
 });
 
 // Repo names and shell commands are identifiers, not decoration — monospace
@@ -26,7 +30,7 @@ export const mono = localFont({
   src: "../app/fonts/GeistMonoVF.woff",
   variable: "--font-mono",
   weight: "100 900",
-  display: "swap",
+  display: "optional",
 });
 
 export const fontVars = `${sans.variable} ${display.variable} ${mono.variable}`;

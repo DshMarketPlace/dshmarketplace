@@ -254,7 +254,7 @@ export function CategoryChip({
       }
     >
       {label}
-      <span className="tabular opacity-60">{count}</span>
+      <span className="tabular">{count}</span>
     </Link>
   );
 }

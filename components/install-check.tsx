@@ -28,9 +28,13 @@ export function InstallCheck({
   // `not-a-layer` reads as neutral ink rather than copper: the command works,
   // and the only news is which kind of package arrived.
   const shape = {
-    passed: { icon: CircleCheck, label: d.passed, tone: "text-ink-faint" },
+    passed: { icon: CircleCheck, label: d.passed, tone: "text-muted-foreground" },
     "needs-approval": { icon: CircleAlert, label: d.needsApproval, tone: "text-copper" },
-    "not-a-layer": { icon: CircleCheck, label: d.notALayer, tone: "text-ink-faint" },
+    "not-a-layer": {
+      icon: CircleCheck,
+      label: d.notALayer,
+      tone: "text-muted-foreground",
+    },
     failed: { icon: CircleX, label: d.failed, tone: "text-copper" },
     timeout: { icon: Clock, label: d.timeout, tone: "text-copper" },
   }[status ?? ""];

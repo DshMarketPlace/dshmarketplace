@@ -58,7 +58,7 @@ function SiteHeader({ locale }: { locale: Locale }) {
             alt=""
             width={22}
             height={22}
-            className="shrink-0"
+            className="h-[22px] w-[22px] shrink-0"
           />
           <span className="display text-[0.95rem] tracking-tight">
             {directory.name}
@@ -102,7 +102,13 @@ function SiteFooter({ locale }: { locale: Locale }) {
         <div className="space-y-3">
           <div className="flex items-center gap-2.5">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/brand/mark.svg" alt="" width={22} height={22} />
+            <img
+              src="/brand/mark.svg"
+              alt=""
+              width={22}
+              height={22}
+              className="h-[22px] w-[22px] shrink-0"
+            />
             <p className="display text-lg tracking-tight">{directory.name}</p>
           </div>
           <p className="max-w-xs text-sm leading-relaxed text-muted-foreground">
