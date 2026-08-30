@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 
 import { PageShell } from "@/components/page-shell";
 import { CopyCommand } from "@/components/copy-command";
+import { PullRequestSubmission } from "@/components/pull-request-submission";
 import { SubmitForm } from "@/components/submit-form";
 import { alternatesFor } from "@/lib/i18n";
 
@@ -27,6 +28,7 @@ export default function SubmitPage() {
         they are published.
       </p>
       <SubmitForm locale="en" />
+      <PullRequestSubmission locale="en" />
 
       <h2>The faster route: tag your repository</h2>
       <p>
@@ -36,9 +38,8 @@ export default function SubmitPage() {
         DSH plugin market, including the one built into DeepSeek Harness.
       </p>
       <p>
-        On GitHub, open your repository, click the gear beside{" "}
-        <em>About</em>, and add <code>dsh-plugin</code> to Topics. Or from the
-        command line:
+        On GitHub, open your repository, click the gear beside <em>About</em>,
+        and add <code>dsh-plugin</code> to Topics. Or from the command line:
       </p>
       <CopyCommand
         size="lg"
@@ -70,7 +71,7 @@ export default function SubmitPage() {
         </li>
       </ul>
 
-      <h2>Getting into the curated registry</h2>
+      <h2>The separate community registry</h2>
       <p>
         Listings marked as being in the registry passed a review by the
         community project that DeepSeek Harness&apos; built-in plugin market

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 
 import { PageShell } from "@/components/page-shell";
 import { CopyCommand } from "@/components/copy-command";
+import { PullRequestSubmission } from "@/components/pull-request-submission";
 import { SubmitForm } from "@/components/submit-form";
 import { alternatesFor } from "@/lib/i18n";
 
@@ -25,6 +26,7 @@ export default function SubmitPageZh() {
         把仓库地址贴进来，这边会先读一遍它的公开信息给你看——topic、开源协议、描述，以及是不是已经被收录了。提交之后要人工过一遍才会发布。
       </p>
       <SubmitForm locale="zh" />
+      <PullRequestSubmission locale="zh" />
 
       <h2>更快的办法：给仓库打 topic</h2>
       <p>
@@ -66,10 +68,11 @@ export default function SubmitPageZh() {
         </li>
       </ul>
 
-      <h2>怎么进社区精选库</h2>
+      <h2>另一个社区精选库</h2>
       <p>
-        标着「已进入精选库」的记录，是通过了那个社区项目的审核——DeepSeek Harness
-        自带的插件市场就是从那儿装的。那是另一个项目，不归这个站管，去给{" "}
+        标着「已进入精选库」的记录，是通过了另一个社区项目的审核——DeepSeek
+        Harness
+        自带的插件市场就是从那儿装的。那个项目不归本站管理，如需进入，可以去给{" "}
         <a
           href="https://github.com/awesome-dsh-plugin/awesome-dsh-plugin"
           rel="noopener"
