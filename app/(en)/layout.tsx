@@ -18,6 +18,9 @@ export const metadata: Metadata = {
   metadataBase: new URL(directory.baseUrl),
   applicationName: directory.name,
   alternates: alternatesFor("en", "/"),
+  other: {
+    "stackscope-claim": "g03FScl3",
+  },
 
   // Next omits <meta name="robots"> when the value is undefined. Google reads
   // absence as index,follow, so nothing is blocked — but max-snippet and
