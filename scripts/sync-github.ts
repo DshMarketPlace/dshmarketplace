@@ -12,7 +12,7 @@
 import "dotenv/config";
 import { marked } from "marked";
 import sanitizeHtml from "sanitize-html";
-import { eq, asc, desc, isNotNull, isNull } from "drizzle-orm";
+import { eq, asc, desc, isNull } from "drizzle-orm";
 
 import { gh as ghFetch, exhausted } from "./lib/github";
 import { db } from "../db/client";
@@ -227,6 +227,9 @@ async function main() {
   // A newly added plugin needs its README and package.json before it has a
   // page worth showing; re-crawling a thousand repos to get one is wasteful.
   const only = onlyAt === -1 ? null : argv[onlyAt + 1];
+  if (onlyAt !== -1 && (!only || only.startsWith("--"))) {
+    throw new Error("--only requires an owner/repo full name");
+  }
   const limit = Number(argv.find((a) => /^\d+$/.test(a))) || 10_000;
   // The review needs a README and will not write without one, so a listing
   // that has never had one fetched is worth more than one being refreshed for
@@ -247,7 +250,7 @@ async function main() {
     .from(plugins)
     .where(
       only
-        ? isNotNull(plugins.linuxdoUrl)
+        ? eq(plugins.fullName, only)
         : missing
           ? isNull(plugins.readmeMd)
           : undefined,

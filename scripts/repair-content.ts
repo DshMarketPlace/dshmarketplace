@@ -23,7 +23,7 @@ import sanitizeHtml from "sanitize-html";
 import { db } from "../db/client";
 import { plugins } from "../db/schema";
 import { scoreContent } from "../lib/plugin-scoring";
-import { displayName } from "./seed-catalog";
+import { displayName } from "./lib/registry";
 
 /** Kept identical to scripts/sync-github.ts — see the note there. */
 function renderReadme(md: string, owner: string, repo: string) {

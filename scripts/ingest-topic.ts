@@ -29,7 +29,7 @@ import { sql } from "drizzle-orm";
 
 import { db } from "../db/client";
 import { ingestRejections, plugins } from "../db/schema";
-import { displayName } from "./seed-catalog";
+import { displayName } from "./lib/registry";
 import { commitCount as ghCommitCount, exhausted, gh as ghFetch } from "./lib/github";
 
 /** The shared client, with this script's User-Agent already applied. */

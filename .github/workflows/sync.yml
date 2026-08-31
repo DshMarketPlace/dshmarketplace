@@ -43,6 +43,13 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Checkout upstream registry
+        uses: actions/checkout@v4
+        with:
+          repository: awesome-dsh-plugin/awesome-dsh-plugin
+          path: .upstream/awesome-dsh-plugin
+          fetch-depth: 1
+
       - uses: pnpm/action-setup@v4
         with:
           version: 10
@@ -53,6 +60,12 @@ jobs:
           cache: pnpm
 
       - run: pnpm install --frozen-lockfile
+
+      # Reconcile the source registry before GitHub metadata is refreshed.
+      # This intentionally does not apply removals: an upstream checkout or
+      # data incident must not retire the live catalogue automatically.
+      - name: Reconcile upstream registry
+        run: pnpm tsx scripts/sync-registry.ts .upstream/awesome-dsh-plugin
 
       # Discovery walks both topics past the search API's 1,000-result ceiling
       # and admits only what clears the bar. Already-known repositories are
