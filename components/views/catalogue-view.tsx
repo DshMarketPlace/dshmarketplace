@@ -190,7 +190,7 @@ export async function CatalogueView({
       {plugins.length === 0 ? (
         <EmptyState locale={locale} query={sp.q} />
       ) : (
-        <div className="grid gap-px border border-border bg-border sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-px sm:grid-cols-2 lg:grid-cols-3">
           {plugins.map((p) => (
             <PluginCard key={p.id} plugin={p} locale={locale} />
           ))}
