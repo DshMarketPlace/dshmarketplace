@@ -26,6 +26,24 @@
 
 const API = "https://api.github.com";
 
+/** Build a contents endpoint without letting a repository path change the URL. */
+export function repoContentPath(owner: string, repo: string, path: string) {
+  const segments = path.split("/");
+  if (
+    segments.some(
+      (segment) => !segment || segment === "." || segment === "..",
+    )
+  ) {
+    throw new Error(`Invalid repository content path: ${path}`);
+  }
+  const encodedPath = segments.map(encodeURIComponent).join("/");
+
+  return (
+    `/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/contents/` +
+    encodedPath
+  );
+}
+
 /** Longer than this and the step gives up rather than blocking the night. */
 export const MAX_WAIT_MS = 120_000;
 

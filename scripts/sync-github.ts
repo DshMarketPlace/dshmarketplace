@@ -14,13 +14,15 @@ import { marked } from "marked";
 import sanitizeHtml from "sanitize-html";
 import { eq, asc, desc, isNull } from "drizzle-orm";
 
-import { gh as ghFetch, exhausted } from "./lib/github";
+import { gh as ghFetch, exhausted, repoContentPath } from "./lib/github";
 import { db } from "../db/client";
 import { plugins } from "../db/schema";
 import { scoreContent } from "../lib/plugin-scoring";
+import { correctedSummary } from "./lib/summary-corrections";
 
 const TOKEN = process.env.GITHUB_TOKEN;
 const CONCURRENCY = 8;
+const dryRun = process.argv.includes("--dry-run");
 const API = "https://api.github.com";
 
 type Repo = {
@@ -131,6 +133,7 @@ async function syncOne(row: {
   id: number;
   owner: string;
   repo: string;
+  subpath: string | null;
   summary: string | null;
   overview: string | null;
   overviewZh: string | null;
@@ -144,6 +147,7 @@ async function syncOne(row: {
     // listing in the batch, silently, in a run that reports success.
     if (exhausted()) return "skipped";
 
+    if (dryRun) return "gone";
     await db
       .update(plugins)
       .set({ isArchived: true, syncedAt: new Date() })
@@ -154,8 +158,11 @@ async function syncOne(row: {
   const readmeMd =
     (await gh<string>(`/repos/${row.owner}/${row.repo}/readme`, true)) ?? "";
 
+  const packageJson = row.subpath
+    ? `${row.subpath}/package.json`
+    : "package.json";
   const pkgRaw = await gh<string>(
-    `/repos/${row.owner}/${row.repo}/contents/package.json`,
+    repoContentPath(row.owner, row.repo, packageJson),
     true,
   );
 
@@ -179,7 +186,14 @@ async function syncOne(row: {
     ? renderReadme(readmeMd, row.owner, row.repo)
     : null;
 
-  const summary = row.summary ?? repo.description ?? null;
+  if (exhausted()) return "skipped";
+  const fullName = `${row.owner}/${row.repo}${row.subpath ? `#${row.subpath}` : ""}`;
+  const correction = correctedSummary(fullName);
+  const summary = correction.summary ?? row.summary ?? repo.description ?? null;
+  if (dryRun) {
+    console.log(JSON.stringify({ fullName, npmPackage, summary, ...correction }));
+    return "ok";
+  }
 
   await db
     .update(plugins)
@@ -194,10 +208,13 @@ async function syncOne(row: {
       repoCreatedAt: repo.created_at ? new Date(repo.created_at) : null,
       homepageUrl: repo.homepage || null,
       summary,
+      ...correction,
       readmeMd: readmeMd || null,
       readmeHtml,
       npmPackage,
-      installKind: npmPackage ? "npm" : "github",
+      // A repository root is installable through GitHub; a subdirectory is
+      // not. Calling both "github" advertised a command we cannot construct.
+      installKind: npmPackage ? "npm" : row.subpath ? "unknown" : "github",
       riskFlags: JSON.stringify(detectRisks(readmeMd, pkg)),
       // Every field the score is made of, or the sync silently unmakes it.
       // This passed `overview: null` and omitted the other three, so a nightly
@@ -241,6 +258,7 @@ async function main() {
       id: plugins.id,
       owner: plugins.owner,
       repo: plugins.repo,
+      subpath: plugins.subpath,
       summary: plugins.summary,
       overview: plugins.overview,
       overviewZh: plugins.overviewZh,

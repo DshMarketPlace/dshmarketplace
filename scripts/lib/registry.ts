@@ -1,4 +1,5 @@
 import yaml from "js-yaml";
+import { correctedSummary } from "./summary-corrections";
 
 export const CATEGORY_LABELS: Record<string, { en: string; zh: string }> = {
   agi: { en: "Agents & AGI", zh: "智能体与 AGI" },
@@ -187,6 +188,7 @@ export function parseRegistryEntry(raw: string): RegistryPlugin | null {
     repoUrl: "https://github.com/" + owner + "/" + repo,
     summary: descOf(description, "en"),
     summaryZh: descOf(description, "zh"),
+    ...correctedSummary(fullName),
     categoryId,
   };
 }

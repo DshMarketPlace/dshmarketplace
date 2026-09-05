@@ -6,7 +6,8 @@
  * removals require the explicit --apply-removals flag.
  *
  *   pnpm tsx scripts/sync-registry.ts <awesome-dsh-plugin dir> [--dry-run]
- *   pnpm tsx scripts/sync-registry.ts <dir> --only owner/repo [--dry-run]
+ *   pnpm tsx scripts/sync-registry.ts <dir> --only full-name [--dry-run]
+ *   pnpm tsx scripts/sync-registry.ts <dir> --only stale-full-name --apply-removals
  */
 import "dotenv/config";
 import { lstatSync, readFileSync, readdirSync } from "node:fs";
@@ -152,16 +153,13 @@ async function main() {
   const base = argv.find((arg) => !arg.startsWith("--"));
   if (!base) {
     throw new Error(
-      "usage: tsx scripts/sync-registry.ts <awesome-dsh-plugin dir> [--dry-run] [--only owner/repo] [--apply-removals]",
+      "usage: tsx scripts/sync-registry.ts <awesome-dsh-plugin dir> [--dry-run] [--only full-name] [--apply-removals]",
     );
   }
 
   const dryRun = argv.includes("--dry-run");
   const applyRemovals = argv.includes("--apply-removals");
   const only = readArg(argv, "--only");
-  if (only && applyRemovals) {
-    throw new Error("--apply-removals cannot be combined with --only");
-  }
 
   const allEntries = readRegistry(base);
   const upstreamNames = new Set(
@@ -172,9 +170,6 @@ async function main() {
         (entry) => entry.fullName.toLowerCase() === only.toLowerCase(),
       )
     : allEntries;
-  if (only && selectedEntries.length !== 1) {
-    throw new Error(only + " was not found in the registry snapshot");
-  }
 
   const existing = await db
     .select({
@@ -192,6 +187,17 @@ async function main() {
   );
   const existingBySlug = new Map(existing.map((row) => [row.slug, row]));
   const changes: Change[] = [];
+
+  // A missing --only target is an intentional, narrowly scoped removal. This
+  // is the safe way to reconcile one renamed upstream entry without applying
+  // every unrelated removal detected in the same snapshot.
+  if (only && selectedEntries.length === 0) {
+    const row = existingByName.get(only.toLowerCase());
+    if (!row) {
+      throw new Error(only + " was found in neither the registry nor database");
+    }
+    if (row.inRegistry) changes.push({ kind: "remove", row });
+  }
 
   for (const entry of selectedEntries) {
     const row = existingByName.get(entry.fullName.toLowerCase());
