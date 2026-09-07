@@ -223,6 +223,36 @@ density, which would be stuffing. It counted 827 "words" on a page holding
 per-plugin summaries rather than boilerplate. Its percentages are unusable for
 Chinese.
 
+## 7 September 2026 — the impression dip, and a friend link
+
+**Impressions fell ~99% and it was not a penalty.** They peaked at 2,469 on
+18 Aug (two days after first indexing), decayed monotonically for two weeks, and
+reached single digits by 2 Sep — while average position *improved* from ~9.8 to
+6.8. That shape is a fresh-site boost expiring, not a demotion: Manual Actions
+is clean, 257 pages are indexed against a 244-URL sitemap (the whole sitemap is
+in), Googlebot fetches return 200, and the Google status dashboard shows no
+September incident. A penalty is instantaneous and shows in Manual Actions; this
+was the long tail (positions 8–20) being withdrawn, which is exactly why the
+surviving average rose. The discriminator going forward is the indexed count,
+not impressions.
+
+**The recovery lever is not more detail pages.** All 56 impression-bearing
+queries were cross-checked against the 90 written pages: 39 already have one, and
+the write-queue is 10 plugins worth ~73 of 2,083 impressions — visible demand is
+~96% covered (with survivorship bias: it cannot see demand that never ranked).
+Plugin-name queries convert at ~0.3% (`dsh-web-ui` 368→1) because GitHub is the
+natural answer and we rank ~7 as filler; intent queries convert an order of
+magnitude better (`dsh插件市场` 49→8, 16.3%). The levers are intent-word
+coverage and real backlinks, not more name-mirroring pages.
+
+**Friend links: nofollow, noindex, out of the sitemap.** `/links` + `/zh/links`
+reciprocate a dofollow link from `dpharness.com` (a peer DSH directory;
+`deepseek1024.com` is another). The exchange rule: they link us first, verified
+by `curl`, before we publish; our outbound link is `rel="nofollow noopener"`,
+disclosed and agreed; the page is `noindex, follow` and deliberately **not** in
+`app/sitemap.ts`. Reciprocal same-niche links are weak-to-negative for a young
+domain, so this is goodwill and traffic, not an SEO lever.
+
 ## Performance, measured 20 Aug
 
 Nothing worth fixing. Homepage LCP 1.0s lab and **1.85s from real users**, CLS
