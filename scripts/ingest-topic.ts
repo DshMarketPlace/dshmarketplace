@@ -31,6 +31,8 @@ import { db } from "../db/client";
 import { ingestRejections, plugins } from "../db/schema";
 import { displayName } from "./lib/registry";
 import { commitCount as ghCommitCount, exhausted, gh as ghFetch } from "./lib/github";
+import { persist } from "./lib/persist";
+import { topicSlugResolver } from "./lib/topic-slug";
 
 /** The shared client, with this script's User-Agent already applied. */
 const gh = <T,>(path: string, raw = false) =>
@@ -81,6 +83,7 @@ const IS_A_HOST = new Set([
 ]);
 
 type SearchRepo = {
+  id: number;
   full_name: string;
   name: string;
   owner: { login: string };
@@ -219,28 +222,6 @@ function guessCategory(repo: SearchRepo) {
   return null;
 }
 
-const slugify = (fullName: string) =>
-  fullName.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
-
-/**
- * Turso is a network hop, and a run long enough to walk the whole topic will
- * meet a connect timeout eventually. Losing an hour of crawling to one dropped
- * packet is the wrong failure mode — the run is resumable, but only because it
- * gets to finish.
- */
-async function persist(write: () => Promise<unknown>) {
-  for (let attempt = 1; ; attempt++) {
-    try {
-      return await write();
-    } catch (err) {
-      if (attempt >= 4) throw err;
-      const wait = 2000 * attempt;
-      console.warn(`  write failed (${attempt}/3) — retrying in ${wait / 1000}s`);
-      await new Promise((r) => setTimeout(r, wait));
-    }
-  }
-}
-
 async function main() {
   const argv = process.argv.slice(2);
   const dryRun = argv.includes("--dry-run");
@@ -255,8 +236,16 @@ async function main() {
     console.warn("no GITHUB_TOKEN — search is capped at 10 requests/minute\n");
   }
 
+  const listings = await db
+    .select({ fullName: plugins.fullName, slug: plugins.slug })
+    .from(plugins);
+  const resolveSlug = topicSlugResolver(listings, async (fullName) => {
+    const path = fullName.split("/").map(encodeURIComponent).join("/");
+    const repo = await gh<{ id: number }>(`/repos/${path}`);
+    return repo?.id ?? null;
+  });
   const known = new Set(
-    (await db.select({ fullName: plugins.fullName }).from(plugins)).map((r) =>
+    listings.map((r) =>
       r.fullName.split("#")[0].toLowerCase(),
     ),
   );
@@ -350,9 +339,21 @@ async function main() {
           histogram[bucket(commits)] = (histogram[bucket(commits)] ?? 0) + 1;
           if (commits < minCommits) return reject(`under ${minCommits} commits`, true);
 
+          const resolved = await resolveSlug(repo.full_name, repo.id);
+          if (resolved.kind === "existing") {
+            console.log(`  = ${repo.full_name} already listed as ${resolved.listing.fullName}`);
+            return;
+          }
+          if (resolved.kind === "unresolved") {
+            // An unavailable lookup is not proof of a distinct repository.
+            // Leave no persisted rejection, so the next run can try again.
+            console.warn(`  ? ${repo.full_name}: cannot verify slug owner ${resolved.listing.fullName}; deferred`);
+            return;
+          }
+
           admitted++;
           if (dryRun) {
-            console.log(`  + ${repo.full_name} (${verdict.why}, ★${repo.stargazers_count})`);
+            console.log(`  + ${repo.full_name} (${verdict.why}, ★${repo.stargazers_count}, slug: ${resolved.slug})`);
             return;
           }
 
@@ -365,7 +366,7 @@ async function main() {
                 owner: repo.owner.login,
                 repo: repo.name,
                 subpath: null,
-                slug: slugify(fullName),
+                slug: resolved.slug,
                 name: displayName(repo.name, null),
                 repoUrl: `https://github.com/${fullName}`,
                 summary: repo.description,
