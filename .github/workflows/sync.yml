@@ -7,6 +7,9 @@ on:
     - cron: "0 19 * * *"
   workflow_dispatch:
     inputs:
+      discovery_limit:
+        description: "Maximum new candidates to inspect (blank walks all topics)"
+        default: ""
       refresh:
         description: "How many listings to re-read from the GitHub API"
         default: "400"
@@ -74,7 +77,18 @@ jobs:
       # and admits only what clears the bar. Already-known repositories are
       # skipped, so a daily run costs a fraction of the first one.
       - name: Discover new plugins
-        run: pnpm tsx scripts/ingest-topic.ts
+        env:
+          DISCOVERY_LIMIT: ${{ inputs.discovery_limit }}
+        run: |
+          args=()
+          if [[ -n "$DISCOVERY_LIMIT" ]]; then
+            if ! [[ "$DISCOVERY_LIMIT" =~ ^[1-9][0-9]*$ ]]; then
+              echo "discovery_limit must be a positive integer" >&2
+              exit 1
+            fi
+            args+=(--limit "$DISCOVERY_LIMIT")
+          fi
+          pnpm tsx scripts/ingest-topic.ts "${args[@]}"
 
       # A listing that was fine last month can stop being one: the repository
       # goes away, or gets archived. Re-reading the oldest-synced rows first
@@ -100,7 +114,7 @@ jobs:
         run: pnpm tsx scripts/repair-npm-claims.ts
 
       - name: Re-apply the admission bar
-        if: ${{ inputs.prune != 'false' }}
+        if: ${{ github.event_name == 'schedule' || inputs.prune }}
         run: pnpm tsx scripts/prune-topic.ts
 
       # After the refresh and the prune, so the day's row reflects what the

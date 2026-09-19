@@ -270,6 +270,7 @@ async function main() {
   let admitted = 0;
 
   for (const topic of topics) {
+    if (fresh >= limit) break;
     console.log(`topic:${topic}`);
     const queue: SearchRepo[] = [];
 
