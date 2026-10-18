@@ -233,6 +233,9 @@ export const pluginStats = sqliteTable(
   },
   (t) => ({
     pluginDayIdx: index("plugin_stats_plugin_day_idx").on(t.pluginId, t.day),
+    // The trending page reads one day across every plugin; without this that
+    // is a scan of the whole history, which Turso bills row by row.
+    dayIdx: index("plugin_stats_day_idx").on(t.day),
   }),
 );
 

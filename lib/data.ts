@@ -1,5 +1,5 @@
 import { db } from "@/db/client";
-import { plugins, categories, type Plugin, type Category } from "@/db/schema";
+import { plugins, categories, pluginStats, type Plugin, type Category } from "@/db/schema";
 import {
   and,
   asc,
@@ -14,6 +14,7 @@ import {
   inArray,
   getTableColumns,
 } from "drizzle-orm";
+import { alias } from "drizzle-orm/sqlite-core";
 import { unstable_cache } from "next/cache";
 
 /**
@@ -465,6 +466,76 @@ export const getMarketRows = unstable_cache(
   },
   ["market-rows"],
   { revalidate: CATALOG_TTL, tags: [CATALOG_TAG] },
+);
+
+const RANKING_TTL = 6 * 3600;
+const RANK_SIZE = 12;
+
+/** `YYYY-MM-DD` shifted by whole days, in UTC like the snapshots themselves. */
+function shiftDay(day: string, days: number) {
+  const d = new Date(`${day}T00:00:00Z`);
+  d.setUTCDate(d.getUTCDate() + days);
+  return d.toISOString().slice(0, 10);
+}
+
+/**
+ * The /top page: three rankings, each on a signal of its own. Installs are
+ * the ones the in-DSH store reported — a number no scraper has. Rising is
+ * the week's star gain from the nightly snapshots. Verified is stars among
+ * plugins that installed on the dsh people run now. Snapshots move once a
+ * night, so this is cached for hours, not minutes.
+ */
+export const getRankings = unstable_cache(
+  async () => {
+    const [{ latest } = { latest: null }] = await db
+      .select({ latest: sql<string | null>`max(${pluginStats.day})` })
+      .from(pluginStats);
+
+    const installed = await db
+      .select({ ...listColumns, metric: plugins.installCount })
+      .from(plugins)
+      .where(and(eq(plugins.isArchived, false), sql`${plugins.installCount} > 0`))
+      .orderBy(desc(plugins.installCount))
+      .limit(RANK_SIZE);
+
+    const verified = await db
+      .select({ ...listColumns, metric: plugins.stars })
+      .from(plugins)
+      .where(
+        and(
+          eq(plugins.isArchived, false),
+          isNotNull(plugins.installDshVersion),
+          or(
+            eq(plugins.installStatus, "passed"),
+            sql`${plugins.installStatus} = 'incompatible' and json_extract(${plugins.installFallback}, '$.status') = 'passed'`,
+          ),
+        ),
+      )
+      .orderBy(desc(plugins.stars))
+      .limit(RANK_SIZE);
+
+    let rising: (PluginCardRow & { metric: number })[] = [];
+    if (latest) {
+      const now = alias(pluginStats, "now");
+      const before = alias(pluginStats, "before");
+      const gain = sql<number>`${now.stars} - ${before.stars}`;
+      rising = await db
+        .select({ ...listColumns, metric: gain })
+        .from(now)
+        .innerJoin(
+          before,
+          and(eq(before.pluginId, now.pluginId), eq(before.day, shiftDay(latest, -7))),
+        )
+        .innerJoin(plugins, eq(plugins.id, now.pluginId))
+        .where(and(eq(now.day, latest), eq(plugins.isArchived, false), sql`${gain} > 0`))
+        .orderBy(desc(gain))
+        .limit(RANK_SIZE);
+    }
+
+    return { day: latest, installed, rising, verified };
+  },
+  ["rankings"],
+  { revalidate: RANKING_TTL, tags: [CATALOG_TAG] },
 );
 
 /**

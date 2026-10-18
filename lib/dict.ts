@@ -63,6 +63,8 @@ const en = {
 
   nav: {
     plugins: "Plugins",
+    top: "Top",
+    menu: "Menu",
     presets: "Presets",
     install: "Install",
     how: "How it works",
@@ -76,6 +78,7 @@ const en = {
     directory: "Directory",
     explore: "Explore plugins",
     api: "Public API",
+    installFailed: "Install failed?",
     faq: "FAQ",
     project: "Project",
     about: "About",
@@ -370,6 +373,26 @@ const en = {
     kindSkill: "Agent skill",
   },
 
+  top: {
+    eyebrow: "Rankings",
+    title: "The best DeepSeek Harness plugins, by what people install",
+    lede: "Three rankings, each on a signal of its own: installs reported from inside DeepSeek Harness, this week's star gain, and stars among the plugins that installed in our sandbox on the version people run now.",
+    installedHeading: "Most installed through dshmarketplace",
+    installedNote:
+      "Counted each time someone installs from the dshmarketplace store inside DeepSeek Harness. Stars measure attention; this measures use.",
+    installedMetric: (n: number) => `${n.toLocaleString("en")} installs`,
+    risingHeading: "Rising this week",
+    risingNote: (from: string, to: string) =>
+      `GitHub stars gained between the nightly snapshots of ${from} and ${to}.`,
+    risingMetric: (n: number) => `+${n.toLocaleString("en")} ★ this week`,
+    verifiedHeading: (dsh: string) => `Most-starred plugins that install on DeepSeek Harness ${dsh}`,
+    verifiedNote:
+      "Each one installed in a throwaway sandbox on that version — or an older release of it did, which dshmarketplace-cli picks for you.",
+    verifiedMetric: (n: number) => `★ ${n.toLocaleString("en")}`,
+    empty: "Not enough data for this one yet.",
+    rank: (i: number) => `#${i}`,
+  },
+
   refusals: {
     plugin: "Plugin",
     needs: "Latest release needs dsh",
@@ -441,6 +464,8 @@ const zh: Dict = {
 
   nav: {
     plugins: "插件",
+    top: "排行",
+    menu: "菜单",
     presets: "预设",
     install: "安装",
     how: "怎么用",
@@ -454,6 +479,7 @@ const zh: Dict = {
     directory: "索引",
     explore: "浏览插件",
     api: "公开 API",
+    installFailed: "装不上？",
     faq: "常见问题",
     project: "项目",
     about: "关于",
@@ -729,6 +755,25 @@ const zh: Dict = {
     kindGithub: "GitHub 源码",
     kindBundle: "DSH 插件包",
     kindSkill: "Agent 技能包",
+  },
+
+  top: {
+    eyebrow: "排行",
+    title: "DeepSeek Harness 插件推荐：看大家实际装了什么",
+    lede: "三个榜，各看一种信号：DeepSeek Harness 里实际发生的安装、这一周涨的 Star，以及在大家现在用的版本上、我们 sandbox 实测装得上的插件里谁的 Star 最多。",
+    installedHeading: "通过 dshmarketplace 安装最多",
+    installedNote:
+      "每次有人在 DeepSeek Harness 里从 dshmarketplace 商店装插件就记一次。Star 量的是关注度，这个量的是真用。",
+    installedMetric: (n: number) => `${n.toLocaleString("zh")} 次安装`,
+    risingHeading: "本周涨得最快",
+    risingNote: (from: string, to: string) => `${from} 到 ${to} 两次夜间快照之间新增的 GitHub Star。`,
+    risingMetric: (n: number) => `本周 +${n.toLocaleString("zh")} ★`,
+    verifiedHeading: (dsh: string) => `在 DeepSeek Harness ${dsh} 上装得上、Star 最多的插件`,
+    verifiedNote:
+      "每一个都在这个版本的一次性 sandbox 里装上过——或者它的某个旧版装上过，dshmarketplace-cli 会替你挑那一版。",
+    verifiedMetric: (n: number) => `★ ${n.toLocaleString("zh")}`,
+    empty: "这一榜的数据还不够。",
+    rank: (i: number) => `#${i}`,
   },
 
   refusals: {

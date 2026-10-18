@@ -42,9 +42,9 @@ function SiteHeader({ locale }: { locale: Locale }) {
   const d = t(locale);
   const nav = [
     { href: localePath(locale, "/plugins"), label: d.nav.plugins },
+    { href: localePath(locale, "/top"), label: d.nav.top },
     { href: localePath(locale, "/presets"), label: d.nav.presets },
     { href: `${localePath(locale)}#install`, label: d.nav.install },
-    { href: `${localePath(locale)}#how`, label: d.nav.how },
     { href: localePath(locale, "/api-docs"), label: d.nav.api },
   ];
 
@@ -86,6 +86,27 @@ function SiteHeader({ locale }: { locale: Locale }) {
           </Link>
           <LanguageSwitch locale={locale} />
           <ThemeToggle />
+          {/* Below `sm` the nav row is hidden, and for a long time phones
+              reached Presets only through the footer. A disclosure needs no
+              client JavaScript, which keeps the header a server component. */}
+          <details className="group relative sm:hidden">
+            <summary className="flex h-8 cursor-pointer list-none items-center border border-border px-2.5 text-xs text-muted-foreground transition-colors hover:text-foreground [&::-webkit-details-marker]:hidden">
+              {d.nav.menu}
+            </summary>
+            <nav className="absolute right-0 top-10 z-50 flex w-52 flex-col border border-border bg-background py-1 text-sm">
+              {[...nav, { href: localePath(locale, "/submit"), label: d.nav.submit }].map(
+                (item) => (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    className="px-4 py-2.5 text-muted-foreground transition-colors hover:bg-paper-sunken hover:text-foreground"
+                  >
+                    {item.label}
+                  </Link>
+                ),
+              )}
+            </nav>
+          </details>
         </div>
       </div>
     </header>
@@ -120,7 +141,9 @@ function SiteFooter({ locale }: { locale: Locale }) {
           title={d.footer.directory}
           links={[
             { href: p("/plugins"), label: d.footer.explore },
+            { href: p("/top"), label: d.nav.top },
             { href: p("/presets"), label: d.nav.presets },
+            { href: p("/install-failed"), label: d.footer.installFailed },
             { href: p("/api-docs"), label: d.footer.api },
             { href: p("/submit"), label: d.nav.submit },
             { href: `${p("/")}#faq`, label: d.footer.faq },

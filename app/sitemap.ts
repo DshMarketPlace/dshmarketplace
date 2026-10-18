@@ -44,7 +44,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   // competing directory cannot copy without running the installs.
   // `install-failed` answers the search people make right after DeepSeek
   // Harness 0.2 refuses a plugin, with the releases our sandbox installed.
-  const DOC_PAGES = ["api-docs", "presets", "install-failed"];
+  // `top` ranks on installs and verdicts, which a scraper has neither of.
+  const DOC_PAGES = ["api-docs", "presets", "install-failed", "top"];
 
   return [
     ...entry("/", { lastModified: now, changeFrequency: "daily", priority: 1 }),
