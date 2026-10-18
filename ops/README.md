@@ -41,17 +41,30 @@ needs. Never add `env:` to `validate`.
 
 **GitHub Actions** holds `TURSO_DATABASE_URL`, `TURSO_AUTH_TOKEN`,
 `REVIEW_API_BASE`, `REVIEW_API_KEY`, `CLOUDFLARE_API_TOKEN`. The GitHub API
-calls use the default `GITHUB_TOKEN`, which is capped at **1,000 requests an
-hour** — an order of magnitude below a personal token, and the reason the first
-scheduled run never finished.
+calls use `SYNC_GITHUB_TOKEN` when it is set and the default `GITHUB_TOKEN`
+otherwise — and as of 18 Oct 2026 it is **not set**. The default is capped at
+**1,000 requests an hour** per repository, shared by every job in the run: the
+sync job spends it, and until `64c9d1d` the validate job's checkout of the
+validator then died on "API rate limit exceeded for installation". A
+fine-grained token with public-repository read access fixes the rest.
 
 **The VPS (`oracle`)** runs the user's real production services alongside ours.
 Keep container limits modest and never take the box down.
 
 ```
-~/dsh-validator/        a checkout of DshMarketPlace/dsh-plugin-validator
 ~/dshm/dshmarketplace/  a checkout of this repo, with .env (chmod 600)
+~/dshm/overnight/       18 Oct backlog run: v/ (validator clone), specs.jsonl,
+                        results.jsonl, run.log; image dshm-probe:overnight
+~/dshm/compat-0.2/      dsh-version experiments: dshm-compat:{latest,next}
+                        and dshm-probe:{latest,next}, one per npm dist-tag
 ```
+
+`~/dsh-validator` no longer exists on the box (found gone on 18 Oct 2026);
+the nightly runs the validator in Actions, and a long backlog run clones it
+fresh from GitHub, as `~/dshm/overnight/run.sh` does. Build one image per
+dsh dist-tag by rewriting the Dockerfile's `npm install -g @deepseek-ai/dsh`
+to `@deepseek-ai/dsh@<tag>` — `preset.mjs` and the probe then answer "does
+this install on the release people get from `latest`, and on `next`".
 
 `~/dsh-validator` **must stay a git checkout.** It spent a day as a loose copy
 of the files, which meant a probe fix in the repo did not exist on the machine

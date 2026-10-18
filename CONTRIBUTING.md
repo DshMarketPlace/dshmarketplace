@@ -56,12 +56,15 @@ round `null` down to `0`.
 **Safe — read-only or additive.**
 `verify-catalog.ts`, `classify-failures.ts` (without `--write-ours`),
 `export-validation-specs.ts`, `build-brand.ts`, `snapshot-stats.ts`
-(idempotent per day: rerunning replaces today's snapshot, never doubles it).
+(idempotent per day: rerunning replaces today's snapshot, never doubles it),
+`weekly-report.ts` (prints a post; it curates nothing, so read it before it
+goes anywhere).
 
 **Writes the catalogue. Run `--dry` or `--dry-run` first, always.**
 `sync-github.ts`, `ingest-topic.ts`, `repair-npm-claims.ts`,
 `apply-validations.ts` (also appends to `install_runs` — the append is part of
-the contract, not a side effect), `write-review.ts`, `repair-reviews.ts`,
+the contract, not a side effect, so applying the same result file twice
+doubles history; apply a growing file in deltas), `write-review.ts`, `repair-reviews.ts`,
 `repair-content.ts`, `link-linuxdo.ts`.
 
 **Destructive. Read the file before you run it.**

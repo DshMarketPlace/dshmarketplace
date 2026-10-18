@@ -1,4 +1,4 @@
-# Status — 28 August 2026
+# Status — 18 October 2026
 
 Live, seeded, and holding the name. A long way from finished.
 
@@ -8,26 +8,29 @@ Live, seeded, and holding the name. A long way from finished.
 | --- | --- |
 | Site | <https://dshmarketplace.dev> — Next.js 16 on Cloudflare Workers via OpenNext |
 | Languages | English at `/`, Chinese at `/zh` — separate root layouts, bidirectional hreflang |
-| Database | Turso (libSQL, `aws-ap-northeast-1`), 5,749 plugins with GitHub metadata — the topic went 4,700 → 11,701 in ten days and ingest is drinking from it nightly |
-| Detail pages | 90 written bilingually, each with a documentation section; 87 illustrated. All 90 indexed |
-| Install check | 3,199 verdicts on live listings (2,854 passed / 253 needs-approval / 36 failed / 1 timeout / 55 not-a-layer); the verdict is printed under the command it is about, served as `installCheck`, filterable as `?installCheck=<verdict>`, aggregated as the install-verified rate on the homepage and catalogue (~99% of tested), and embeddable as `GET /badge/<slug>` |
+| Database | Turso (libSQL, `aws-ap-northeast-1`), ~12,000 plugins with GitHub metadata; ingest adds 100–600 a night. 345 rows sit on renamed or transferred repository names whose new name is also listed — see 18 Oct |
+| Detail pages | 90 written bilingually, each with a documentation section; 87 illustrated. All 90 indexed. None written since 24 Aug: the text gateway in `.dev.vars` stopped answering — a new one is needed before `write-content.ts` can run |
+| Install check | Every verdict now names the dsh it ran on (`install_dsh_version`), and `incompatible` joined the verdict set for dsh 0.2's refusal, with the older release that installed instead (`install_fallback`). The 0.1-era verdicts are being re-run on dsh 0.2.0-rc.2 — see 18 Oct. Served as `installCheck` / `installCheckDsh` / `installFallback`, filterable as `?installCheck=<verdict>`, aggregated as the install-verified rate (now over dsh-versioned verdicts only, hidden below 200), embeddable as `GET /badge/<slug>` |
 | Verdict history | `install_runs`, append-only since 26 Aug — every verdict the catalogue publishes, with the exact command it was about. Retraction marks rows, never deletes them |
-| Daily snapshots | `plugin_stats`, one row per plugin per night since 26 Aug (stars, installs, views) — the table sat empty for a week while the schema promised it |
+| Daily snapshots | `plugin_stats`, one row per plugin per night since 26 Aug (stars, installs, views), indexed on `day` since 18 Oct. Feeds `/top` and `scripts/weekly-report.ts` |
 | LINUX DO | 7 plugins verified against the thread their author posted |
 | Content pipeline | `write-content.ts` → `promote.ts`. Text on one gateway, images on another |
-| CLI | `npx dshmarketplace-cli` — [npm](https://www.npmjs.com/package/dshmarketplace-cli) · repo **public, MIT** |
+| CLI | `npx dshmarketplace-cli` — [npm](https://www.npmjs.com/package/dshmarketplace-cli) · repo **public, MIT**. 0.4.0 (18 Oct) reads `dsh --version` and installs the newest release the local dsh accepts, by the harness's own rule; `name@version` pins |
 | Python | `pip install dshmarketplace` — [PyPI](https://pypi.org/project/dshmarketplace/) · repo **public, MIT**. Zero dependencies, `dshm` CLI, agent tools, 3.9–3.13 |
 | In-DSH plugin | `dsh plugin --profile web add dshmarketplace-plugin` — [npm](https://www.npmjs.com/package/dshmarketplace-plugin) · repo **public, MIT**. Verified running in a real harness. Since 0.1.6 it lists only sandbox-`passed` plugins and identifies itself with an `X-DSHM-Client` header. **0.1.7 (28 Aug) is the floor**: every earlier version's `tools/pre-execute` listener returned `undefined` into the host's waterfall, which on dsh 0.1.0-rc.6 fails *every* tool call in the session — the store plugin was breaking Bash |
 | Userscript | [DSH Plugin Radar](https://greasyfork.org/scripts/591735-dsh-plugin-radar) — marks plugins on GitHub and npm · [repo](https://github.com/DshMarketPlace/dsh-plugin-radar) **public, MIT**. Live on Greasy Fork 17 Aug 2026 |
 | Validator | [dsh-plugin-validator](https://github.com/DshMarketPlace/dsh-plugin-validator) — installs each plugin in a throwaway container on an Oracle ARM box · **public, MIT**. `preset.mjs` validates a whole combination in one install |
-| Presets | 3 curated sets, each installed together in the sandbox before publishing. `/presets`, `/zh/presets`, `GET /api/v1/presets`, `npx dshmarketplace-cli preset <id>` |
+| Presets | 3 curated sets, each installed together in the sandbox before publishing — re-verified 18 Oct on dsh 0.2.0-rc.2 and 0.2.1-rc.2; `power` pins `dsh-better-sidebar@0.26.1`. `/presets`, `/zh/presets`, `GET /api/v1/presets`, `npx dshmarketplace-cli preset <id>` |
 | Cart | Pick plugins anywhere on the site; the bar composes one `npx dshmarketplace-cli add …`. localStorage, no dependency, survives navigation |
-| AI review | Pre-generated bilingual verdict per plugin, grounded in the sandbox result where there is one. Button on every card, section on every detail page |
+| AI review | Pre-generated bilingual verdict per plugin, grounded in the sandbox result where there is one. **Stopped 23 Sep**: the review gateway answers 503 and the nightly step stays green. 2,552 of ~12,000 have one |
 | Nightly sync | `.github/workflows/sync.yml` — discovery through redeploy, no human in the loop, now including the daily stats snapshot. First completed 18 Aug |
 | Docs for a second developer | `CONTRIBUTING.md` (which scripts destroy what), `ops/README.md` (what runs where, the CI credential boundary) |
 | This repo | **Public, MIT**, history squashed to one commit |
 | Analytics | GA4 `G-R6HWVQVVVB`, all pages |
 | Launch | [LINUX DO thread](https://linux.do/t/topic/2765838), 17 Aug 2026 |
+| MCP server | `https://dshmarketplace.dev/mcp` — stateless Streamable HTTP, five read-only tools, hand-rolled (no SDK in the Worker). Since 18 Oct |
+| Plugin index | `https://dshmarketplace.dev/market/index.json` — DSH 0.2.1's format 1 for its Discover tab: only releases the sandbox installed, with `engines.dsh`. Checked with the harness's own `parseMarketIndex`. Since 18 Oct |
+| Rankings, guide | `/top` (installs, star gain, verified-by-stars) and `/install-failed` (dsh 0.2's refusal, with measured fallbacks), both languages, in the sitemap |
 
 **Five surfaces, one API.** The site, the npm CLI, the Python package, the
 in-DSH plugin and the userscript all read the same endpoints, so a listing
@@ -54,6 +57,82 @@ Three public endpoints, all CORS-open:
 Pages, each in both languages: `/` (hero, catalogue, how-it-works, FAQ),
 `/p/[slug]`, `/api-docs`, `/about`, `/submit`, `/contact`, `/terms`, `/privacy`.
 English-only: `/admin`, `/api/v1/*`, `/badge/[slug]`.
+
+## What changed, 18 Oct
+
+**DeepSeek Harness 0.2 changed what "installs" means, and the nightly hid it
+for three weeks.** dsh 0.2.0-rc.1 (28 Sep, npm `latest` as 0.2.0-rc.2 from 29
+Sep) refuses, before installing anything, a plugin whose `engines.dsh` — or,
+without one, any `@deepseek-ai/dsh*` peer range — does not cover the running
+version; a multi-target `add a b c` is refused whole. The validator image
+installs unpinned `@deepseek-ai/dsh`, so it moved to 0.2 by itself. The probe
+had no branch for the refusal, so it landed in "installed but not
+registered"; `classify-failures` called that unexplained, `retract-verdicts`
+undid it, and the same high-starred rows topped the next night's 150 again —
+724 refusals in ten days, 721 retracted, untested listings at 6,949 of 12,084,
+while the homepage still said 99% from dsh 0.1 runs. The workflow was green
+throughout. The `power` preset installed nothing on `latest`:
+`dsh-better-sidebar@0.28.0` needs `^0.2.1-rc.1`.
+
+What changed, all verified in a real dsh 0.2.0-rc.2 / 0.2.1-rc.2 sandbox:
+
+- **Probe** (validator `04b6034`, `fd36de5`): `incompatible` with `requires`
+  and a `fallback` — the newest release the harness accepts, installed into
+  a second fresh profile; every verdict stamped `dshVersion` / `pnpmVersion`;
+  dsh 0.2's diagnostics file read in (it no longer prints pnpm's output on
+  failure, which blinded every error-code branch); named causes for an
+  unpublished package, `catalog:` dependencies, a rejected
+  `cordis.patch.yml`, and pnpm killed by the sandbox ceiling (`error`, no
+  verdict). Passed installs report `installed: { name, version, publishedAt,
+  engines }`.
+- **Schema** (0006–0008, applied by hand like 0005): `install_dsh_version`,
+  `install_fallback`, `verified_release`; an index on `plugin_stats(day)`.
+- **Export** re-runs a verdict once npm `latest` for `@deepseek-ai/dsh` moves
+  past the dsh it ran on, and every verdict with no dsh at all.
+- **CLI 0.4.0** fits each npm target to `dsh --version` by the harness's own
+  rule (`semver.satisfies` with `includePrerelease`, `engines.dsh` deciding
+  alone), hand-rolled and held to node-semver 7.8.5 over 58,815 checks.
+- **Site**: the verdict, its dsh, the fallback command and a link to
+  `/install-failed` on every page; the headline rate counts only
+  dsh-versioned verdicts; presets re-verified and `power` pinned.
+
+**A backlog run on oracle re-validated the top 4,000 by stars overnight**
+(`~/dshm/overnight`, image `dshm-probe:overnight` built from GitHub, 2 × 0.8
+CPU because the same box runs the user's API gateway and its nightly
+`pg_dump`). Results are applied by hand in deltas (`/tmp/dshm-apply-delta.sh`
+on the Mac) — `apply-validations` writes history rows, so applying one file
+twice would duplicate them.
+
+**Two full-table reads were one socket away from failing.**
+`export-validation-specs` and `apply-validations` both `select()`-ed every
+column of every plugin to compute install commands; at ~12,000 rows with the
+stored README that is >100 MB, and Turso closed the socket 127 MB in. Both now
+select the five columns `primaryInstall` reads.
+
+**New surfaces**: `/mcp` (MCP server), `/market/index.json` (DSH Discover
+index), `/top`, `/install-failed`, a header menu below `sm`, and
+`scripts/weekly-report.ts` for a post the user curates before publishing.
+
+**Found, not fixed — each is the user's call:**
+
+- **Renamed repositories are listed twice.** GraphQL over all 11,743 stored
+  repos: 367 now resolve to another `nameWithOwner`, 339 of whose new name is
+  also listed — 345 rows, 10 of them indexed pages on the old name. Sync never
+  canonicalises a redirect. Merging needs slug redirects; deleting needs a
+  yes.
+- **The catalogue and the in-DSH store carry a jailbreak plugin.**
+  `Minglink/dsh-infinite-gen-*` describes itself as a "DeepSeek 专用破甲插件"
+  appending an unconditional-obedience system prompt; it was installed 81
+  times through the store in the week to 17 Oct. Others advertise keyless
+  "free" DeepSeek/Kimi access or call themselves reverse-engineering tools.
+  The admission bar has no content rule.
+- **No `SYNC_GITHUB_TOKEN` secret exists**, so the nightly runs on the
+  1,000-requests/hour built-in token; `64c9d1d` stopped the validate job dying
+  on it, but the sync job still spends it.
+- **Both content gateways are dead** (text: timeouts; review: 503).
+- `/top`'s "rising" inherits a monorepo's stars for a subpath plugin
+  (Tencent WeKnora +5,810), and its "most installed" leads with
+  `dsh-market/dsh-market`, a competing store.
 
 ## What changed, 28 Aug
 
@@ -785,6 +864,23 @@ The general question worth asking of any new filter, gate or sort order:
   our output is a contract we can never revoke; check the oldest shipped guard
   before changing an output's shape, and make clients identify themselves
   (`X-DSHM-Client`, since 0.1.6).
+
+- **`unstable_cache` hands back strings where it was given Dates.** It
+  serialises its result; a card row's timestamps return as ISO strings and
+  `relativeTime` calls `.getTime()` on them. A cold cache hides it — the first
+  build of `/top` passed and the second failed. Revive after the cache
+  (`reviveDates` in `lib/data.ts`), as `getCatalogStats` does.
+- **`git add -A components lib` commits the untracked share-dialog work.**
+  `components/share-dialog.tsx` and `lib/share.ts` still sit untracked and
+  still break the build; `30a51c5` swept them up and its deploy failed until
+  `d398860` untracked them. Stage files by name.
+- **The sandbox's dsh is whatever npm says `latest` is that night.** That is
+  the point — verdicts should be about what people install — but it means the
+  harness can change underneath the probe. When the "not registered" bucket
+  grows, read the log lines before believing the bucket.
+- **dsh 0.2 prints only a path when pnpm fails.** The pnpm output, with every
+  `ERR_PNPM_*` code the probe matches, is in
+  `<profile>/.plugin-manager/logs/operation-*/pnpm.log`.
 
 ## Provenance
 

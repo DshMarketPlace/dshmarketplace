@@ -71,7 +71,11 @@ Violating any of these breaks the deploy or the data, not just the build.
    `sum(case…)` or `GROUP BY` over the plugins table that runs per request must
    be wrapped in `unstable_cache` with the `catalog` tag — the cached helpers
    in `lib/data.ts` are the pattern. Never cache a `?q=` search count: the keys
-   are attacker-mintable.
+   are attacker-mintable. A cached result comes back JSON-serialised: revive
+   its Dates (`reviveDates`), or the second render crashes where the first,
+   on a cold cache, passed. And a script that needs a few columns of every
+   row must select those columns — the full row carries the stored README,
+   and ~12,000 of them is past what Turso will send in one response.
 
 ## DSH itself
 
@@ -119,6 +123,25 @@ has the full set.
   profile's `pnpm-workspace.yaml`**, followed by a reinstall. Verified on
   `dsh-better-sidebar`: node-pty blocked, allowlisted, node-gyp built it,
   registered. `dshmarketplace-cli` does this automatically.
+- **From 0.2 the harness refuses plugins built for another version of it.**
+  Before installing anything it checks `engines.dsh`, or without one every
+  `@deepseek-ai/dsh*` peer range, with `semver.satisfies(…, {
+  includePrerelease: true })`, and refuses the whole multi-target `add` over
+  one miss (`packages/boot/app-boot/src/plugin-compatibility.ts` upstream).
+  So **a verdict is about a dsh version**, and every one now says which
+  (`install_dsh_version`); `incompatible` is a verdict, not a failure, and
+  usually an older release installs (`install_fallback`). The sandbox
+  follows npm `latest`, and the exporter re-runs verdicts when it moves.
+  `dshmarketplace-cli` ≥ 0.4.0 fits releases to the local dsh by the same
+  rule; its `src/compat.js` and the validator's `compat.mjs` are one file.
+- **dsh 0.2 hides pnpm's output on failure** behind a diagnostics path; the
+  probe reads the file. Any new error-code branch must match `install.text`,
+  not the printed output.
+- **dsh 0.2.1 browses third-party plugin indexes** (Discover tab, format 1,
+  `docs/user/guide/plugin-market.md` upstream). `/market/index.json` is ours;
+  validate any change to it with `parseMarketIndex` from
+  `@deepseek-ai/dsh-plugin-market-index` — the harness rejects the whole
+  index over one malformed value.
 - **Nothing about the plugin API is discoverable by reading.** Boot the
   harness; its errors name the missing field precisely.
 
