@@ -468,6 +468,68 @@ export const getMarketRows = unstable_cache(
 );
 
 /**
+ * What dsh 0.2's compatibility gate has done to the catalogue, for the page
+ * people land on after "installation rejected". Counts are over verdicts that
+ * name the dsh they ran on; the rows are the most-starred refusals, with the
+ * release that installed instead where there was one.
+ */
+export const getRefusalReport = unstable_cache(
+  async () => {
+    const onDsh = isNotNull(plugins.installDshVersion);
+    const [[totals], rows] = await Promise.all([
+      db
+        .select({
+          dsh: sql<string | null>`max(${plugins.installDshVersion})`,
+          tested: sql<number>`sum(case when ${plugins.installStatus} in ('passed','needs-approval','failed','timeout','incompatible') then 1 else 0 end)`,
+          refused: sql<number>`sum(case when ${plugins.installStatus} = 'incompatible' then 1 else 0 end)`,
+          rescued: sql<number>`sum(case when ${plugins.installStatus} = 'incompatible' and json_extract(${plugins.installFallback}, '$.status') = 'passed' then 1 else 0 end)`,
+        })
+        .from(plugins)
+        .where(and(eq(plugins.isArchived, false), onDsh)),
+      db
+        .select({
+          fullName: plugins.fullName,
+          name: plugins.name,
+          slug: plugins.slug,
+          visibility: plugins.visibility,
+          repoUrl: plugins.repoUrl,
+          npmPackage: plugins.npmPackage,
+          stars: plugins.stars,
+          installFallback: plugins.installFallback,
+        })
+        .from(plugins)
+        .where(
+          and(eq(plugins.isArchived, false), onDsh, eq(plugins.installStatus, "incompatible")),
+        )
+        .orderBy(desc(plugins.stars))
+        .limit(30),
+    ]);
+    return {
+      dsh: totals?.dsh ?? null,
+      tested: Number(totals?.tested ?? 0),
+      refused: Number(totals?.refused ?? 0),
+      rescued: Number(totals?.rescued ?? 0),
+      rows: rows.map((r) => {
+        const f = r.installFallback
+          ? (JSON.parse(r.installFallback) as {
+              version: string | null;
+              status: string;
+              requires?: Record<string, string>;
+            })
+          : null;
+        return {
+          ...r,
+          requires: [...new Set(Object.values(f?.requires ?? {}))].join(", "),
+          fallbackVersion: f?.status === "passed" ? f.version : null,
+        };
+      }),
+    };
+  },
+  ["refusal-report"],
+  { revalidate: CATALOG_TTL, tags: [CATALOG_TAG] },
+);
+
+/**
  * Header counters. Real numbers, computed — never hardcoded.
  *
  * The scan is cached; the wrapper below rebuilds the `Date` outside the cache,

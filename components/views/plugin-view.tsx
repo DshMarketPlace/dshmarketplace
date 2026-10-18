@@ -170,6 +170,14 @@ function IncompatibleHelp({ plugin, locale }: { plugin: Plugin; locale: Locale }
           <CopyCommand command={`npx dshmarketplace-cli add ${plugin.fullName}`} locale={locale} />
         </>
       ) : null}
+      <p>
+        <Link
+          href={localePath(locale, "/install-failed")}
+          className="underline underline-offset-2 hover:text-foreground"
+        >
+          {d.whyRefused}
+        </Link>
+      </p>
     </div>
   );
 }

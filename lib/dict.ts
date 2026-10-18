@@ -249,6 +249,7 @@ const en = {
       `No release of it accepts DeepSeek Harness ${dsh} yet. \`dsh plugin allow-version … --accept-risk\` forces one in, at the risk the harness itself warns about; otherwise wait for an update.`,
     cliFits:
       "dshmarketplace-cli reads your dsh version and installs the release it accepts:",
+    whyRefused: "Why DeepSeek Harness refuses plugins, and every way around it ›",
     sourceRefused:
       "This listing installs from source, so there is no older release to fall back to. `dsh plugin allow-version … --accept-risk` forces it in, at the risk the harness itself warns about; otherwise wait for the author to widen the range.",
     heading: "What happened when we ran it",
@@ -367,6 +368,14 @@ const en = {
     kindGithub: "GitHub source",
     kindBundle: "DSH bundle",
     kindSkill: "Agent skill",
+  },
+
+  refusals: {
+    plugin: "Plugin",
+    needs: "Latest release needs dsh",
+    installs: (dsh: string) => `Installs on ${dsh}`,
+    none: "no release fits yet",
+    empty: "Nothing refused on the current dsh so far.",
   },
 
   // Read inside DeepSeek Harness's Discover tab, not on this site.
@@ -606,6 +615,7 @@ const zh: Dict = {
     noFallback: (dsh: string) =>
       `它还没有哪一版接受 DeepSeek Harness ${dsh}。\`dsh plugin allow-version … --accept-risk\` 可以硬装，风险 harness 自己已经写明了；不然就等作者更新。`,
     cliFits: "dshmarketplace-cli 会读你本机的 dsh 版本，自动装它能接受的那一版：",
+    whyRefused: "DeepSeek Harness 为什么拒装、有哪些绕过办法 ›",
     sourceRefused:
       "这条是从源码装的，没有旧版本可退。`dsh plugin allow-version … --accept-risk` 可以硬装，风险 harness 自己已经写明了；不然就等作者把版本范围放宽。",
     heading: "我们跑过之后",
@@ -719,6 +729,14 @@ const zh: Dict = {
     kindGithub: "GitHub 源码",
     kindBundle: "DSH 插件包",
     kindSkill: "Agent 技能包",
+  },
+
+  refusals: {
+    plugin: "插件",
+    needs: "最新版要求的 dsh",
+    installs: (dsh: string) => `在 ${dsh} 上能装的版本`,
+    none: "暂时没有能装的版本",
+    empty: "目前在当前 dsh 上还没有被拒的插件。",
   },
 
   market: {

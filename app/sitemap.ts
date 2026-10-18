@@ -42,7 +42,9 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   // `presets` sits with the API page rather than the boilerplate: both answer
   // a search someone actually types, and presets is the one page here that a
   // competing directory cannot copy without running the installs.
-  const DOC_PAGES = ["api-docs", "presets"];
+  // `install-failed` answers the search people make right after DeepSeek
+  // Harness 0.2 refuses a plugin, with the releases our sandbox installed.
+  const DOC_PAGES = ["api-docs", "presets", "install-failed"];
 
   return [
     ...entry("/", { lastModified: now, changeFrequency: "daily", priority: 1 }),
