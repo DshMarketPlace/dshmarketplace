@@ -485,7 +485,7 @@ function shiftDay(day: string, days: number) {
  * plugins that installed on the dsh people run now. Snapshots move once a
  * night, so this is cached for hours, not minutes.
  */
-export const getRankings = unstable_cache(
+const getRankingsRaw = unstable_cache(
   async () => {
     const [{ latest } = { latest: null }] = await db
       .select({ latest: sql<string | null>`max(${pluginStats.day})` })
@@ -537,6 +537,33 @@ export const getRankings = unstable_cache(
   ["rankings"],
   { revalidate: RANKING_TTL, tags: [CATALOG_TAG] },
 );
+
+const TIMESTAMP_COLUMNS = Object.entries(getTableColumns(plugins))
+  .filter(([, column]) => column.columnType === "SQLiteTimestamp")
+  .map(([name]) => name);
+
+/**
+ * `unstable_cache` serialises its result, so every `Date` in a card row comes
+ * back as a string — and the card calls `.getTime()` on it. Only a cold cache
+ * hides this: the first render gets real Dates, every later one strings.
+ */
+function reviveDates<T extends Record<string, unknown>>(row: T): T {
+  const out: Record<string, unknown> = { ...row };
+  for (const name of TIMESTAMP_COLUMNS) {
+    if (typeof out[name] === "string") out[name] = new Date(out[name] as string);
+  }
+  return out as T;
+}
+
+export async function getRankings() {
+  const r = await getRankingsRaw();
+  return {
+    day: r.day,
+    installed: r.installed.map(reviveDates),
+    rising: r.rising.map(reviveDates),
+    verified: r.verified.map(reviveDates),
+  };
+}
 
 /**
  * What dsh 0.2's compatibility gate has done to the catalogue, for the page
