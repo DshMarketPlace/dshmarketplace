@@ -111,8 +111,8 @@ const en = {
     // The differentiator, stated plainly: a scraper can copy the repo, but not
     // the record of installing it. Reads over the plugins actually run, never
     // the whole catalogue.
-    installVerifiedLead: (rate: number, tested: string) =>
-      `${rate}% of the ${tested} plugins we ran through a throwaway install sandbox actually install`,
+    installVerifiedLead: (rate: number, tested: string, dsh: string) =>
+      `${rate}% of the ${tested} plugins we ran on DeepSeek Harness ${dsh} in a throwaway sandbox install`,
     installMethodologyCta: "How we test",
   },
 
@@ -122,7 +122,8 @@ const en = {
     lede: "Synced from the community registry and the dsh-plugin GitHub topic. Star counts and last-push dates come straight from GitHub.",
     unit: (one: boolean): string => (one ? "plugin" : "plugins"),
     matching: (q: string) => ` matching “${q}”`,
-    installVerified: (rate: number) => `${rate}% install-verified`,
+    installVerified: (rate: number, dsh: string) =>
+      `${rate}% install-verified on DeepSeek Harness ${dsh}`,
     searchPlaceholder: "Search by name, capability or author…",
     searchLabel: "Search plugins",
     categoriesLabel: "Categories",
@@ -236,12 +237,27 @@ const en = {
     notALayer: "Installs, but not as a profile layer",
     failed: "Did not install when we ran it",
     timeout: "Took too long to install when we ran it",
+    incompatible: (dsh: string | null) =>
+      `DeepSeek Harness ${dsh ?? ""} refuses the latest release`.replace("  ", " "),
+    incompatibleHelp: (dsh: string, ranges: string) =>
+      `From 0.2 DeepSeek Harness checks a plugin's dsh range before installing anything, and refuses the whole command when the running version is outside it. The latest release asks for ${ranges}; we ran ${dsh}.`,
+    fallbackWorks: (pkg: string, version: string, dsh: string) =>
+      `${pkg}@${version} is the newest release DeepSeek Harness ${dsh} accepts, and it installed when we ran it:`,
+    fallbackBlocked: (pkg: string, version: string) =>
+      `${pkg}@${version} is the newest release this version accepts, but it did not install either when we ran it.`,
+    noFallback: (dsh: string) =>
+      `No release of it accepts DeepSeek Harness ${dsh} yet. \`dsh plugin allow-version … --accept-risk\` forces one in, at the risk the harness itself warns about; otherwise wait for an update.`,
+    cliFits:
+      "dshmarketplace-cli reads your dsh version and installs the release it accepts:",
+    sourceRefused:
+      "This listing installs from source, so there is no older release to fall back to. `dsh plugin allow-version … --accept-risk` forces it in, at the risk the harness itself warns about; otherwise wait for the author to widen the range.",
     heading: "What happened when we ran it",
     approvalHelp:
       "pnpm refuses to run a package's build script until it is allowlisted. Add the key pnpm prints to allowBuilds in the profile's pnpm-workspace.yaml, then run the command again.",
     layerHelp:
       "The command works. The package declares no dsh.bundle, so the harness takes it as an ordinary dependency rather than a layer over your profile — use it the way its README describes. If a later version adds one, it activates on its own.",
     checkedAt: (when: string) => `Last run ${when}`,
+    checkedOn: (dsh: string) => `on DeepSeek Harness ${dsh}`,
     method:
       "Every command here is run in a throwaway container against a clean profile, and the result is whatever the harness recorded — not a guess from the source.",
     badgeHeading: "Show it in your README",
@@ -450,8 +466,8 @@ const zh: Dict = {
     statPages: "已上线详情页",
     statSynced: "最近同步",
     // 差异化的一句话：repo 谁都能爬，但「装过一遍」的记录爬不走。分母只算真跑过的。
-    installVerifiedLead: (rate: number, tested: string) =>
-      `我们把 ${tested} 个插件挨个丢进 sandbox 实装了一遍，${rate}% 装得上`,
+    installVerifiedLead: (rate: number, tested: string, dsh: string) =>
+      `我们在 DeepSeek Harness ${dsh} 上把 ${tested} 个插件挨个丢进 sandbox 实装，${rate}% 装得上`,
     installMethodologyCta: "怎么测的",
   },
 
@@ -461,7 +477,8 @@ const zh: Dict = {
     lede: "这些 DSH 插件同步自社区精选库和 GitHub 的 dsh-plugin topic。Star 数、最近推送时间直接取自 GitHub。",
     unit: () => "个插件",
     matching: (q: string) => `，匹配「${q}」`,
-    installVerified: (rate: number) => `${rate}% 实测可装`,
+    installVerified: (rate: number, dsh: string) =>
+      `${rate}% 在 DeepSeek Harness ${dsh} 上实测可装`,
     searchPlaceholder: "按名称、能力或作者搜索…",
     searchLabel: "搜索插件",
     categoriesLabel: "分类",
@@ -566,12 +583,26 @@ const zh: Dict = {
     notALayer: "装得上，但不是 profile layer",
     failed: "我们跑过，没装上",
     timeout: "我们跑过，装到超时",
+    incompatible: (dsh: string | null) =>
+      `DeepSeek Harness ${dsh ?? ""} 拒装最新版`.replace("  ", " "),
+    incompatibleHelp: (dsh: string, ranges: string) =>
+      `从 0.2 起，DeepSeek Harness 装插件前会先核对它声明的 dsh 版本范围，当前版本不在范围内就整条命令拒掉。最新版要求 ${ranges}，我们跑的是 ${dsh}。`,
+    fallbackWorks: (pkg: string, version: string, dsh: string) =>
+      `DeepSeek Harness ${dsh} 能接受的最新一版是 ${pkg}@${version}，我们实装过，装得上：`,
+    fallbackBlocked: (pkg: string, version: string) =>
+      `这个版本能接受的最新一版是 ${pkg}@${version}，但我们实装时它也没装上。`,
+    noFallback: (dsh: string) =>
+      `它还没有哪一版接受 DeepSeek Harness ${dsh}。\`dsh plugin allow-version … --accept-risk\` 可以硬装，风险 harness 自己已经写明了；不然就等作者更新。`,
+    cliFits: "dshmarketplace-cli 会读你本机的 dsh 版本，自动装它能接受的那一版：",
+    sourceRefused:
+      "这条是从源码装的，没有旧版本可退。`dsh plugin allow-version … --accept-risk` 可以硬装，风险 harness 自己已经写明了；不然就等作者把版本范围放宽。",
     heading: "我们跑过之后",
     approvalHelp:
       "pnpm 不会执行没进白名单的构建脚本。把 pnpm 打印出来的那个 key 加进 profile 里 pnpm-workspace.yaml 的 allowBuilds，再跑一次即可。",
     layerHelp:
       "命令是好的。它的 package.json 里没写 dsh.bundle，所以 harness 把它当普通依赖收下，而不是叠一层到你的 profile 上——按它 README 说的方式用就行。以后哪个版本补上了，会自己生效。",
     checkedAt: (when: string) => `最近一次 ${when}`,
+    checkedOn: (dsh: string) => `，DeepSeek Harness ${dsh}`,
     method:
       "这里每条命令都在一次性容器里、对着干净 profile 真跑过，结果取自 harness 自己的记录，不是读源码猜的。",
     badgeHeading: "挂进你的 README",

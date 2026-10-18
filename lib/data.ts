@@ -89,6 +89,7 @@ export const INSTALL_VERDICTS = [
   "not-a-layer",
   "failed",
   "timeout",
+  "incompatible",
 ] as const;
 export type InstallVerdict = (typeof INSTALL_VERDICTS)[number];
 
@@ -424,38 +425,50 @@ export const getCatalogueIndex = unstable_cache(
  * because `unstable_cache` serialises its result and a `Date` returns as a
  * string that breaks `stats.lastSynced.toISOString()` at the call site.
  */
+const MIN_RATE_SAMPLE = 200;
+
 const getCatalogStatsRaw = unstable_cache(
   async () => {
+    const onCurrent = sql`${plugins.installDshVersion} is not null`;
     const [totals] = await db
       .select({
         total: count(),
         indexed: sql<number>`sum(case when ${plugins.visibility} = 'indexed' then 1 else 0 end)`,
         lastSyncedUnix: sql<number | null>`max(${plugins.syncedAt})`,
-        // Installability from real sandbox runs — the one figure no scraper can
-        // produce. `needs-approval` counts as installable: it installs once a
-        // build script is allowlisted, which `dshmarketplace-cli` does on its own.
-        // `not-a-layer` is excluded from both sides (the package installs but is
-        // not a plugin layer), and an untested row counts toward neither, so the
-        // rate is over what was actually run, not over the whole catalogue.
-        installable: sql<number>`sum(case when ${plugins.installStatus} in ('passed','needs-approval') then 1 else 0 end)`,
-        installTested: sql<number>`sum(case when ${plugins.installStatus} in ('passed','needs-approval','failed','timeout') then 1 else 0 end)`,
+        // Every verdict on record, any harness version: the size of the work.
+        installTested: sql<number>`sum(case when ${plugins.installStatus} in ('passed','needs-approval','failed','timeout','incompatible') then 1 else 0 end)`,
+        // The rate is only over verdicts that say which dsh produced them.
+        // The rest are all dsh 0.1, and from 0.2 the harness refuses much of
+        // what 0.1 installed — a rate mixing the two described neither.
+        // Installable: `passed`, `needs-approval` (one allowlist entry, which
+        // `dshmarketplace-cli` writes), and `incompatible` where an older
+        // release installed — the CLI picks that release on its own. Refused
+        // with nothing to fall back to counts against. `not-a-layer` and
+        // untested rows count toward neither side.
+        rateInstallable: sql<number>`sum(case when ${onCurrent} and (${plugins.installStatus} in ('passed','needs-approval') or (${plugins.installStatus} = 'incompatible' and json_extract(${plugins.installFallback}, '$.status') in ('passed','needs-approval'))) then 1 else 0 end)`,
+        rateTested: sql<number>`sum(case when ${onCurrent} and ${plugins.installStatus} in ('passed','needs-approval','failed','timeout','incompatible') then 1 else 0 end)`,
+        rateDsh: sql<string | null>`max(${plugins.installDshVersion})`,
       })
       .from(plugins)
       .where(eq(plugins.isArchived, false));
 
-    const installTested = Number(totals?.installTested ?? 0);
-    const installable = Number(totals?.installable ?? 0);
+    const rateTested = Number(totals?.rateTested ?? 0);
+    const rateInstallable = Number(totals?.rateInstallable ?? 0);
 
     return {
       total: totals?.total ?? 0,
       indexed: Number(totals?.indexed ?? 0),
       lastSyncedUnix: totals?.lastSyncedUnix ?? null,
-      installTested,
-      // Null, not 0, when nothing has been tested — the UI hides the claim
-      // rather than printing "0% install-verified".
-      installRate: installTested
-        ? Math.round((installable / installTested) * 100)
-        : null,
+      installTested: Number(totals?.installTested ?? 0),
+      // Null below a sample worth quoting — the UI hides the claim rather than
+      // headlining a percentage of a few dozen runs.
+      installRate:
+        rateTested >= MIN_RATE_SAMPLE
+          ? Math.round((rateInstallable / rateTested) * 100)
+          : null,
+      installRateTested: rateTested,
+      // "0.2", not "0.2.1-rc.2": the claim is about a release line.
+      installRateDsh: totals?.rateDsh?.split(".").slice(0, 2).join(".") ?? null,
     };
   },
   ["catalog-stats"],
@@ -470,6 +483,8 @@ export async function getCatalogStats() {
     lastSynced: s.lastSyncedUnix ? new Date(s.lastSyncedUnix * 1000) : null,
     installTested: s.installTested,
     installRate: s.installRate,
+    installRateTested: s.installRateTested,
+    installRateDsh: s.installRateDsh,
   };
 }
 

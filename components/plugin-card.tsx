@@ -88,7 +88,11 @@ export function PluginCard({
             <>
               <CopyCommand command={install.cmd} locale={locale} />
               <div className="flex items-center justify-between gap-2">
-                <InstallCheck status={plugin.installStatus} locale={locale} />
+                <InstallCheck
+                  status={plugin.installStatus}
+                  dsh={plugin.installDshVersion}
+                  locale={locale}
+                />
                 {cartTarget ? (
                   <CartButton
                     locale={locale}

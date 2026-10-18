@@ -129,11 +129,19 @@ export const plugins = sqliteTable(
     // container on a machine that had never seen it. `installStatus` is one of
     // passed / needs-approval / not-a-layer / failed / timeout, and it is the
     // one field here that no competitor can scrape: it is the record of a run,
-    // not of a repo.
+    // not of a repo. `incompatible` joined them with dsh 0.2, which refuses a
+    // plugin whose dsh range does not cover it before installing anything.
     installStatus: text("install_status"),
     installDetail: text("install_detail"),
     blockedBuilds: text("blocked_builds"),
     installCheckedAt: integer("install_checked_at", { mode: "timestamp" }),
+    // The dsh the verdict was produced on. Null for every verdict before
+    // 18 Oct 2026 — all of them dsh 0.1 — which is how those get re-run.
+    installDshVersion: text("install_dsh_version"),
+    // When dsh refuses the latest release: the newest release it accepts and
+    // what happened when that one was installed, as JSON
+    // `{ version, status }`, or `{ version: null }` when no release fits.
+    installFallback: text("install_fallback"),
 
     // The written verdict. Generated from the README, the repository signals
     // and — where one exists — the install result above, which is what keeps

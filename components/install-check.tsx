@@ -14,10 +14,13 @@ import { cn } from "@/lib/utils";
  */
 export function InstallCheck({
   status,
+  dsh = null,
   locale = "en",
   className,
 }: {
   status: string | null;
+  /** The dsh the verdict ran on, where the label is about that version. */
+  dsh?: string | null;
   locale?: Locale;
   className?: string;
 }) {
@@ -37,6 +40,9 @@ export function InstallCheck({
     },
     failed: { icon: CircleX, label: d.failed, tone: "text-copper" },
     timeout: { icon: Clock, label: d.timeout, tone: "text-copper" },
+    // Copper, not a cross: the plugin works on the harness it was built for,
+    // and usually an older release works on this one.
+    incompatible: { icon: CircleAlert, label: d.incompatible(dsh), tone: "text-copper" },
   }[status ?? ""];
 
   if (!shape) return null;

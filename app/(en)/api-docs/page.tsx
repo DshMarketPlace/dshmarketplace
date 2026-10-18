@@ -287,6 +287,21 @@ export default async function ApiDocsPage() {
           </tr>
           <tr>
             <td>
+              <code>incompatible</code>
+            </td>
+            <td>
+              DeepSeek Harness refused the latest release before installing
+              anything: its <code>engines.dsh</code>, or its{" "}
+              <code>@deepseek-ai/dsh*</code> peer ranges, do not cover the dsh we
+              ran. We then install the newest release that dsh accepts and
+              publish that result as <code>installFallback</code>.{" "}
+              <code>dshmarketplace-cli</code> picks that release for whatever dsh
+              you run, so a working fallback counts as installable; no fallback
+              counts against.
+            </td>
+          </tr>
+          <tr>
+            <td>
               <code>failed</code> / <code>timeout</code>
             </td>
             <td>Did not install. The few percent we flag instead of letting you find out.</td>
@@ -294,13 +309,17 @@ export default async function ApiDocsPage() {
         </tbody>
       </table>
       <p>
-        The headline <em>N% install-verified</em> is <code>passed</code> plus{" "}
-        <code>needs-approval</code> over everything actually run —{" "}
+        Every verdict says which DeepSeek Harness produced it ({" "}
+        <code>installCheckDsh</code>), because from 0.2 the harness refuses
+        plugins built for another version of it, and the same command can pass
+        on one release and be refused by the next. The headline{" "}
+        <em>N% install-verified</em> counts only verdicts that carry a version —
+        everything before 18 Oct 2026 ran on dsh 0.1 and is being re-run — and
+        is <code>passed</code>, <code>needs-approval</code> and{" "}
+        <code>incompatible</code> with a working fallback, over everything run.{" "}
         <code>not-a-layer</code> and untested rows are excluded from both sides,
         so it is a rate over tested plugins, not a claim about the whole
-        catalogue. Verdicts are produced under a pinned <code>pnpm&nbsp;10</code>;
-        an older pnpm reports a blocked build script as a hard failure, which
-        only understates the number.
+        catalogue. Verdicts are produced under a pinned <code>pnpm&nbsp;10</code>.
       </p>
 
       <h2>Caching and fair use</h2>

@@ -130,6 +130,50 @@ function JsonLd({ plugin, locale }: { plugin: Plugin; locale: Locale }) {
   );
 }
 
+/**
+ * What to do when the harness refused the latest release. The fallback is a
+ * run, not a guess: the sandbox installed that exact release on that dsh.
+ */
+function IncompatibleHelp({ plugin, locale }: { plugin: Plugin; locale: Locale }) {
+  const d = t(locale).installCheck;
+  const dsh = plugin.installDshVersion ?? "";
+  const fallback: {
+    version: string | null;
+    status: string;
+    requires?: Record<string, string>;
+  } | null = plugin.installFallback ? JSON.parse(plugin.installFallback) : null;
+  const ranges = [...new Set(Object.values(fallback?.requires ?? {}))].join(", ") || "—";
+  const pkg = plugin.npmPackage;
+  const works = fallback?.version && ["passed", "needs-approval"].includes(fallback.status);
+
+  return (
+    <div className="space-y-2 text-xs leading-relaxed text-muted-foreground">
+      <p>{d.incompatibleHelp(dsh, ranges)}</p>
+      {pkg && works && fallback?.version ? (
+        <>
+          <p>{d.fallbackWorks(pkg, fallback.version, dsh)}</p>
+          <CopyCommand
+            command={`dsh plugin --profile web add ${pkg}@${fallback.version}`}
+            locale={locale}
+          />
+        </>
+      ) : pkg && fallback?.version ? (
+        <p>{d.fallbackBlocked(pkg, fallback.version)}</p>
+      ) : fallback?.status === "untried" ? (
+        <p>{d.sourceRefused}</p>
+      ) : (
+        <p>{d.noFallback(dsh)}</p>
+      )}
+      {works ? (
+        <>
+          <p>{d.cliFits}</p>
+          <CopyCommand command={`npx dshmarketplace-cli add ${plugin.fullName}`} locale={locale} />
+        </>
+      ) : null}
+    </div>
+  );
+}
+
 export async function PluginView({
   plugin,
   locale,
@@ -253,6 +297,7 @@ export async function PluginView({
               <p className="eyebrow">{t(locale).installCheck.heading}</p>
               <InstallCheck
                 status={plugin.installStatus}
+                dsh={plugin.installDshVersion}
                 locale={locale}
                 className="text-xs"
               />
@@ -264,6 +309,9 @@ export async function PluginView({
                   {t(locale).installCheck.approvalHelp}
                 </p>
               ) : null}
+              {plugin.installStatus === "incompatible" ? (
+                <IncompatibleHelp plugin={plugin} locale={locale} />
+              ) : null}
               {plugin.installStatus === "not-a-layer" ? (
                 <p className="text-xs leading-relaxed text-muted-foreground">
                   {t(locale).installCheck.layerHelp}
@@ -272,7 +320,11 @@ export async function PluginView({
               <p className="text-xs leading-relaxed text-ink-faint">
                 {t(locale).installCheck.method}
                 {checkedAgo
-                  ? ` ${t(locale).installCheck.checkedAt(checkedAgo)}.`
+                  ? ` ${t(locale).installCheck.checkedAt(checkedAgo)}${
+                      plugin.installDshVersion
+                        ? t(locale).installCheck.checkedOn(plugin.installDshVersion)
+                        : ""
+                    }.`
                   : null}
               </p>
               {/* Offered only on the two verdicts a maintainer would want to

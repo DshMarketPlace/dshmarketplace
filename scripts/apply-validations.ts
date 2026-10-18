@@ -88,6 +88,17 @@ async function main() {
             ? JSON.stringify(r.blockedBuildScripts)
             : null,
           installCheckedAt: now,
+          installDshVersion: r.dshVersion ?? null,
+          // Only an `incompatible` verdict has one. A source install has no
+          // older release to try, which is "untried", not "none fits".
+          installFallback:
+            r.status === "incompatible"
+              ? JSON.stringify({
+                  version: r.fallback?.version ?? null,
+                  status: r.fallback?.status ?? "untried",
+                  requires: r.requires ?? {},
+                })
+              : null,
           updatedAt: now,
         })
         .where(eq(plugins.fullName, r.fullName)),

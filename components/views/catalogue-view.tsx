@@ -102,10 +102,10 @@ export async function CatalogueView({
           </p>
           {/* The unscrapeable signal, kept next to the count: not just how many
               plugins, but how many we actually installed. */}
-          {stats.installRate != null ? (
+          {stats.installRate != null && stats.installRateDsh ? (
             <p className="mt-1 flex items-center justify-end gap-1.5 text-xs text-copper">
               <CircleCheck className="h-3 w-3 shrink-0" aria-hidden />
-              {d.browse.installVerified(stats.installRate)}
+              {d.browse.installVerified(stats.installRate, stats.installRateDsh)}
             </p>
           ) : null}
         </div>

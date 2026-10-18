@@ -7,13 +7,29 @@
  * has nothing to run, and running nothing proves nothing.
  */
 import "dotenv/config";
-import { and, desc, eq, isNull, or, lt } from "drizzle-orm";
+import { and, desc, eq, isNull, ne, or, lt } from "drizzle-orm";
 
 import { db } from "../db/client";
 import { plugins } from "../db/schema";
 import { primaryInstall } from "../lib/install";
 
 const STALE_AFTER_DAYS = 30;
+
+/**
+ * The dsh `npm install -g @deepseek-ai/dsh` gives people today, which is what
+ * the sandbox image is built from. Null when npm cannot be reached; the run
+ * then still re-checks every verdict that carries no version at all.
+ */
+async function currentDsh(): Promise<string | null> {
+  try {
+    const res = await fetch("https://registry.npmjs.org/-/package/@deepseek-ai%2fdsh/dist-tags", {
+      signal: AbortSignal.timeout(15_000),
+    });
+    return res.ok ? ((await res.json()) as { latest?: string }).latest ?? null : null;
+  } catch {
+    return null;
+  }
+}
 
 async function main() {
   const cutoff = new Date(Date.now() - STALE_AFTER_DAYS * 86_400_000);
@@ -32,6 +48,12 @@ async function main() {
   const statusFlag = process.argv.indexOf("--status");
   const status = statusFlag === -1 ? null : process.argv[statusFlag + 1];
 
+  // A verdict from another dsh is as stale as an old one: from 0.2 the
+  // harness refuses what an older one installed, so when `latest` moves,
+  // every verdict moves with it. Those with no version are all dsh 0.1.
+  const dsh = await currentDsh();
+  process.stderr.write(`current dsh: ${dsh ?? "unknown"}\n`);
+
   const rows = await db
     .select()
     .from(plugins)
@@ -40,7 +62,12 @@ async function main() {
         eq(plugins.isArchived, false),
         status
           ? eq(plugins.installStatus, status)
-          : or(isNull(plugins.installCheckedAt), lt(plugins.installCheckedAt, cutoff))!,
+          : or(
+              isNull(plugins.installCheckedAt),
+              lt(plugins.installCheckedAt, cutoff),
+              isNull(plugins.installDshVersion),
+              ...(dsh ? [ne(plugins.installDshVersion, dsh)] : []),
+            )!,
       ),
     )
     .orderBy(desc(plugins.stars));

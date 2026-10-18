@@ -80,6 +80,19 @@ function installProse(p: Plugin) {
     }
     case "timeout":
       return "实测超时：安装在 3 分钟内没有结束";
+    case "incompatible": {
+      const f = p.installFallback
+        ? (JSON.parse(p.installFallback) as { version: string | null; status: string })
+        : null;
+      const dsh = p.installDshVersion ?? "当前版本";
+      const tail =
+        f?.version && ["passed", "needs-approval"].includes(f.status)
+          ? `；它的旧版 ${f.version} 在同一个 dsh 上实测能装`
+          : f?.status === "untried"
+            ? "；它是从源码装的，没有旧版本可退"
+            : "；它目前没有任何一版接受这个 dsh";
+      return `实测：DeepSeek Harness ${dsh} 在安装前就拒绝了最新版，因为它声明的 dsh 版本范围不包含 ${dsh}${tail}`;
+    }
     default:
       return "实测结果不确定";
   }
@@ -102,6 +115,8 @@ function verdictConstraint(p: Plugin) {
       return "\n\n硬约束：实测显示它要先手动允许构建才能装好。第四段如果建议安装，必须同时点明这一步，不能让读者以为一行命令就完事。";
     case "not-a-layer":
       return "\n\n硬约束：实测显示这条命令能装上，不许说它装不上。但它进的是普通依赖，不是 profile layer——第四段如果建议安装，要让读者知道装完不会多出一个 profile layer，得按它 README 说的方式用。";
+    case "incompatible":
+      return "\n\n硬约束：实测显示当前 DeepSeek Harness 会拒装它的最新版。这不是插件坏了，是版本范围没跟上。第四段不能建议直接装最新版；有能装的旧版就点明用旧版或 dshmarketplace-cli（它会自动挑），没有就说清楚要等作者更新。";
     default:
       return "";
   }

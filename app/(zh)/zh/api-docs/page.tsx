@@ -262,6 +262,18 @@ export default async function ApiDocsPage() {
           </tr>
           <tr>
             <td>
+              <code>incompatible</code>
+            </td>
+            <td>
+              DeepSeek Harness 还没开始装就把最新版拒了：它的 <code>engines.dsh</code>
+              （没有的话就看 <code>@deepseek-ai/dsh*</code> 的 peer 范围）不覆盖我们跑的 dsh。
+              接着我们会装这个 dsh 能接受的最新一版，结果放在 <code>installFallback</code> 里。
+              <code>dshmarketplace-cli</code> 会按你本机的 dsh 自动挑那一版，所以回退版能装的算可装，
+              一版都不行的算不可装。
+            </td>
+          </tr>
+          <tr>
+            <td>
               <code>failed</code> / <code>timeout</code>
             </td>
             <td>没装上。这几个百分点我们直接标出来，省得你自己踩。</td>
@@ -269,11 +281,13 @@ export default async function ApiDocsPage() {
         </tbody>
       </table>
       <p>
-        头牌那句「<em>N% 实测可装</em>」= <code>passed</code> 加{" "}
-        <code>needs-approval</code>，分母是所有真跑过的插件——
-        <code>not-a-layer</code> 和还没测的都不算进两边，所以它是「测过的里面多少能装」，
-        不是对整个目录的断言。verdict 都在锁定的 <code>pnpm&nbsp;10</code> 下跑；旧版
-        pnpm 会把被挡的 build script 当成硬失败，只会把这个数往低了报。
+        每条 verdict 都写明是哪个 DeepSeek Harness 跑出来的（<code>installCheckDsh</code>）：
+        从 0.2 起 harness 会拒装为别的版本写的插件，同一条命令在这一版能装，下一版可能就被拒。
+        头牌那句「<em>N% 实测可装</em>」只算带版本号的 verdict——2026-10-18 之前的全是 dsh 0.1
+        跑的，正在重跑——分子是 <code>passed</code>、<code>needs-approval</code> 和回退版能装的{" "}
+        <code>incompatible</code>，分母是所有真跑过的。<code>not-a-layer</code>
+        和还没测的都不算进两边，所以它是「测过的里面多少能装」，不是对整个目录的断言。verdict
+        都在锁定的 <code>pnpm&nbsp;10</code> 下跑。
       </p>
 
       <h2>缓存与合理使用</h2>

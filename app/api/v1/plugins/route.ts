@@ -67,13 +67,22 @@ export async function GET(request: Request) {
     installOptions: installOptions(p),
     // What happened when the command above was actually run, in a throwaway
     // container against a clean profile: passed | needs-approval | not-a-layer
-    // | failed | timeout, or null where it has not been run since the command
-    // last changed. Only the last two are defects. `needs-approval` means pnpm
+    // | failed | timeout | incompatible, or null where it has not been run
+    // since the command last changed. Only failed and timeout are defects;
+    // `incompatible` means the harness refused the latest release for its dsh
+    // range — see installFallback for a release it accepts. `needs-approval` means pnpm
     // blocked a build script until it is allowlisted, which one `allowBuilds`
     // entry fixes; `not-a-layer` means the package installed but declares no
     // `dsh.bundle`, so the harness took it as an ordinary dependency.
     installCheck: p.installStatus,
     installCheckedAt: p.installCheckedAt,
+    // The dsh the verdict was produced on; null for verdicts from before
+    // 18 Oct 2026, which were all dsh 0.1.
+    installCheckDsh: p.installDshVersion,
+    // On `incompatible`: the newest release that dsh accepts and what
+    // happened when it was installed, `{ version, status }`; version null
+    // when no release fits. `npx dshmarketplace-cli add` picks it itself.
+    installFallback: p.installFallback ? JSON.parse(p.installFallback) : null,
     // The packages pnpm named when it refused to run their build scripts —
     // observed in the sandbox, not inferred from the README. This is the whole
     // content of a `needs-approval` verdict, and without it a client can say

@@ -209,6 +209,8 @@ function Hero({
     lastSynced: Date | null;
     installTested: number;
     installRate: number | null;
+    installRateTested: number;
+    installRateDsh: string | null;
   };
 }) {
   const d = t(locale).hero;
@@ -304,10 +306,16 @@ function Hero({
             installs. Stated in words, with the tested count and a link to how,
             so the number is auditable rather than asserted. Hidden when nothing
             has been tested rather than printing a bare 0%. */}
-        {stats.installRate != null ? (
+        {stats.installRate != null && stats.installRateDsh ? (
           <p className="mt-5 flex flex-wrap items-center justify-center gap-x-2 gap-y-1 text-center text-sm text-muted-foreground">
             <CircleCheck className="h-4 w-4 shrink-0 text-copper" aria-hidden />
-            <span>{d.installVerifiedLead(stats.installRate, stats.installTested.toLocaleString())}</span>
+            <span>
+              {d.installVerifiedLead(
+                stats.installRate,
+                stats.installRateTested.toLocaleString(),
+                stats.installRateDsh,
+              )}
+            </span>
             <Link
               href={`${localePath(locale, "/api-docs")}#install-check`}
               className="whitespace-nowrap text-copper underline underline-offset-4 transition-colors hover:text-foreground"

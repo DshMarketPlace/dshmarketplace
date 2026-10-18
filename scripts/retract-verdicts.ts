@@ -71,6 +71,8 @@ async function main() {
         installDetail: null,
         blockedBuilds: null,
         installCheckedAt: null,
+        installDshVersion: null,
+        installFallback: null,
         review: null,
         reviewZh: null,
         reviewHtml: null,
