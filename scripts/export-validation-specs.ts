@@ -54,8 +54,18 @@ async function main() {
   const dsh = await currentDsh();
   process.stderr.write(`current dsh: ${dsh ?? "unknown"}\n`);
 
+  // Only what `primaryInstall` reads. The full row drags the stored README
+  // along, and once every 0.1-era verdict became a candidate that was ~12,000
+  // rows of it in one response — Turso closed the socket mid-transfer.
   const rows = await db
-    .select()
+    .select({
+      fullName: plugins.fullName,
+      owner: plugins.owner,
+      repo: plugins.repo,
+      subpath: plugins.subpath,
+      npmPackage: plugins.npmPackage,
+      installKind: plugins.installKind,
+    })
     .from(plugins)
     .where(
       and(
