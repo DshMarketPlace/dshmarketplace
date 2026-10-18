@@ -35,7 +35,7 @@ export type Preset = {
      * rather than hidden behind a green tick.
      */
     blockedBuilds: string[];
-    /** The dsh version the sandbox image carried for that run. */
+    /** The dsh version(s) the sandbox ran the set on, `·`-separated. */
     dsh: string;
     /** Pinned, because the same plugin can pass on 10 and not on 11. */
     pnpm: string;
@@ -58,11 +58,11 @@ export const PRESETS: Preset[] = [
       "dsh-tokenledger",
     ],
     verified: {
-      at: "2026-08-20",
+      at: "2026-10-18",
       verdict: "passed",
       blockedBuilds: [],
-      dsh: "0.1.0-rc.7",
-      pnpm: "10.34.5",
+      dsh: "0.2.0-rc.2 · 0.2.1-rc.2",
+      pnpm: "10.34.7",
     },
   },
   {
@@ -78,11 +78,11 @@ export const PRESETS: Preset[] = [
       "@anionex/dsh-vision-toolkit",
     ],
     verified: {
-      at: "2026-08-20",
+      at: "2026-10-18",
       verdict: "passed",
       blockedBuilds: [],
-      dsh: "0.1.0-rc.7",
-      pnpm: "10.34.5",
+      dsh: "0.2.0-rc.2 · 0.2.1-rc.2",
+      pnpm: "10.34.7",
     },
   },
   {
@@ -94,16 +94,19 @@ export const PRESETS: Preset[] = [
     },
     plugins: [
       "@liustack/modlens",
-      "dsh-better-sidebar",
+      // Pinned: 0.28.0 needs dsh ^0.2.1-rc.1, and dsh 0.2.0-rc.2 (npm
+      // `latest` on 18 Oct 2026) refuses the whole `add` over it. 0.26.1 is
+      // accepted by both, which the sandbox confirmed for the set as a whole.
+      "dsh-better-sidebar@0.26.1",
       "@nanmicoder/dsh-agent-teams",
       "dsh-context",
     ],
     verified: {
-      at: "2026-08-20",
+      at: "2026-10-18",
       verdict: "passed",
-      blockedBuilds: ["node-pty@1.1.0"],
-      dsh: "0.1.0-rc.7",
-      pnpm: "10.34.5",
+      blockedBuilds: [],
+      dsh: "0.2.0-rc.2 · 0.2.1-rc.2",
+      pnpm: "10.34.7",
     },
   },
 ];
@@ -132,9 +135,13 @@ export function presetCliCommand(preset: Preset): string {
  * one thing in a browser and another over HTTP — the failure this project
  * keeps hitting is two surfaces disagreeing about the same listing.
  */
+/** `name@version` → `name`; the catalogue knows a plugin by name only. */
+const packageName = (target: string) =>
+  target.replace(/^(@[^/@]+\/[^@]+|[^@][^@]*)@.+$/, "$1");
+
 export async function getPresetsWithPlugins() {
   const { getPluginsByNpmName } = await import("@/lib/data");
-  const wanted = [...new Set(PRESETS.flatMap((p) => p.plugins))];
+  const wanted = [...new Set(PRESETS.flatMap((p) => p.plugins.map(packageName)))];
   const rows = await getPluginsByNpmName(wanted);
   const byNpm = new Map(
     rows.filter((r) => r.npmPackage).map((r) => [r.npmPackage as string, r]),
@@ -146,7 +153,7 @@ export async function getPresetsWithPlugins() {
       ...preset,
       members: preset.plugins.map((target) => ({
         target,
-        plugin: byNpm.get(target) ?? null,
+        plugin: byNpm.get(packageName(target)) ?? null,
       })),
     })),
   };

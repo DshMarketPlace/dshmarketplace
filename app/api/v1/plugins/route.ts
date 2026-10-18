@@ -13,7 +13,14 @@ export const revalidate = 900;
  */
 export async function GET(request: Request) {
   const url = new URL(request.url);
-  const q = url.searchParams.get("q") ?? undefined;
+  // A pinned preset member (`name@0.26.1`) reaches here verbatim from
+  // dshmarketplace-cli 0.3, which predates pins and searches for the whole
+  // spec. Searching the name keeps that client installing the full set rather
+  // than reporting one member missing and installing the rest.
+  const q =
+    url.searchParams
+      .get("q")
+      ?.replace(/^(@[^/@\s]+\/[^@\s]+|[^@\s][^@\s]*)@[^@\s]+$/, "$1") ?? undefined;
   const category = url.searchParams.get("category") ?? undefined;
   const limit = Math.min(Number(url.searchParams.get("limit")) || 20, 100);
 
