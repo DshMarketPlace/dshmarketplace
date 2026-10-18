@@ -28,7 +28,19 @@ async function main() {
   // What each listing publishes *now*. A batch takes hours, and
   // `repair-npm-claims.ts` retracted 412 commands while this one was running.
   const current = new Map<string, string | undefined>();
-  for (const p of await db.select().from(plugins)) {
+  // Only what `primaryInstall` reads: the full row carries the stored README,
+  // and twelve thousand of those in one response is how a socket gets closed.
+  const installFields = await db
+    .select({
+      fullName: plugins.fullName,
+      owner: plugins.owner,
+      repo: plugins.repo,
+      subpath: plugins.subpath,
+      npmPackage: plugins.npmPackage,
+      installKind: plugins.installKind,
+    })
+    .from(plugins);
+  for (const p of installFields) {
     current.set(p.fullName, primaryInstall(p)?.cmd);
   }
 
