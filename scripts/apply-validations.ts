@@ -78,6 +78,14 @@ async function main() {
       continue;
     }
 
+    // The release a plugin index can list: the one that installed on this dsh.
+    const release =
+      r.status === "passed"
+        ? r.installed
+        : r.status === "incompatible" && r.fallback?.status === "passed"
+          ? r.fallback.installed
+          : null;
+
     const result = await persist(() =>
       db
         .update(plugins)
@@ -99,6 +107,7 @@ async function main() {
                   requires: r.requires ?? {},
                 })
               : null,
+          verifiedRelease: release ? JSON.stringify(release) : null,
           updatedAt: now,
         })
         .where(eq(plugins.fullName, r.fullName)),

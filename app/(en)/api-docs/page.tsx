@@ -322,6 +322,28 @@ export default async function ApiDocsPage() {
         catalogue. Verdicts are produced under a pinned <code>pnpm&nbsp;10</code>.
       </p>
 
+      <h2 id="plugin-market">Browse it inside DeepSeek Harness</h2>
+      <p>
+        From dsh 0.2.1 the harness can browse a third-party plugin index in a{" "}
+        <strong>Discover</strong> tab on its Plugins page. This catalogue
+        publishes one at{" "}
+        <code>https://dshmarketplace.dev/market/index.json</code>, in the harness&apos;s
+        own format 1. To add it: open <strong>Plugins</strong>, select{" "}
+        <strong>More</strong> beside <strong>Experimental plugins</strong>,
+        switch on <strong>Custom plugin markets</strong>, then in{" "}
+        <strong>Discover</strong> choose <strong>Add index source</strong> and
+        paste the URL.
+      </p>
+      <p>
+        Only releases the sandbox installed are listed, each with the{" "}
+        <code>engines.dsh</code> range the harness checks it against, so the tab
+        offers a plugin only where it will install. When dsh refused a
+        plugin&apos;s latest release and an older one installed, the older one
+        is listed and labelled as such. Plugins that install from source are not
+        in it: a source install needs a build approved first, which the Discover
+        tab cannot do.
+      </p>
+
       <h2>Caching and fair use</h2>
       <p>
         Responses carry <code>Cache-Control</code> and are served from

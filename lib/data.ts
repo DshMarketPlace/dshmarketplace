@@ -419,6 +419,55 @@ export const getCatalogueIndex = unstable_cache(
 );
 
 /**
+ * The listings a DSH plugin index may offer: a release that installed in the
+ * sandbox on a dsh that the verdict names. Cached like the other catalogue
+ * scans — it reads every row to find the few thousand that qualify.
+ */
+export const getMarketRows = unstable_cache(
+  async () => {
+    const [rows, cats] = await Promise.all([
+      db
+        .select({
+          fullName: plugins.fullName,
+          name: plugins.name,
+          owner: plugins.owner,
+          subpath: plugins.subpath,
+          repoUrl: plugins.repoUrl,
+          summary: plugins.summary,
+          summaryZh: plugins.summaryZh,
+          categoryId: plugins.categoryId,
+          slug: plugins.slug,
+          visibility: plugins.visibility,
+          stars: plugins.stars,
+          installCount: plugins.installCount,
+          inRegistry: plugins.inRegistry,
+          linuxdoUrl: plugins.linuxdoUrl,
+          installStatus: plugins.installStatus,
+          installDshVersion: plugins.installDshVersion,
+          verifiedRelease: plugins.verifiedRelease,
+        })
+        .from(plugins)
+        .where(
+          and(
+            eq(plugins.isArchived, false),
+            isNotNull(plugins.installDshVersion),
+            isNotNull(plugins.verifiedRelease),
+            inArray(plugins.installStatus, ["passed", "incompatible"]),
+          ),
+        )
+        .orderBy(desc(plugins.stars)),
+      db
+        .select({ id: categories.id, name: categories.name, nameZh: categories.nameZh })
+        .from(categories)
+        .orderBy(asc(categories.sortOrder)),
+    ]);
+    return { rows, categories: cats };
+  },
+  ["market-rows"],
+  { revalidate: CATALOG_TTL, tags: [CATALOG_TAG] },
+);
+
+/**
  * Header counters. Real numbers, computed — never hardcoded.
  *
  * The scan is cached; the wrapper below rebuilds the `Date` outside the cache,

@@ -195,6 +195,7 @@ async function main() {
         installCheckedAt: null,
         installDshVersion: null,
         installFallback: null,
+        verifiedRelease: null,
         // And a review that cites a measurement cannot outlive it. These said
         // "沙箱实测显示…" about installs of packages the authors never
         // published — a sentence about someone else's abandoned library,

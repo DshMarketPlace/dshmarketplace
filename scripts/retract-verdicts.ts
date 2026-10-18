@@ -73,6 +73,7 @@ async function main() {
         installCheckedAt: null,
         installDshVersion: null,
         installFallback: null,
+        verifiedRelease: null,
         review: null,
         reviewZh: null,
         reviewHtml: null,

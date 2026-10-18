@@ -142,6 +142,10 @@ export const plugins = sqliteTable(
     // what happened when that one was installed, as JSON
     // `{ version, status }`, or `{ version: null }` when no release fits.
     installFallback: text("install_fallback"),
+    // The release known to install on `installDshVersion`, as a DSH plugin
+    // index lists it: JSON `{ name, version, publishedAt, engines }`. The
+    // latest release on `passed`, the fallback on `incompatible`; npm only.
+    verifiedRelease: text("verified_release"),
 
     // The written verdict. Generated from the README, the repository signals
     // and — where one exists — the install result above, which is what keeps

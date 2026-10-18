@@ -290,6 +290,21 @@ export default async function ApiDocsPage() {
         都在锁定的 <code>pnpm&nbsp;10</code> 下跑。
       </p>
 
+      <h2 id="plugin-market">在 DeepSeek Harness 里直接浏览</h2>
+      <p>
+        从 dsh 0.2.1 起，harness 的插件页多了一个 <strong>Discover</strong> 标签，可以浏览第三方插件索引。
+        本目录按 harness 自己的 format 1 发布了一份：{" "}
+        <code>https://dshmarketplace.dev/market/index.json</code>。添加方法：打开 <strong>Plugins</strong>，
+        在 <strong>Experimental plugins</strong> 旁边点 <strong>More</strong>，打开{" "}
+        <strong>Custom plugin markets</strong>，再到 <strong>Discover</strong> 里选{" "}
+        <strong>Add index source</strong>，把上面的地址粘进去。
+      </p>
+      <p>
+        里面只列 sandbox 实装成功的版本，每一版都带着 harness 会拿来核对的 <code>engines.dsh</code>
+        范围，所以 Discover 只会在装得上的 dsh 上给出它。最新版被 dsh 拒、旧版能装的，列的是旧版，
+        并打上标签。从源码装的插件不在里面：源码安装要先放行构建，Discover 做不到这一步。
+      </p>
+
       <h2>缓存与合理使用</h2>
       <p>
         响应带 <code>Cache-Control</code>，走 Cloudflare 边缘缓存。没有限流也没有

@@ -369,6 +369,18 @@ const en = {
     kindSkill: "Agent skill",
   },
 
+  // Read inside DeepSeek Harness's Discover tab, not on this site.
+  market: {
+    title: "dshmarketplace — install-verified",
+    description:
+      "Every release here was installed into a clean DeepSeek Harness profile in a throwaway sandbox before it was listed, and each is listed with the dsh versions it accepts.",
+    labelRegistry: "In the community registry",
+    labelLinuxdo: "Author verified on LINUX DO",
+    labelOlderRelease: "Older release — the latest one needs a newer dsh",
+    sortStars: "GitHub stars",
+    sortInstalls: "Installs through dshmarketplace",
+  },
+
   copy: {
     idle: "Copy",
     done: "Copied",
@@ -707,6 +719,17 @@ const zh: Dict = {
     kindGithub: "GitHub 源码",
     kindBundle: "DSH 插件包",
     kindSkill: "Agent 技能包",
+  },
+
+  market: {
+    title: "dshmarketplace 实测可装",
+    description:
+      "这里每一版都先在一次性 sandbox 的干净 DeepSeek Harness profile 里实装过才列出来，并标明它接受哪些 dsh 版本。",
+    labelRegistry: "社区精选库收录",
+    labelLinuxdo: "作者在 LINUX DO 认证过",
+    labelOlderRelease: "旧版——最新版要更新的 dsh",
+    sortStars: "GitHub Star",
+    sortInstalls: "经 dshmarketplace 安装次数",
   },
 
   copy: {
