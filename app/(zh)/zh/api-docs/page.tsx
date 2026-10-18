@@ -305,6 +305,21 @@ export default async function ApiDocsPage() {
         并打上标签。从源码装的插件不在里面：源码安装要先放行构建，Discover 做不到这一步。
       </p>
 
+      <h2 id="mcp">在 agent 里用（MCP）</h2>
+      <p>
+        <code>https://dshmarketplace.dev/mcp</code> 是一个远程 MCP server：Streamable HTTP，不要 key，只读。
+        五个工具：<code>search_plugins</code>、<code>get_plugin</code>、<code>install_command</code>、
+        <code>list_categories</code>、<code>list_presets</code>。回答和 <code>/api/v1</code>{" "}
+        出自同一份记录，sandbox 结论和回退版本都在里面，agent 动手之前就能告诉用户这条命令装不装得上。
+      </p>
+      <pre>
+        <code>{`# Claude Code
+claude mcp add --transport http dshmarketplace https://dshmarketplace.dev/mcp
+
+# Cursor、Windsurf 等大多数客户端（mcp.json）
+{ "mcpServers": { "dshmarketplace": { "url": "https://dshmarketplace.dev/mcp" } } }`}</code>
+      </pre>
+
       <h2>缓存与合理使用</h2>
       <p>
         响应带 <code>Cache-Control</code>，走 Cloudflare 边缘缓存。没有限流也没有

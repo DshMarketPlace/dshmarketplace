@@ -344,6 +344,25 @@ export default async function ApiDocsPage() {
         tab cannot do.
       </p>
 
+      <h2 id="mcp">Use it from an agent (MCP)</h2>
+      <p>
+        <code>https://dshmarketplace.dev/mcp</code> is a remote MCP server —
+        Streamable HTTP, no key, read-only. Five tools:{" "}
+        <code>search_plugins</code>, <code>get_plugin</code>,{" "}
+        <code>install_command</code>, <code>list_categories</code> and{" "}
+        <code>list_presets</code>. Their answers come from the same records as{" "}
+        <code>/api/v1</code>, sandbox verdicts and fallback releases included,
+        so an agent can tell a user whether a command installs before running
+        it.
+      </p>
+      <pre>
+        <code>{`# Claude Code
+claude mcp add --transport http dshmarketplace https://dshmarketplace.dev/mcp
+
+# Cursor, Windsurf and most other clients (mcp.json)
+{ "mcpServers": { "dshmarketplace": { "url": "https://dshmarketplace.dev/mcp" } } }`}</code>
+      </pre>
+
       <h2>Caching and fair use</h2>
       <p>
         Responses carry <code>Cache-Control</code> and are served from
