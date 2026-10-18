@@ -154,13 +154,14 @@ jobs:
     timeout-minutes: 300
 
     steps:
-      # Checkout before the download: it cleans the path it writes to, and the
-      # spec file must not be standing there when it does.
+      # A plain clone, not actions/checkout: for a repository other than this
+      # one, checkout asks the REST API for the default branch, and the sync
+      # job above has already spent this run's token quota by then. Two of the
+      # nightlies in the week to 16 Oct died right here on "API rate limit
+      # exceeded for installation", taking validate and apply with them.
+      # Git over HTTPS on a public repo makes no API call at all.
       - name: Fetch the validator
-        uses: actions/checkout@v4
-        with:
-          repository: DshMarketPlace/dsh-plugin-validator
-          path: validator
+        run: git clone --depth 1 https://github.com/DshMarketPlace/dsh-plugin-validator.git validator
 
       - uses: actions/download-artifact@v4
         with:
