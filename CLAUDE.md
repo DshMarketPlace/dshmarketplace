@@ -54,8 +54,14 @@ Violating any of these breaks the deploy or the data, not just the build.
    dependency without checking the bundle. Prefer a hand-rolled twenty lines.
 2. **Markdown is rendered at author time, never at request time.** `marked` and
    `sanitize-html` must not reach the Worker. Sync writes `*Html` columns.
-3. **Turso needs the `/web` entrypoints and lazy client init.** Reading
-   credentials at module scope throws on cold start.
+3. **The database is self-hosted libSQL (sqld), not Turso, since 20 Oct 2026.**
+   `libsql://dshmarketplace.db.fengshao1227.com` → nginx → the
+   `sqld-dshmarketplace` container on 198.200.42.226 (layout, backups and the
+   restore procedure in `ops/README.md`). The env names stay
+   `TURSO_DATABASE_URL` / `TURSO_AUTH_TOKEN` and the client is unchanged: it
+   still needs the `/web` entrypoints and lazy init — reading credentials at
+   module scope throws on cold start. Turso's read quota blocked the whole DB
+   twice; nothing bills rows any more, but rule 7 still decides latency.
 4. **Dependency tracing runs under Node, bundling under workerd.** A package
    with a separate `workerd` export condition needs an entry in
    `outputFileTracingIncludes`.

@@ -37,6 +37,36 @@ is nothing in that job to reach.
 If you add a step, put it in the job that already holds the credentials it
 needs. Never add `env:` to `validate`.
 
+## The database
+
+Self-hosted libSQL (`sqld`) on 198.200.42.226 (San Jose) since 20 Oct 2026,
+after Turso's monthly read quota blocked every read and every export path.
+One container per database, all under `/opt/sqld`:
+
+| Database | Host | Container (127.0.0.1) |
+|---|---|---|
+| dshmarketplace | `dshmarketplace.db.fengshao1227.com` | `sqld-dshmarketplace` :8091 |
+| ai-ebook | `ai-ebook.db.fengshao1227.com` | `sqld-ai-ebook` :8092 |
+| music-finder | `music-finder.db.fengshao1227.com` | `sqld-music-finder` :8093 |
+
+- nginx (`conf.d/sqld.conf`) terminates TLS for `*.db.fengshao1227.com`
+  (DNS-only wildcard on Cloudflare, one Let's Encrypt cert renewed by the
+  existing certbot cron) and maps the host to the port.
+- Each database verifies Ed25519 JWTs against its own
+  `/opt/sqld/<name>/jwt_public.pem`. The private keys and tokens live only on
+  the home Mac in `~/.config/sqld/<name>/`; a token for one database is
+  refused by the others. Mint a new token there, never on the server.
+- `/opt/sqld/backup.sh` runs at 04:40 (server time, UTC+8): SQLite online
+  backup, integrity check, gzip to `/opt/sqld/backups/<name>-<day>.db.gz`,
+  seven kept. They are on the same disk as the data.
+- Restore or re-seed: `gunzip` a copy, then `/opt/sqld/seed.sh <name> <file>`
+  (stops the container, swaps the file, drops the replication log, starts;
+  the log says "recovering from database file"). A new database:
+  `/opt/sqld/run.sh <name> <port>`, add it to the nginx map, expand the cert.
+- The box also runs other services (songfinder, transcript-lab, resin,
+  adguard, the Mac reverse tunnels) — change only `/opt/sqld` and
+  `conf.d/sqld.conf`.
+
 ## The two hosts
 
 **GitHub Actions** holds `TURSO_DATABASE_URL`, `TURSO_AUTH_TOKEN`,
