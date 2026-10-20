@@ -180,6 +180,50 @@ export const plugins = sqliteTable(
     starsIdx: index("plugins_stars_idx").on(t.stars),
     pushedIdx: index("plugins_pushed_idx").on(t.repoPushedAt),
     ownerIdx: index("plugins_owner_idx").on(t.owner),
+    // readme_md and readme_html (~230 MB together) sit mid-row, so reading any
+    // later column of a row walks its README overflow pages: every catalogue
+    // aggregate and every `?q=` search read the whole 370 MB table, 5–11 s on
+    // the self-hosted sqld. These let those queries read a few MB of index
+    // instead (migrations/0009 has the measurements). Keep a column a hot
+    // query filters, sorts or aggregates on inside one of them.
+    statsCoverIdx: index("plugins_stats_cover_idx").on(
+      t.isArchived,
+      t.installStatus,
+      t.installDshVersion,
+      t.visibility,
+      t.syncedAt,
+      t.installFallback,
+    ),
+    searchCoverIdx: index("plugins_search_cover_idx").on(
+      t.isArchived,
+      t.stars,
+      t.installStatus,
+      t.fullName,
+      t.name,
+      t.summary,
+      t.summaryZh,
+      t.tags,
+      t.npmPackage,
+    ),
+    searchStatusIdx: index("plugins_search_status_idx").on(
+      t.isArchived,
+      t.installStatus,
+      t.stars,
+      t.fullName,
+      t.name,
+      t.summary,
+      t.summaryZh,
+      t.tags,
+      t.npmPackage,
+    ),
+    linuxdoStarsIdx: index("plugins_linuxdo_stars_idx")
+      .on(t.isArchived, t.stars)
+      .where(sql`${t.linuxdoUrl} IS NOT NULL`),
+    linuxdoRecentIdx: index("plugins_linuxdo_recent_idx")
+      .on(t.isArchived, t.linuxdoVerifiedAt, t.stars)
+      .where(sql`${t.linuxdoUrl} IS NOT NULL`),
+    visibilitySlugIdx: index("plugins_visibility_slug_idx").on(t.visibility, t.slug),
+    installCountIdx: index("plugins_install_count_idx").on(t.isArchived, t.installCount),
   }),
 );
 
