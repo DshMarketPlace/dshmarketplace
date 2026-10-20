@@ -71,9 +71,13 @@ Violating any of these breaks the deploy or the data, not just the build.
    work — icons and social cards are declared in `lib/social.ts`.
 6. **An undefined CSS variable invalidates the whole declaration.**
    `--font-cjk` is defined at `:root` for this reason. Do not move it.
-7. **A catalogue-wide aggregate is a full-table scan, and Turso bills rows
-   scanned.** Four uncached aggregates on every list render cost ~500M rows a
-   month once crawlers arrived and blew the free tier. Any `count()`,
+7. **A catalogue-wide aggregate is a full-table scan, and every row drags its
+   README.** `readme_md`/`readme_html` sit mid-row, so a query touching a later
+   column reads the whole 370 MB table unless an index covers it — Turso billed
+   that until the quota blocked the site; on sqld it cost 5–11 s a query until
+   migrations 0009/0010. A new hot query needs a covering index, measured on a
+   copy. Four uncached aggregates on every list render once cost ~500M rows a
+   month. Any `count()`,
    `sum(case…)` or `GROUP BY` over the plugins table that runs per request must
    be wrapped in `unstable_cache` with the `catalog` tag — the cached helpers
    in `lib/data.ts` are the pattern. Never cache a `?q=` search count: the keys

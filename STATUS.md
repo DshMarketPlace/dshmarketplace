@@ -1,4 +1,4 @@
-# Status — 18 October 2026
+# Status — 20 October 2026
 
 Live, seeded, and holding the name. A long way from finished.
 
@@ -8,7 +8,7 @@ Live, seeded, and holding the name. A long way from finished.
 | --- | --- |
 | Site | <https://dshmarketplace.dev> — Next.js 16 on Cloudflare Workers via OpenNext |
 | Languages | English at `/`, Chinese at `/zh` — separate root layouts, bidirectional hreflang |
-| Database | Turso (libSQL, `aws-ap-northeast-1`), ~12,000 plugins with GitHub metadata; ingest adds 100–600 a night. 345 rows sit on renamed or transferred repository names whose new name is also listed — see 18 Oct |
+| Database | Self-hosted libSQL (`sqld`) at `dshmarketplace.db.fengshao1227.com` since 20 Oct — was Turso `aws-ap-northeast-1`; layout and restore in `ops/README.md`. ~12,000 plugins with GitHub metadata; ingest adds 100–600 a night. 345 rows sit on renamed or transferred repository names whose new name is also listed — see 18 Oct |
 | Detail pages | 90 written bilingually, each with a documentation section; 87 illustrated. All 90 indexed. None written since 24 Aug: the text gateway in `.dev.vars` stopped answering — a new one is needed before `write-content.ts` can run |
 | Install check | Every verdict now names the dsh it ran on (`install_dsh_version`), and `incompatible` joined the verdict set for dsh 0.2's refusal, with the older release that installed instead (`install_fallback`). The 0.1-era verdicts are being re-run on dsh 0.2.0-rc.2 — see 18 Oct. Served as `installCheck` / `installCheckDsh` / `installFallback`, filterable as `?installCheck=<verdict>`, aggregated as the install-verified rate (now over dsh-versioned verdicts only, hidden below 200), embeddable as `GET /badge/<slug>` |
 | Verdict history | `install_runs`, append-only since 26 Aug — every verdict the catalogue publishes, with the exact command it was about. Retraction marks rows, never deletes them |
@@ -57,6 +57,37 @@ Three public endpoints, all CORS-open:
 Pages, each in both languages: `/` (hero, catalogue, how-it-works, FAQ),
 `/p/[slug]`, `/api-docs`, `/about`, `/submit`, `/contact`, `/terms`, `/privacy`.
 English-only: `/admin`, `/api/v1/*`, `/badge/[slug]`.
+
+## What changed, 20 Oct
+
+**The database left Turso.** The Developer plan's 2.5B rows-read quota ran out
+with overages off, and Turso blocked every read: `/plugins`, `/api/v1/plugins`,
+MCP search and therefore `dshmarketplace-cli add` returned 500 while ISR-cached
+pages kept serving. The block also covers every export path (`/dump`,
+`/export/<gen>`, `/sync`), so nothing could be copied out until overages were
+switched on for a day. The catalogue, and the owner's two other Turso databases
+(ai-ebook, music-finder), now run on `sqld` in Docker on 198.200.42.226 behind
+nginx at `<name>.db.fengshao1227.com`, one container and one JWT key per
+database. Env names (`TURSO_*`) and the client are unchanged. Cut over from a
+snapshot plus WAL frames, then reconciled three-way against a final export:
+the window lost nothing. Turso: overages off, downgrade to Free scheduled for
+1 Nov, the old databases kept as cold copies. This reverses the 24 Aug "no VPS"
+call below — the owner's decision, after the quota blocked the site twice.
+
+**Then the self-hosted copy was slow, and the reason was the table.**
+`readme_md` and `readme_html` (~230 MB) sit mid-row, so any query touching a
+later column walks every README's overflow pages: aggregates, `?q=` search and
+category pages each read the whole 370 MB table — 5–11 s per query, 12 GB of
+disk reads in the first 25 minutes, ~3.4 GB per `getCategoriesWithCounts`. That
+same full-table reading is what Turso had been billing. Migrations 0009 and
+0010 add covering and per-sort indexes, measured on a copy before shipping:
+every hot query now reads at most a few MB, live search and catalogue pages
+went from 4–6 s to 0.3–1.4 s, disk reads from ~8 MB/s to ~0.6 MB/s.
+
+**The database host is also the Claude Code host** (2 vCPU, 3.7 GB). The sqld
+containers run with `--oom-score-adj -800 --memory-swappiness 0`, so memory
+pressure from agent sessions kills a session before a database. Backups are
+nightly, integrity-checked, seven kept — on the same disk.
 
 ## What changed, 18 Oct
 
@@ -544,6 +575,14 @@ upstream, so no card is machine-translated.
 
 **Next up, with the evidence already gathered**
 
+- **Copy the nightly DB backups off the box.** `/opt/sqld/backups` shares a
+  disk with the data and with every Claude Code session on that host; one disk
+  failure now loses all three databases. The home Mac is on 24/7.
+- **Move `readme_md`/`readme_html` into a side table.** The 0009/0010 indexes
+  cover today's hot queries; the side table would make every future query
+  cheap by default instead of by index. Touches the sync, the detail page and
+  `write-content.ts`.
+
 - **Give the 54 subpath listings an install command.** `#path:` is proven; the
   change is in `lib/install.ts`, which five surfaces read, so per the rule
   above every client re-runs against live data afterwards. Audit the `subpath`
@@ -776,6 +815,17 @@ The general question worth asking of any new filter, gate or sort order:
   aggregates ran on every render of every list page. Crawlers turned that into
   ~500M rows a month and blew the free tier. Any new catalogue-wide aggregate
   must go through `unstable_cache` with the `catalog` tag — see `lib/data.ts`.
+- **A README mid-row makes every later column cost the README.** SQLite stores
+  a row's columns in order and spills long values into a chain of overflow
+  pages; to read `is_archived` (column 19) it walks `readme_md` (column 11),
+  and `install_status` (52) walks `readme_html` (43) too. "No index helps" was
+  wrong: a covering index lets the query skip the row. Before adding a hot
+  query that filters, sorts or aggregates on a plugins column, check it against
+  migrations 0009/0010 and measure pages read on a copy (`sqlite3`, `.stats
+  on`, "Page cache misses"). `sqld` refuses `ANALYZE` over HTTP.
+- **A quota block is total.** When Turso blocked reads it also blocked `/dump`,
+  `/export/<gen>` and `/sync` — there was no way to take the data out without
+  first paying for a day of overages. Keep an exportable copy you control.
 - **A schema promise is not a pipeline.** `plugin_stats` said "daily snapshots"
   and held zero rows for a week; nothing wrote it, and nothing complained,
   because an empty table looks exactly like a table nobody queried yet. When a
