@@ -1,4 +1,12 @@
+/**
+ * [INPUT]: 依赖共享导航、语言与主题能力，以及 SponsorFooter 资源链接与 SponsorBanner 内页公告。
+ * [OUTPUT]: 提供 SiteFrame 双语页面外壳。
+ * [POS]: 统一页头页脚与全站 Provider，不承载目录业务数据。
+ * [PROTOCOL]: 变更时更新此头部，然后检查 AGENTS.md
+ */
 import Link from "next/link";
+import { SponsorFooter } from "@/components/sponsor";
+import { SponsorBanner } from "@/components/sponsor-banner";
 
 import { ThemeProvider } from "@/components/theme-provider";
 import { ThemeToggle } from "@/components/theme-toggle";
@@ -27,6 +35,7 @@ export function SiteFrame({
       enableSystem
       disableTransitionOnChange
     >
+      <SponsorBanner locale={locale} />
       <SiteHeader locale={locale} />
       {children}
       <SiteFooter locale={locale} />
@@ -135,6 +144,7 @@ function SiteFooter({ locale }: { locale: Locale }) {
           <p className="max-w-xs text-sm leading-relaxed text-muted-foreground">
             {d.footer.blurb}
           </p>
+          <SponsorFooter locale={locale} />
         </div>
 
         <FooterColumn

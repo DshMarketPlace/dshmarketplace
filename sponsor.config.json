@@ -1,0 +1,38 @@
+{
+  "enabled": true,
+  "brand": "BeatAPI",
+  "logo": "/sponsors/beatapi.png",
+  "destination": "https://beatapi.io/deepseek-v4-1-flash-api?variant=deepseek-v4.1-flash-free#free-deepseek-api",
+  "tracking": {
+    "utm_source": "dshmarketplace",
+    "utm_medium": "sponsorship",
+    "utm_campaign": "deepseek_free"
+  },
+  "placements": { "home": true, "footer": true, "top_banner": true },
+  "copy": {
+    "en": {
+      "label": "Sponsored",
+      "category": "API partner",
+      "title": "Your next agent starts with a free API.",
+      "description": "Try DeepSeek V4.1 Flash on BeatAPI. An OpenAI-compatible API for your next agent workflow.",
+      "benefits": ["Free access", "No top-up required", "OpenAI-compatible"],
+      "cta": "Get free API access",
+      "footer": "Free DeepSeek API",
+      "banner": "Try the free DeepSeek V4.1 Flash model API",
+      "bannerCta": "Get API access",
+      "dismiss": "Dismiss announcement"
+    },
+    "zh": {
+      "label": "赞助推荐",
+      "category": "API 合作伙伴",
+      "title": "下一个 Agent，从免费 API 开始。",
+      "description": "在 BeatAPI 试用 DeepSeek V4.1 Flash，为你的下一个 Agent 工作流接入 OpenAI 兼容 API。",
+      "benefits": ["免费调用", "无需充值", "OpenAI 兼容接口"],
+      "cta": "获取免费 API",
+      "footer": "免费 DeepSeek API",
+      "banner": "免费试用 DeepSeek V4.1 Flash 模型 API",
+      "bannerCta": "获取 API",
+      "dismiss": "关闭公告"
+    }
+  }
+}

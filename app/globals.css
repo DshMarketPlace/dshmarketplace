@@ -1,3 +1,9 @@
+/**
+ * [INPUT]: 依赖 Tailwind 层与全站主题变量。
+ * [OUTPUT]: 提供基础排版、明暗主题与赞助区样式。
+ * [POS]: App Router 全局视觉层；赞助强调色不改变原站主题。
+ * [PROTOCOL]: 变更时更新此头部，然后检查 AGENTS.md
+ */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -111,6 +117,36 @@
 }
 
 @layer components {
+  .sponsor-banner {
+    background: #edf2ff;
+    color: #26428d;
+    border-color: #d4def5;
+  }
+
+  .dark .sponsor-banner {
+    background: #202a40;
+    color: #c5d5ff;
+    border-color: #354564;
+  }
+
+  .sponsor-feature {
+    --sponsor-accent: #2854c5;
+    background: var(--paper-raised);
+  }
+
+  .dark .sponsor-feature {
+    --sponsor-accent: #9ab8ff;
+  }
+
+  .sponsor-cta {
+    background: #2854c5;
+    color: #fff;
+  }
+
+  .sponsor-cta:hover {
+    background: #1e429f;
+  }
+
   /* Letterpress-style section label: small, wide-tracked, rule beneath. */
   .eyebrow {
     @apply text-[0.6875rem] font-semibold uppercase tracking-[0.18em] text-muted-foreground;

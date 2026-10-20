@@ -1,4 +1,11 @@
+/**
+ * [INPUT]: 依赖目录数据、双语文案及 SponsorFeature 展示层。
+ * [OUTPUT]: 提供 HomeView 首页视图。
+ * [POS]: 首页内容编排；赞助区独立于插件推荐与评测数据。
+ * [PROTOCOL]: 变更时更新此头部，然后检查 AGENTS.md
+ */
 import Link from "next/link";
+import { SponsorFeature } from "@/components/sponsor";
 import { ArrowRight, CircleCheck, Search } from "lucide-react";
 
 import { PluginCard } from "@/components/plugin-card";
@@ -35,6 +42,7 @@ export async function HomeView({ locale }: { locale: Locale }) {
   return (
     <main>
       <Hero locale={locale} stats={stats} />
+      <SponsorFeature locale={locale} />
 
       <section className="mx-auto max-w-shell px-5 pt-16 sm:px-8">
         <div className="flex flex-wrap items-end justify-between gap-4 border-b border-border pb-5">
