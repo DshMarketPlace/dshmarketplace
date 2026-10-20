@@ -224,6 +224,31 @@ export const plugins = sqliteTable(
       .where(sql`${t.linuxdoUrl} IS NOT NULL`),
     visibilitySlugIdx: index("plugins_visibility_slug_idx").on(t.visibility, t.slug),
     installCountIdx: index("plugins_install_count_idx").on(t.isArchived, t.installCount),
+    // One per catalogue sort inside a category (orderFor in lib/data.ts), so a
+    // category page reads 24 rows, not the category; the stars one also covers
+    // getCategoriesWithCounts, which read ~3 GB of pages per call without it.
+    categoryStarsIdx: index("plugins_category_stars_idx").on(t.categoryId, t.isArchived, t.stars),
+    categoryPushedIdx: index("plugins_category_pushed_idx").on(
+      t.categoryId,
+      t.isArchived,
+      t.repoPushedAt,
+    ),
+    categoryCreatedIdx: index("plugins_category_created_idx").on(
+      t.categoryId,
+      t.isArchived,
+      t.createdAt,
+    ),
+    categoryNameIdx: index("plugins_category_name_idx").on(t.categoryId, t.isArchived, t.fullName),
+    categoryInstallsIdx: index("plugins_category_installs_idx").on(
+      t.categoryId,
+      t.isArchived,
+      t.installCount,
+    ),
+    categoryLinuxdoIdx: index("plugins_category_linuxdo_idx")
+      .on(t.categoryId, t.isArchived)
+      .where(sql`${t.linuxdoUrl} IS NOT NULL`),
+    archivedCreatedIdx: index("plugins_archived_created_idx").on(t.isArchived, t.createdAt),
+    npmPackageIdx: index("plugins_npm_package_idx").on(t.npmPackage),
   }),
 );
 
