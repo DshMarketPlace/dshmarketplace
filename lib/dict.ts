@@ -440,6 +440,61 @@ const en = {
     empty: "Nothing refused on the current dsh so far.",
   },
 
+  upgrade: {
+    metaTitle: (v: string | null) =>
+      v
+        ? `DeepSeek Harness ${v} Plugin Compatibility — Which Plugins Stop Installing`
+        : "DeepSeek Harness Upgrade Check — Which Plugins Stop Installing",
+    metaDescription:
+      "Paste your DeepSeek Harness plugins and see which ones the next and alpha releases refuse or fail to install — measured nightly in a sandbox, not guessed from package.json.",
+    eyebrow: "Upgrade check",
+    title: (v: string | null) =>
+      v ? `DeepSeek Harness ${v} plugin compatibility` : "Will your plugins survive the next DeepSeek Harness?",
+    lede: "Every night our sandbox takes plugins that install on npm latest and installs them again, into a clean profile, on the upcoming next and alpha releases of DeepSeek Harness. It measures one thing — whether the plugin still installs and registers on that release — and not whether it behaves the same once it runs.",
+    label: "Your plugins",
+    help: "Plugin names, npm names or github:owner/repo, one per line or separated by spaces. Or paste your profile's package.json and its dependencies are read.",
+    placeholder: "dsh-better-sidebar\n@liustack/modlens\ngithub:owner/repo",
+    check: "Check",
+    nothingParsed: "Nothing in there looks like a plugin name.",
+    networkError: "Could not reach the API. Try again in a moment.",
+    overflow: (n: number) => `${n} more left out — the check takes 100 names at a time.`,
+    skipped: (list: string) => `Not plugin names, skipped: ${list}`,
+    plugin: "Plugin",
+    now: "Today, on latest",
+    notListed: "Not in the catalogue",
+    notRun: "not run yet",
+    ranOn: (v: string) => `ran on ${v}`,
+    yours: (tag: string, dsh: string, broken: number, total: number) =>
+      `${tag} (${dsh}): ${broken} of your ${total} would stop installing.`,
+    verdicts: {
+      passed: "installs",
+      "needs-approval": "needs approval",
+      "not-a-layer": "not a layer",
+      failed: "fails",
+      timeout: "timed out",
+      incompatible: "refused",
+      untested: "untested",
+    } as Record<string, string>,
+    summaryHeading: "What the sandbox found",
+    tagLine: (tag: string, dsh: string, passed: number, checked: number, date: string) =>
+      `${tag} — DeepSeek Harness ${dsh}: ${passed} of ${checked} plugins that install on latest still install. Last run ${date}.`,
+    tagBreakdown: (refused: number, failed: number, approval: number) =>
+      `${refused} refused by the version check, ${failed} failed or timed out, ${approval} need a build approved first.`,
+    noRuns:
+      "The first runs on next and alpha have not landed yet. They run nightly, about 150 plugins per release, most-installed first.",
+    regressionsHeading: "Install on latest, not on the next release",
+    regressionsNote:
+      "Most-starred first. Only each plugin's newest run on the tag's current release counts.",
+    regressionsEmpty: "None so far: every plugin checked on the upcoming releases still installs.",
+    stars: "Stars",
+    fixHeading: "If one of yours breaks",
+    fixBody:
+      "Refused means the plugin's declared dsh range does not cover that release, and only its author can widen engines.dsh. Until then, staying on the DeepSeek Harness you run now is the fix.",
+    fixLink: "Why DeepSeek Harness refuses plugins, and every way around it ›",
+    api: "The same data as JSON, CORS open, up to 100 names a call:",
+    fromInstallFailed: "Thinking of updating DeepSeek Harness? Check which of your plugins the next release refuses ›",
+  },
+
   // Read inside DeepSeek Harness's Discover tab, not on this site.
   market: {
     title: "dshmarketplace — install-verified",
@@ -859,6 +914,59 @@ const zh: Dict = {
     installs: (dsh: string) => `在 ${dsh} 上能装的版本`,
     none: "暂时没有能装的版本",
     empty: "目前在当前 dsh 上还没有被拒的插件。",
+  },
+
+  upgrade: {
+    metaTitle: (v: string | null) =>
+      v
+        ? `DeepSeek Harness ${v} 插件兼容性：升级后哪些插件装不上`
+        : "DeepSeek Harness 升级前检查：下一版哪些插件装不上",
+    metaDescription:
+      "把你装的 DeepSeek Harness 插件贴进来，看 next 和 alpha 版会拒装哪些、哪些装不上。每晚在 sandbox 里实装测出来的，不是看 package.json 猜的。",
+    eyebrow: "升级前检查",
+    title: (v: string | null) =>
+      v ? `DeepSeek Harness ${v} 插件兼容性` : "升级 DeepSeek Harness，你的插件还装得上吗",
+    lede: "每天夜里，我们把在 npm latest 上装得上的插件，放进 DeepSeek Harness 即将发布的 next 和 alpha 版的干净 profile 里再装一遍。测的只有一件事：在那一版上还能不能装上、注册进 profile；装上之后跑起来行为变没变，不在测量范围内。",
+    label: "你装的插件",
+    help: "插件名、npm 包名或 github:owner/repo，一行一个或者空格隔开都行。也可以直接把 profile 的 package.json 整个贴进来，会从 dependencies 里读。",
+    placeholder: "dsh-better-sidebar\n@liustack/modlens\ngithub:owner/repo",
+    check: "检查",
+    nothingParsed: "没认出插件名。",
+    networkError: "连不上 API，过一会儿再试。",
+    overflow: (n: number) => `还有 ${n} 个没查——一次最多 100 个。`,
+    skipped: (list: string) => `不像插件名，跳过了：${list}`,
+    plugin: "插件",
+    now: "现在（latest）",
+    notListed: "目录里没有",
+    notRun: "还没跑",
+    ranOn: (v: string) => `跑的是 ${v}`,
+    yours: (tag: string, dsh: string, broken: number, total: number) =>
+      `${tag}（${dsh}）：你这 ${total} 个里有 ${broken} 个会装不上。`,
+    verdicts: {
+      passed: "装得上",
+      "needs-approval": "要先批准构建",
+      "not-a-layer": "不是 layer",
+      failed: "装不上",
+      timeout: "超时",
+      incompatible: "被拒装",
+      untested: "没测过",
+    } as Record<string, string>,
+    summaryHeading: "sandbox 实测结果",
+    tagLine: (tag: string, dsh: string, passed: number, checked: number, date: string) =>
+      `${tag}——DeepSeek Harness ${dsh}：在 latest 上装得上的插件抽测了 ${checked} 个，${passed} 个照样装得上。最近一次跑在 ${date}。`,
+    tagBreakdown: (refused: number, failed: number, approval: number) =>
+      `${refused} 个被版本检查拒装，${failed} 个装失败或超时，${approval} 个要先批准构建脚本。`,
+    noRuns: "next 和 alpha 的第一批结果还没出来。每晚每个版本跑 150 个左右，装得多的先跑。",
+    regressionsHeading: "latest 上装得上、下一版装不上的",
+    regressionsNote: "按 Star 排。每个插件只算它在该 tag 当前版本上最近的一次。",
+    regressionsEmpty: "目前没有：抽测到的插件在下一版上都还装得上。",
+    stars: "Star",
+    fixHeading: "你的插件在名单里怎么办",
+    fixBody:
+      "被拒装说明插件声明的 dsh 范围没覆盖那一版，只有作者放宽 engines.dsh 才能解决。在那之前，先别升级 DeepSeek Harness 就行。",
+    fixLink: "DeepSeek Harness 为什么拒装插件，以及所有绕过办法 ›",
+    api: "同样的数据有 JSON 接口，开放 CORS，每次最多 100 个：",
+    fromInstallFailed: "准备升级 DeepSeek Harness？先查查你的插件在下一版上还装不装得上 ›",
   },
 
   market: {

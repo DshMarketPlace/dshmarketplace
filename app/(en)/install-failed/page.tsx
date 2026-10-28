@@ -4,6 +4,7 @@ import Link from "next/link";
 import { PageShell } from "@/components/page-shell";
 import { RefusalTable } from "@/components/refusal-table";
 import { getRefusalReport } from "@/lib/data";
+import { t } from "@/lib/dict";
 import { alternatesFor } from "@/lib/i18n";
 
 export const revalidate = 3600;
@@ -110,6 +111,9 @@ export default async function InstallFailedPage() {
           Otherwise the author has to widen the range.
         </li>
       </ol>
+      <p>
+        <Link href="/upgrade">{t("en").upgrade.fromInstallFailed}</Link>
+      </p>
 
       <h2>If you maintain a plugin</h2>
       <p>

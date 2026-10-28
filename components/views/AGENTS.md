@@ -7,5 +7,6 @@
 - `plugin-view.tsx`: 插件详情与安装信息。
 - `top-view.tsx`: 排行榜视图。
 - `weekly-view.tsx`: 周报列表与单期视图，渲染 `weekly_reports` 里定稿的数据，并提供两类页面的 metadata 与 Article JSON-LD。
+- `upgrade-view.tsx`: 升级前检查（/upgrade）：粘贴插件查 next/alpha 预览结果（客户端 `components/upgrade-check.tsx`），下方为服务端渲染的各 tag 统计与回归表。
 
 [PROTOCOL]: 变更时更新此头部，然后检查 AGENTS.md

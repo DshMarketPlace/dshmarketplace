@@ -4,6 +4,7 @@ import Link from "next/link";
 import { PageShell } from "@/components/page-shell";
 import { RefusalTable } from "@/components/refusal-table";
 import { getRefusalReport } from "@/lib/data";
+import { t } from "@/lib/dict";
 import { alternatesFor } from "@/lib/i18n";
 
 export const revalidate = 3600;
@@ -89,6 +90,9 @@ export default async function InstallFailedPage() {
           0.28.0 要求 <code>^0.2.1-rc.1</code>，升级 DeepSeek Harness 就好了。其余情况只能等作者把范围放宽。
         </li>
       </ol>
+      <p>
+        <Link href="/zh/upgrade">{t("zh").upgrade.fromInstallFailed}</Link>
+      </p>
 
       <h2>如果你是插件作者</h2>
       <p>

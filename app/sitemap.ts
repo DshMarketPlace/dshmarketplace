@@ -64,6 +64,9 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         priority: 0.7,
       }),
     ),
+    // Answers "will my plugins survive the next DeepSeek Harness", from
+    // installs on npm next/alpha that only a sandbox can produce.
+    ...entry("/upgrade", { lastModified: now, changeFrequency: "daily", priority: 0.7 }),
     ...STATIC_PAGES.flatMap((slug) =>
       entry(`/${slug}`, {
         lastModified: now,
