@@ -19,7 +19,7 @@ on:
         default: true
       validate:
         description: "How many listings to install in the sandbox (0 skips it)"
-        default: "150"
+        default: "400"
       reviews:
         description: "How many reviews to write afterwards"
         default: "40"
@@ -130,7 +130,7 @@ jobs:
       - name: Export what still needs an install check
         run: |
           pnpm tsx scripts/export-validation-specs.ts \
-            --limit ${{ inputs.validate || '150' }} > specs.jsonl
+            --limit ${{ inputs.validate || '400' }} > specs.jsonl
           echo "count=$(wc -l < specs.jsonl)" >> "$GITHUB_OUTPUT"
         id: specs
 

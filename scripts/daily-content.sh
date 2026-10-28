@@ -16,6 +16,12 @@ N=${1:-5}
 
 echo "== $(date '+%F %T') daily content, $N pages"
 git pull --ff-only --quiet
+# The push at the end ships whatever main holds. Someone's unpushed commits
+# in this checkout are not this job's to publish.
+if [ "$(git rev-list --count '@{u}..HEAD')" != 0 ]; then
+  echo "main has unpushed commits — not writing today"
+  exit 1
+fi
 pnpm tsx scripts/write-content.ts --limit "$N" --images --promote
 
 new=$(git ls-files --others --exclude-standard -- 'public/plugins/*.jpg')
@@ -25,6 +31,6 @@ if [ -z "$new" ]; then
 fi
 git add -- $new
 git commit --quiet -m "content: $(echo "$new" | wc -l | tr -d ' ') pages, $(date +%F)" -- $new
-git pull --rebase --quiet
+git pull --rebase --autostash --quiet
 git push --quiet
 echo "pushed $(git rev-parse --short HEAD)"

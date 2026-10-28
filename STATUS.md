@@ -9,7 +9,7 @@ Live, seeded, and holding the name. A long way from finished.
 | Site | <https://dshmarketplace.dev> — Next.js 16 on Cloudflare Workers via OpenNext |
 | Languages | English at `/`, Chinese at `/zh` — separate root layouts, bidirectional hreflang |
 | Database | Self-hosted libSQL (`sqld`) at `dshmarketplace.db.fengshao1227.com` since 20 Oct — was Turso `aws-ap-northeast-1`; layout and restore in `ops/README.md`. ~12,000 plugins with GitHub metadata; ingest adds 100–600 a night. 345 rows sit on renamed or transferred repository names whose new name is also listed — see 18 Oct |
-| Detail pages | 90 written bilingually, each with a documentation section; 87 illustrated. All 90 indexed. None written since 24 Aug: the text gateway in `.dev.vars` stopped answering — a new one is needed before `write-content.ts` can run |
+| Detail pages | 94 written bilingually, each with a documentation section and an illustration, all indexed. Nothing was written 24 Aug – 28 Oct (the text gateway died); since 28 Oct five a day, unattended — see "What runs itself". Text, images and reviews run on BeatAPI with a dedicated token capped at $20 (`dshmarketplace-content`); images there are tasks, `IMAGE_API_MODE=task` |
 | Install check | Every verdict now names the dsh it ran on (`install_dsh_version`), and `incompatible` joined the verdict set for dsh 0.2's refusal, with the older release that installed instead (`install_fallback`). The 0.1-era verdicts are being re-run on dsh 0.2.0-rc.2 — see 18 Oct. Served as `installCheck` / `installCheckDsh` / `installFallback`, filterable as `?installCheck=<verdict>`, aggregated as the install-verified rate (now over dsh-versioned verdicts only, hidden below 200), embeddable as `GET /badge/<slug>` |
 | Verdict history | `install_runs`, append-only since 26 Aug — every verdict the catalogue publishes, with the exact command it was about. Retraction marks rows, never deletes them |
 | Daily snapshots | `plugin_stats`, one row per plugin per night since 26 Aug (stars, installs, views), indexed on `day` since 18 Oct. Feeds `/top` and `scripts/weekly-report.ts` |
@@ -22,7 +22,7 @@ Live, seeded, and holding the name. A long way from finished.
 | Validator | [dsh-plugin-validator](https://github.com/DshMarketPlace/dsh-plugin-validator) — installs each plugin in a throwaway container on an Oracle ARM box · **public, MIT**. `preset.mjs` validates a whole combination in one install |
 | Presets | 3 curated sets, each installed together in the sandbox before publishing — re-verified 18 Oct on dsh 0.2.0-rc.2 and 0.2.1-rc.2; `power` pins `dsh-better-sidebar@0.26.1`. `/presets`, `/zh/presets`, `GET /api/v1/presets`, `npx dshmarketplace-cli preset <id>` |
 | Cart | Pick plugins anywhere on the site; the bar composes one `npx dshmarketplace-cli add …`. localStorage, no dependency, survives navigation |
-| AI review | Pre-generated bilingual verdict per plugin, grounded in the sandbox result where there is one. **Stopped 23 Sep**: the review gateway answers 503 and the nightly step stays green. 2,552 of ~12,000 have one |
+| AI review | Pre-generated bilingual verdict per plugin, grounded in the sandbox result where there is one. Stopped 23 Sep – 28 Oct (the review gateway answered 503 and the nightly step stayed green); the `REVIEW_API_*` secrets now point at BeatAPI. 2,471 of ~14,400 have one |
 | Nightly sync | `.github/workflows/sync.yml` — discovery through redeploy, no human in the loop, now including the daily stats snapshot. First completed 18 Aug |
 | Docs for a second developer | `CONTRIBUTING.md` (which scripts destroy what), `ops/README.md` (what runs where, the CI credential boundary) |
 | This repo | **Public, MIT**, history squashed to one commit |
@@ -459,14 +459,20 @@ re-run, and retracted again every night while the run reports success. So it
 prints those logs, and one entry in `CAUSES` ends the loop. Nothing else will
 ever ask.
 
-**Not automated, deliberately:** `write-content.ts` and `promote.ts`. The
-per-plugin writing is the only thing competitors cannot scrape, and `promote.ts`
-is a quality gate — automating it would push empty pages into the sitemap.
+**Automated since 28 Oct, at five pages a day:** `scripts/daily-content.sh`,
+from launchd on the home Mac (`dev.dshmarketplace.content`, 11:30, log
+`~/Library/Logs/dshm-content.log`). It writes, promotes only at or above
+`PROMOTION_THRESHOLD` (the bar `promote.ts` holds — below it a page stays
+`listed`), takes one plugin per author per batch, sandbox-`passed` first, and
+pushes the illustrations so they deploy. It refuses to run when main has
+unpushed commits, because its push would ship them. `promote.ts` is still the
+manual gate for pages written without `--promote`.
 
-Caps to remember: 150 installs and 40 reviews a night, and a 400-listing
-metadata refresh, so the catalogue cycles in six days. That keeps up with new
-arrivals; it does not clear a backlog. Sandbox concurrency stays at 3 — going
-faster got the whole batch throttled and every plugin in it looked broken.
+Caps to remember: 400 installs (150 until 28 Oct — a batch took five minutes,
+while ~250 new listings a day left 8,686 untested) and 40 reviews a night, and
+a 400-listing metadata refresh, so the catalogue cycles in six days. Sandbox
+concurrency stays at 3 — going faster got the whole batch throttled and every
+plugin in it looked broken; the count is not the concurrency.
 
 ## Serving it
 

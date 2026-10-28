@@ -27,7 +27,7 @@ import sanitizeHtml from "sanitize-html";
 import { db } from "../db/client";
 import { plugins } from "../db/schema";
 import { primaryInstall } from "../lib/install";
-import { scoreContent } from "../lib/plugin-scoring";
+import { PROMOTION_THRESHOLD, scoreContent } from "../lib/plugin-scoring";
 import { chatBlocks, generateImageSync } from "./lib/velokey";
 
 const run = promisify(execFile);
@@ -223,7 +223,7 @@ async function main() {
   const dryRun = flag("dry-run");
   const promote = flag("promote");
 
-  const candidates = await db
+  const pool = await db
     .select()
     .from(plugins)
     .where(
@@ -243,7 +243,20 @@ async function main() {
       desc(sql`${plugins.installStatus} = 'passed'`),
       desc(plugins.stars),
     )
-    .limit(only ? 1 : limit);
+    .limit(only ? 1 : limit * 10);
+
+  // A monorepo's packages share its star count and sort together, so one
+  // batch was four packages of the same repository — and the next candidate
+  // was the same author's other monorepo. One per author per batch; the rest
+  // come up on later days.
+  const owners = new Set<string>();
+  const candidates = pool
+    .filter((p) => {
+      if (owners.has(p.owner)) return false;
+      owners.add(p.owner);
+      return true;
+    })
+    .slice(0, limit);
 
   console.log(`${candidates.length} plugin(s) to write\n`);
 
@@ -341,6 +354,9 @@ async function main() {
         summary,
         illustration,
       });
+      // The same bar promote.ts holds, so an unattended batch cannot put a
+      // thin page into the sitemap; below it the page stays `listed`.
+      const indexNow = promote && contentScore >= PROMOTION_THRESHOLD;
 
       await db
         .update(plugins)
@@ -363,11 +379,11 @@ async function main() {
           // used to knock it back to `listed`, silently pulling it out of the
           // sitemap as a side effect of improving its copy.
           visibility:
-            promote || p.visibility === "indexed" ? "indexed" : "listed",
+            indexNow || p.visibility === "indexed" ? "indexed" : "listed",
           indexedAt:
             p.visibility === "indexed"
               ? (p.indexedAt ?? new Date())
-              : promote
+              : indexNow
                 ? new Date()
                 : p.indexedAt,
           updatedAt: new Date(),
@@ -375,7 +391,8 @@ async function main() {
         .where(eq(plugins.id, p.id));
 
       console.log(
-        `${words}w EN / ${cjk} CJK / score ${contentScore}${illustration ? " / illustrated" : ""}`,
+        `${words}w EN / ${cjk} CJK / score ${contentScore}${illustration ? " / illustrated" : ""}` +
+          (promote && !indexNow ? " / below the bar, left listed" : ""),
       );
       done++;
     } catch (err) {
