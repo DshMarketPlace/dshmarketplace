@@ -1,4 +1,4 @@
-import { and, eq, inArray, sql } from "drizzle-orm";
+import { and, eq, gte, inArray, lt, lte, or, sql } from "drizzle-orm";
 import { unstable_cache } from "next/cache";
 
 import { db } from "@/db/client";
@@ -67,15 +67,21 @@ function listingUrl(p: Pick<CoveredRow, "visibility" | "slug" | "fullName">): st
 
 async function coveredByName(names: string[]): Promise<CoveredRow[]> {
   if (!names.length) return [];
-  // The is_archived term matches every row and is there for the planner:
-  // with full_name alone it takes the unique index and reads each row's
-  // README; with both it takes plugins_compat_cover_idx (checked with
-  // EXPLAIN QUERY PLAN on production's schema). Before 0012 is applied it
-  // falls back to the unique index, so the query never depends on it.
-  return db
-    .select(COVERED)
-    .from(plugins)
-    .where(and(inArray(plugins.fullName, names), inArray(plugins.isArchived, [false, true])));
+  // Every name is a range on full_name, which is what makes the planner take
+  // plugins_compat_cover_idx for each OR term (EXPLAIN QUERY PLAN on
+  // production's schema). An `=` term takes the unique index and reads the
+  // row's README instead, and an extra is_archived term pulls the whole OR
+  // onto plugins_archived_created_idx — a scan of every row.
+  //
+  // A bare `owner/repo` is [n, n + "$"): the name itself and its subpath
+  // listings (`owner/repo#sub`), since a repo name holds no character below
+  // `$` other than our `#`. A name with a subpath is just itself.
+  const terms = names.map((n) =>
+    n.includes("#")
+      ? and(gte(plugins.fullName, n), lte(plugins.fullName, n))
+      : and(gte(plugins.fullName, n), lt(plugins.fullName, `${n}$`)),
+  );
+  return db.select(COVERED).from(plugins).where(or(...terms));
 }
 
 export type PreviewRun = {
@@ -158,7 +164,7 @@ export async function getCompatFor(keys: CompatKey[]): Promise<CompatResult[]> {
   return keys.map((k) => {
     const match =
       k.kind === "repo"
-        ? byName.get(k.key)
+        ? (byName.get(k.key) ?? best(listings.filter((p) => p.fullName.startsWith(`${k.key}#`))))
         : best(listings.filter((p) => p.npmPackage === k.key));
     if (!match) return { query: k.key, fullName: null, url: null, current: null, preview: {} };
     return {

@@ -28,7 +28,11 @@ function bad(error: string) {
  * Every one is validated before it reaches a query.
  */
 export async function GET(request: Request) {
-  const raw = new URL(request.url).searchParams.get("names") ?? "";
+  // Not `new URL(request.url).searchParams`: on Workers the URL arrives with
+  // `%23` already decoded, so a subpath name's `#` would turn the rest of the
+  // list into a fragment. URLSearchParams over the raw query keeps `#` as text.
+  const query = request.url.slice(request.url.indexOf("?") + 1);
+  const raw = request.url.includes("?") ? (new URLSearchParams(query).get("names") ?? "") : "";
   if (raw.length > 20_000) return bad("names is too long");
 
   const tokens = [...new Set(raw.split(",").map((s) => s.trim()).filter(Boolean))];
