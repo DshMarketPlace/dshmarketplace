@@ -332,6 +332,22 @@ export const ingestRejections = sqliteTable("ingest_rejections", {
     .default(sql`(unixepoch())`),
 });
 
+/**
+ * One row per published weekly report, keyed by the snapshot day its week
+ * ends on. The issue is stored rather than recomputed because a past week
+ * must read the same next month: plugins get renamed, hidden and deleted, and
+ * a recomputed issue would quietly rewrite what we said at the time. `data`
+ * is language-neutral JSON (`WeeklyData` in `lib/weekly.ts`); the pages and
+ * the Markdown render the words.
+ */
+export const weeklyReports = sqliteTable("weekly_reports", {
+  day: text("day").primaryKey(), // YYYY-MM-DD, a plugin_stats day
+  data: text("data").notNull(),
+  createdAt: integer("created_at", { mode: "timestamp" })
+    .notNull()
+    .default(sql`(unixepoch())`),
+});
+
 /** Community submissions awaiting review. */
 export const submissions = sqliteTable("submissions", {
   id: integer("id").primaryKey({ autoIncrement: true }),
