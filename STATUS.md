@@ -160,6 +160,29 @@ Subpath names go over the wire as `owner/repo:sub`: Cloudflare cuts a query
 at `#` even as %23, so the API never sees one. Untested in CI until the first
 nightly run after 28 Oct.
 
+Same evening (the rest of the 28 Oct competitor plan):
+- **`/market/index.json` says what only our sandbox knows.** Labels
+  `sandbox-<dsh>` (the release a listed version installed on), `next-ok` /
+  `alpha-ok` / `<tag>-refused` from `compat_runs` (current release only; a
+  failed preview is not "breaks"); sortKeys `recommended` (the default order),
+  `stars-week` (absent, not 0, when unknown), `stars`, `installs`; `homepage`
+  is our detail page only when one exists, else the repo. The read was 13–16 s
+  on production; migration 0013 (`plugins_market_cover_idx`, partial,
+  applied 28 Oct) makes it a covering-index read (~0.26 s server-side).
+- **`dshmarketplace-plugin` 0.3.0 / 0.3.1** (npm, published by CI on tag
+  `v*`): on first start it switches on DSH's experimental plugin-market
+  bundle and appends our index to Plugins → Discover, the way dshopen.org's
+  `dsh-open-market` does; removals are remembered in the profile
+  (`.dshmarketplace-plugin.json`), `/store-index` re-adds. 0.3.0 also fixed
+  the peer range that had excluded every current dsh; 0.3.1 carries
+  `/store <query>` past dsh 0.2.1's result normalisation (see
+  `docs/in-dsh-plugin.md`). Neither was clicked through in a real DSH web UI.
+- **Detail pages:** a Security block (blocked build scripts with names,
+  package.json install hooks, README risk keywords, each row naming its source
+  and the block saying it is not an audit) and a web/desktop install switch
+  (CLAUDE.md, the desktop profile rule). The API, cards, cart and presets stay
+  `--profile web`.
+
 **Found, not fixed — each is the user's call:**
 
 - **Renamed repositories are listed twice.** GraphQL over all 11,743 stored

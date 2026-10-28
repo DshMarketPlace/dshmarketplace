@@ -164,7 +164,13 @@ Read from the packed `@deepseek-ai/dsh-plugin-market`, `-plugin-manager`,
   `ctx.get("hmr").executing.exit(fn)` first.
 - A command handler's result is normalised at the registry: only `kind`,
   `text` and `sourceEventSeq` survive, and `kind: "error"` needs non-empty
-  `text`. Our `/store` handler's `query` field is dropped there.
+  `text`. Our `/store` handler's `query` field is dropped there, so since
+  0.3.1 the handler also parks the query in a one-shot inbox keyed by
+  `agent.session.id`, and the client takes it from
+  `/api/dshmarketplace/store-query` when the browser-local
+  `command/executed` event fires (still emitted in 0.2.1, with the
+  normalised result). `text` would survive too, but it renders as a
+  persistent node in the conversation.
 - `dshmarketplace-plugin` ≥ 0.3.0 uses this: once per profile it switches the
   bundle on and appends `https://dshmarketplace.dev/market/index.json`
   (marker `.dshmarketplace-plugin.json` in the profile dir), and
