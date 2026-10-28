@@ -150,6 +150,16 @@ once the newest stored one is seven days old. Stored issues are never
 overwritten, and `--save` refuses any day but the latest snapshot, because
 totals and compatibility read the catalogue as it is now.
 
+Also since 28 Oct, `/upgrade` and `GET /api/v1/compat?names=` answer "will my
+plugins still install on the next dsh". The nightly `preview` job builds the
+validator with `--build-arg DSH_VERSION=next|alpha` (the image must prove it
+holds that release or the leg fails), installs up to 150 plugins that pass on
+`latest`, and `preview-apply` writes `compat_runs` (migration 0012) only —
+never `plugins.install_*`. A tag on the same release as `latest` is skipped.
+Subpath names go over the wire as `owner/repo:sub`: Cloudflare cuts a query
+at `#` even as %23, so the API never sees one. Untested in CI until the first
+nightly run after 28 Oct.
+
 **Found, not fixed — each is the user's call:**
 
 - **Renamed repositories are listed twice.** GraphQL over all 11,743 stored
