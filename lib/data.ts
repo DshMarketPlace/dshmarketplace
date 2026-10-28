@@ -17,6 +17,8 @@ import {
 import { alias } from "drizzle-orm/sqlite-core";
 import { unstable_cache } from "next/cache";
 
+import { getPreviewVerdicts } from "@/lib/compat";
+
 /**
  * Every catalogue-wide aggregate below (`count`, `sum(case…)`, `GROUP BY`) is
  * a full scan SQLite answers by visiting every `is_archived = 0` row — no
@@ -426,9 +428,14 @@ export const getCatalogueIndex = unstable_cache(
  */
 export const getMarketRows = unstable_cache(
   async () => {
-    const [rows, cats] = await Promise.all([
+    // Every listed column but the early ones (name, summary, repo…) sits past
+    // the README; plugins_market_cover_idx (migrations/0013) carries them, so
+    // this reads ~1,800 index entries and each row's first page instead of
+    // every README overflow chain — 13–16 s on production without it.
+    const [rows, cats, weekGain, previews] = await Promise.all([
       db
         .select({
+          id: plugins.id,
           fullName: plugins.fullName,
           name: plugins.name,
           owner: plugins.owner,
@@ -461,12 +468,43 @@ export const getMarketRows = unstable_cache(
         .select({ id: categories.id, name: categories.name, nameZh: categories.nameZh })
         .from(categories)
         .orderBy(asc(categories.sortOrder)),
+      getWeekStarGain(),
+      getPreviewVerdicts(),
     ]);
-    return { rows, categories: cats };
+    return { rows, categories: cats, weekGain, previews };
   },
-  ["market-rows"],
+  // v2: the cached value gained weekGain and previews.
+  ["market-rows-v2"],
   { revalidate: CATALOG_TTL, tags: [CATALOG_TAG] },
 );
+
+/**
+ * Stars gained over the last week of nightly snapshots, per plugin id, for
+ * every plugin that gained any. The snapshots skip nights, so "a week ago" is
+ * the newest snapshot at least seven days older than the latest. Two reads on
+ * plugin_stats' day and (plugin, day) indexes; never touches plugins.
+ */
+async function getWeekStarGain(): Promise<[number, number][]> {
+  const [{ latest } = { latest: null }] = await db
+    .select({ latest: sql<string | null>`max(${pluginStats.day})` })
+    .from(pluginStats);
+  if (!latest) return [];
+  const [{ before } = { before: null }] = await db
+    .select({ before: sql<string | null>`max(${pluginStats.day})` })
+    .from(pluginStats)
+    .where(sql`${pluginStats.day} <= ${shiftDay(latest, -7)}`);
+  if (!before) return [];
+
+  const now = alias(pluginStats, "now");
+  const then = alias(pluginStats, "then");
+  const gain = sql<number>`${now.stars} - ${then.stars}`;
+  const rows = await db
+    .select({ pluginId: now.pluginId, gain })
+    .from(now)
+    .innerJoin(then, and(eq(then.pluginId, now.pluginId), eq(then.day, before)))
+    .where(and(eq(now.day, latest), sql`${gain} > 0`));
+  return rows.map((r) => [r.pluginId, Number(r.gain)]);
+}
 
 const RANKING_TTL = 6 * 3600;
 const RANK_SIZE = 12;

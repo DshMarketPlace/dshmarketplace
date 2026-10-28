@@ -177,6 +177,44 @@ export async function getCompatFor(keys: CompatKey[]): Promise<CompatResult[]> {
   });
 }
 
+export type PreviewVerdicts = {
+  tag: PreviewTag;
+  /** The release the tag pointed at on its newest run. */
+  version: string;
+  /** Latest verdict per plugin on exactly that release. */
+  verdicts: Record<string, string>;
+};
+
+/**
+ * Per upcoming tag, every plugin's latest verdict on the tag's current
+ * release — what the plugin index labels. Uncached: its caller caches.
+ * One grouped read per tag over compat_runs_tag_version_idx.
+ */
+export async function getPreviewVerdicts(): Promise<PreviewVerdicts[]> {
+  const out: PreviewVerdicts[] = [];
+  for (const tag of PREVIEW_TAGS) {
+    const rows = await orNone(() =>
+      db
+        .select({
+          fullName: compatRuns.fullName,
+          dshVersion: compatRuns.dshVersion,
+          status: compatRuns.status,
+          ranAt: sql<number>`max(${compatRuns.ranAt})`,
+        })
+        .from(compatRuns)
+        .where(eq(compatRuns.dshTag, tag))
+        .groupBy(compatRuns.fullName),
+    );
+    const latest = rows.map((r) => ({ ...r, ranAt: Number(r.ranAt) }));
+    const { version } = summariseTag(latest);
+    if (!version) continue;
+    const verdicts: Record<string, string> = {};
+    for (const r of latest) if (r.dshVersion === version) verdicts[r.fullName] = r.status;
+    out.push({ tag, version, verdicts });
+  }
+  return out;
+}
+
 export type Regression = {
   fullName: string;
   slug: string;
