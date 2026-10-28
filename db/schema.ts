@@ -249,6 +249,20 @@ export const plugins = sqliteTable(
       .where(sql`${t.linuxdoUrl} IS NOT NULL`),
     archivedCreatedIdx: index("plugins_archived_created_idx").on(t.isArchived, t.createdAt),
     npmPackageIdx: index("plugins_npm_package_idx").on(t.npmPackage),
+    // The upgrade check looks up to 100 pasted names per request, uncached
+    // (the keys are the caller's), and every column it reads sits past the
+    // README. Covering them keeps one request at a few index pages instead of
+    // a hundred README overflow chains. migrations/0012.
+    compatCoverIdx: index("plugins_compat_cover_idx").on(
+      t.fullName,
+      t.isArchived,
+      t.installStatus,
+      t.installDshVersion,
+      t.npmPackage,
+      t.visibility,
+      t.slug,
+      t.stars,
+    ),
   }),
 );
 
@@ -284,6 +298,43 @@ export const installRuns = sqliteTable(
   },
   (t) => ({
     nameRanIdx: index("install_runs_name_ran_idx").on(t.fullName, t.ranAt),
+  }),
+);
+
+/**
+ * Installs on an upcoming dsh — npm `next` or `alpha` — of plugins that pass
+ * on `latest`, so a reader can see what an upgrade would stop installing.
+ *
+ * Its own table on purpose: nothing here is a verdict the catalogue
+ * publishes. `plugins.install_*` and `install_runs` describe `latest`, and
+ * retraction reads them; a preview row reaching either would put a release
+ * most people do not run on the listing. Append-only, like install_runs; the
+ * latest row per (full_name, dsh_tag) is the answer.
+ */
+export const compatRuns = sqliteTable(
+  "compat_runs",
+  {
+    id: integer("id").primaryKey({ autoIncrement: true }),
+    fullName: text("full_name").notNull(),
+    /** The dist-tag the image was built from: `next` or `alpha`. */
+    dshTag: text("dsh_tag").notNull(),
+    /** What the tag resolved to when it ran; a tag moves, this does not. */
+    dshVersion: text("dsh_version").notNull(),
+    install: text("install"),
+    status: text("status").notNull(),
+    detail: text("detail"),
+    ranAt: integer("ran_at", { mode: "timestamp" }).notNull(),
+  },
+  (t) => ({
+    // Latest per (plugin, tag) for the API's pasted names.
+    nameTagRanIdx: index("compat_runs_name_tag_ran_idx").on(t.fullName, t.dshTag, t.ranAt),
+    // Latest per plugin on one release of a tag: the summary and the export.
+    tagVersionIdx: index("compat_runs_tag_version_idx").on(
+      t.dshTag,
+      t.dshVersion,
+      t.fullName,
+      t.ranAt,
+    ),
   }),
 );
 

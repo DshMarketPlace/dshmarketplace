@@ -148,8 +148,33 @@ jobs:
           path: specs.jsonl
           retention-days: 1
 
+      # The upgrade check (/upgrade): plugins that pass on `latest`, to try on
+      # npm `next` and `alpha`. A tag on the same release as `latest` writes
+      # nothing. Never fails the job — a preview is not worth tonight's
+      # verdicts — so a broken export only costs its own lane.
+      - name: Export what to try on upcoming dsh releases
+        id: preview
+        run: |
+          tags=()
+          for tag in next alpha; do
+            if pnpm tsx scripts/export-validation-specs.ts --preview "$tag" --limit 150 > "preview-specs-$tag.jsonl"; then
+              if [ -s "preview-specs-$tag.jsonl" ]; then tags+=("\"$tag\""); fi
+            else
+              echo "::warning::preview export for $tag failed"
+            fi
+          done
+          echo "tags=[$(IFS=,; echo "${tags[*]}")]" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/upload-artifact@v4
+        if: ${{ steps.preview.outputs.tags != '[]' }}
+        with:
+          name: preview-specs
+          path: preview-specs-*.jsonl
+          retention-days: 1
+
     outputs:
       specs: ${{ steps.specs.outputs.count }}
+      preview_tags: ${{ steps.preview.outputs.tags }}
 
   # Runs other people's install scripts, so it holds no secrets at all — not
   # the database token, not the review key. That is the whole reason it is a
@@ -247,6 +272,97 @@ jobs:
       - name: Write the reviews
         if: ${{ env.REVIEW_API_KEY != '' }}
         run: pnpm tsx scripts/write-review.ts --limit ${{ inputs.reviews || '40' }}
+
+  # The same sandbox on an upcoming dsh. Same rule as `validate`: it runs
+  # other people's install scripts, so it holds no secrets. One tag at a time
+  # beside `validate`, at the same concurrency, because more parallel
+  # installs is what got us throttled before.
+  preview:
+    needs: sync
+    if: ${{ needs.sync.outputs.preview_tags != '' && needs.sync.outputs.preview_tags != '[]' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 300
+    strategy:
+      fail-fast: false
+      max-parallel: 1
+      matrix:
+        tag: ${{ fromJSON(needs.sync.outputs.preview_tags || '[]') }}
+
+    steps:
+      - name: Fetch the validator
+        run: git clone --depth 1 https://github.com/DshMarketPlace/dsh-plugin-validator.git validator
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: preview-specs
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      # A validator without the DSH_VERSION build arg would quietly install
+      # `latest` and file it under this tag, so the image proves which dsh it
+      # holds before anything runs.
+      - name: Install every plugin on dsh@${{ matrix.tag }}
+        working-directory: validator
+        env:
+          TAG: ${{ matrix.tag }}
+          VALIDATOR_IMAGE: dsh-validator:${{ matrix.tag }}
+        run: |
+          docker build --build-arg DSH_VERSION="$TAG" -t "$VALIDATOR_IMAGE" .
+          want=$(npm view "@deepseek-ai/dsh@$TAG" version)
+          got=$(docker run --rm --entrypoint sh "$VALIDATOR_IMAGE" -c 'npm ls -g --depth=0 @deepseek-ai/dsh' | grep -o '@deepseek-ai/dsh@[^ ]*' | cut -d@ -f3)
+          if [ "$want" != "$got" ]; then
+            echo "::error::image holds dsh $got, $TAG is $want"
+            exit 1
+          fi
+          node run.mjs "../preview-specs-$TAG.jsonl" "../preview-results-$TAG.jsonl" 3
+
+      - uses: actions/upload-artifact@v4
+        if: ${{ always() }}
+        with:
+          name: preview-results-${{ matrix.tag }}
+          path: preview-results-${{ matrix.tag }}.jsonl
+          retention-days: 7
+          if-no-files-found: ignore
+
+  # Back on the trusted side, and writes compat_runs only: a preview never
+  # touches plugins.install_* or install_runs, and nothing is retracted here.
+  preview-apply:
+    needs: [sync, preview]
+    if: ${{ always() && (needs.preview.result == 'success' || needs.preview.result == 'failure') }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    env:
+      TURSO_DATABASE_URL: ${{ secrets.TURSO_DATABASE_URL }}
+      TURSO_AUTH_TOKEN: ${{ secrets.TURSO_AUTH_TOKEN }}
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: preview-results-*
+          merge-multiple: true
+
+      # A leg that timed out still uploaded what it finished; each line is a
+      # whole result, so a partial file is a smaller batch, not a wrong one.
+      - name: Record what upcoming releases did
+        run: |
+          for f in preview-results-*.jsonl; do
+            [ -e "$f" ] || continue
+            tag="${f#preview-results-}"
+            pnpm tsx scripts/apply-compat-runs.ts --tag "${tag%.jsonl}" "$f"
+          done
 
   # The catalogue counts are baked into prerendered pages, so a sync that does
   # not redeploy leaves the site quoting yesterday's numbers. It runs even when
