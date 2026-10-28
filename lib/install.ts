@@ -20,8 +20,15 @@ type InstallFields = Pick<
  * `--profile` is mandatory — `dsh plugin add x` exits with "required option
  * '--profile <name>' not specified" and nothing installs. `web` is the profile
  * a default install creates; the note tells anyone on another one to swap it.
+ *
+ * `desktop` is the Electron app's own profile, and only the dsh command the app
+ * installs may manage it — npm's dsh rejects the name ("managed exclusively by
+ * the Electron application", apps/cli in deepseek-harness). Only the detail
+ * page offers it; every API field and card keeps `web`, because published
+ * clients parse those strings with guards that can never be updated.
  */
-const PROFILE = "web";
+export const INSTALL_HOSTS = ["web", "desktop"] as const;
+export type InstallHost = (typeof INSTALL_HOSTS)[number];
 
 /**
  * Resolves how a plugin is actually installed into DeepSeek Harness.
@@ -38,15 +45,17 @@ const PROFILE = "web";
 export function installOptions(
   plugin: InstallFields,
   locale: Locale = "en",
+  profile: InstallHost = "web",
 ): InstallOption[] {
   const d = t(locale).install;
+  const desktop = profile === "desktop";
   const options: InstallOption[] = [];
 
   if (plugin.npmPackage) {
     options.push({
       label: "npm",
-      cmd: `dsh plugin --profile ${PROFILE} add ${plugin.npmPackage}`,
-      note: d.npmNote,
+      cmd: `dsh plugin --profile ${profile} add ${plugin.npmPackage}`,
+      note: desktop ? d.npmNoteDesktop : d.npmNote,
     });
   }
 
@@ -62,8 +71,8 @@ export function installOptions(
 
   options.push({
     label: "GitHub",
-    cmd: `dsh plugin --profile ${PROFILE} add github:${plugin.owner}/${plugin.repo}`,
-    note: d.githubNote,
+    cmd: `dsh plugin --profile ${profile} add github:${plugin.owner}/${plugin.repo}`,
+    note: desktop ? d.githubNoteDesktop : d.githubNote,
   });
 
   return options;

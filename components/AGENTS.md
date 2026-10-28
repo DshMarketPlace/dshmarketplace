@@ -13,6 +13,7 @@
 - `copy-command.tsx`: 安装命令复制交互。
 - `craft.tsx`: 通用内容布局原语。
 - `install-check.tsx`: 插件安装检查结果展示。
+- `install-host-switch.tsx`: 详情页安装命令的 web / desktop profile 切换（客户端，默认 web，选择存 localStorage）。
 - `language-switch.tsx`: 双语路由切换。
 - `page-shell.tsx`: 内容页面公共布局。
 - `plugin-card.tsx`: 插件目录条目展示。

@@ -4,8 +4,9 @@ import { Star, GitFork, ExternalLink, MessagesSquare, Sparkles } from "lucide-re
 import { PluginCard } from "@/components/plugin-card";
 import { CopyCommand } from "@/components/copy-command";
 import { InstallCheck } from "@/components/install-check";
+import { InstallHostSwitch } from "@/components/install-host-switch";
 import { SecurityPanel } from "@/components/security-panel";
-import { installOptions, installKindLabel } from "@/lib/install";
+import { installOptions, installKindLabel, type InstallOption } from "@/lib/install";
 import { t } from "@/lib/dict";
 import {
   absoluteUrl,
@@ -182,6 +183,32 @@ function IncompatibleHelp({ plugin, locale }: { plugin: Plugin; locale: Locale }
   );
 }
 
+function CommandList({
+  plugin,
+  commands,
+  locale,
+}: {
+  plugin: Plugin;
+  commands: InstallOption[];
+  locale: Locale;
+}) {
+  const d = t(locale).plugin;
+  return commands.map((c) => (
+    <div key={c.label} className="space-y-1.5">
+      <p className="text-xs text-muted-foreground">
+        {d.via(c.label)}
+        {plugin.installKind !== "unknown" && c.label === "GitHub"
+          ? ` · ${installKindLabel(plugin.installKind, locale)}`
+          : null}
+      </p>
+      <CopyCommand command={c.cmd} size="lg" locale={locale} />
+      {c.note ? (
+        <p className="text-xs leading-relaxed text-muted-foreground">{c.note}</p>
+      ) : null}
+    </div>
+  ));
+}
+
 export async function PluginView({
   plugin,
   locale,
@@ -192,6 +219,8 @@ export async function PluginView({
   const d = t(locale).plugin;
   const related = await getRelatedPlugins(plugin);
   const commands = installOptions(plugin, locale);
+  const desktopCommands = installOptions(plugin, locale, "desktop");
+  const di = t(locale).install;
   const checkedAgo = relativeTime(plugin.installCheckedAt, locale);
   const summary = summaryFor(plugin, locale);
   const overview = overviewFor(plugin, locale);
@@ -282,22 +311,35 @@ export async function PluginView({
               {t(locale).install.subpathUnsupported}
             </p>
           ) : null}
-          {commands.map((c) => (
-            <div key={c.label} className="space-y-1.5">
-              <p className="text-xs text-muted-foreground">
-                {d.via(c.label)}
-                {plugin.installKind !== "unknown" && c.label === "GitHub"
-                  ? ` · ${installKindLabel(plugin.installKind, locale)}`
-                  : null}
-              </p>
-              <CopyCommand command={c.cmd} size="lg" locale={locale} />
-              {c.note ? (
-                <p className="text-xs leading-relaxed text-muted-foreground">
-                  {c.note}
-                </p>
-              ) : null}
-            </div>
-          ))}
+          {commands.length > 0 ? (
+            // Web first and by default: it is what a plain `npm i -g` install
+            // creates, and the profile every published API string names.
+            <InstallHostSwitch
+              label={di.hostLabel}
+              hosts={[
+                {
+                  id: "web",
+                  name: di.hostWeb,
+                  body: <CommandList plugin={plugin} commands={commands} locale={locale} />,
+                },
+                {
+                  id: "desktop",
+                  name: di.hostDesktop,
+                  body: (
+                    <>
+                      <p className="border-l-2 border-copper pl-4 text-sm leading-relaxed text-muted-foreground">
+                        {di.desktopHow}
+                      </p>
+                      <CommandList plugin={plugin} commands={desktopCommands} locale={locale} />
+                      <p className="text-xs leading-relaxed text-ink-faint">
+                        {di.desktopUnverified}
+                      </p>
+                    </>
+                  ),
+                },
+              ]}
+            />
+          ) : null}
 
           {plugin.installStatus ? (
             <div className="space-y-2 border border-border bg-card p-4">

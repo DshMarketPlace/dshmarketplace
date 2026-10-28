@@ -402,6 +402,17 @@ const en = {
       "Resolves a published tarball rather than cloning the repository, and installs without any extra setup. Swap `web` for your profile name if you run another one.",
     githubNote:
       "Installing from GitHub runs the project's build script, which pnpm blocks until you allowlist it — run the command once and pnpm prints the exact key to add under `allowBuilds` in ~/.dsh/profiles/web/pnpm-workspace.yaml.",
+    npmNoteDesktop:
+      "Resolves a published tarball rather than cloning the repository.",
+    githubNoteDesktop:
+      "Installing from GitHub runs the project's build script, which pnpm blocks until you allowlist it — run the command once and pnpm prints the exact key to add under `allowBuilds` in ~/.dsh/profiles/desktop/pnpm-workspace.yaml.",
+    hostLabel: "Install into",
+    hostWeb: "dsh web",
+    hostDesktop: "Desktop app",
+    desktopHow:
+      "The desktop app keeps its own profile, desktop, and only the dsh command it ships may change it — the npm-installed dsh refuses that profile. Install the command from the app menu (Manage dsh Command…), open Desktop once, quit it fully, run the line below, then reopen Desktop.",
+    desktopUnverified:
+      "Our install check ran in a web profile on npm's dsh, not in the desktop app.",
     subpathUnsupported:
       "This plugin lives in a subdirectory of a larger repository, and `dsh plugin add` cannot reach it — it forwards to pnpm, which reads everything after `#` as a git branch or commit. Clone the repository and add the plugin through DSH's plugin panel using a repository source, or ask the author to publish it to npm.",
     kindNpm: "npm package",
@@ -911,6 +922,15 @@ const zh: Dict = {
       "直接拉已发布的 tarball，不用克隆整个仓库，也不需要额外配置。如果你用的是别的 profile，把 `web` 换成对应的名字。",
     githubNote:
       "从 GitHub 装会执行项目自己的构建脚本，而 pnpm 默认拦着不让跑——先跑一次这条命令，pnpm 会打印出要加到 ~/.dsh/profiles/web/pnpm-workspace.yaml 里 `allowBuilds` 下面的那个 key。",
+    npmNoteDesktop: "直接拉已发布的 tarball，不用克隆整个仓库。",
+    githubNoteDesktop:
+      "从 GitHub 装会执行项目自己的构建脚本，而 pnpm 默认拦着不让跑——先跑一次这条命令，pnpm 会打印出要加到 ~/.dsh/profiles/desktop/pnpm-workspace.yaml 里 `allowBuilds` 下面的那个 key。",
+    hostLabel: "装到哪",
+    hostWeb: "dsh web",
+    hostDesktop: "桌面版",
+    desktopHow:
+      "桌面版有自己的 profile，叫 desktop，只认它自带的 dsh 命令——npm 装的 dsh 会直接拒掉这个 profile。先在应用菜单里点 Manage dsh Command… 装上这个命令，打开一次桌面版再彻底退出，跑下面这条，然后重新打开桌面版。",
+    desktopUnverified: "我们的实装是在 npm 版 dsh 的 web profile 里跑的，没在桌面版上跑过。",
     subpathUnsupported:
       "这个插件放在一个大仓库的子目录里，`dsh plugin add` 够不到它——它转发给 pnpm，而 pnpm 会把 `#` 后面的内容当成分支或 commit。请先 clone 仓库，再用 DSH 插件面板的 repository 源添加，或者请作者发一个 npm 包。",
     kindNpm: "npm 包",

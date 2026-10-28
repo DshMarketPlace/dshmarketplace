@@ -97,6 +97,13 @@ has the full set.
 - **`dsh plugin` forwards to pnpm inside a profile directory**, so
   `--profile <name>` is mandatory. Without it nothing installs. Every command
   the site emits carries `--profile web`.
+- **`desktop` is the Electron app's own profile, and npm's `dsh` refuses
+  it** ("managed exclusively by the Electron application", `apps/cli` bin.js
+  in 0.2.1-rc.2 through 0.2.2-alpha.2). Only the `dsh` the desktop app installs
+  (menu: Manage dsh Command…) may run `dsh plugin --profile desktop add`, with
+  the app opened once and fully quit (`apps/desktop/README.md`, "Bundled command
+  runtime"). The detail page offers it behind a web/desktop switch; the API,
+  cards, cart and presets stay on `web`, and no verdict was run on Desktop.
 - **`github:owner/repo#subpath` fails, but a subpath install is possible.**
   This file asserted the opposite until 19 Aug 2026, when an install disproved
   it. The bare form is read as a git ref and fails with `Could not resolve
