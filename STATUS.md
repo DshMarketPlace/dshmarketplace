@@ -143,6 +143,12 @@ select the five columns `primaryInstall` reads.
 **New surfaces**: `/mcp` (MCP server), `/market/index.json` (DSH Discover
 index), `/top`, `/install-failed`, a header menu below `sm`, and
 `scripts/weekly-report.ts` for a post the user curates before publishing.
+Since 28 Oct the same numbers are also stored as issues (`weekly_reports`,
+migration 0011) and served at `/weekly` and `/weekly/<day>`; the nightly runs
+`weekly-report.ts --save --if-due` after the snapshot, so a new issue lands
+once the newest stored one is seven days old. Stored issues are never
+overwritten, and `--save` refuses any day but the latest snapshot, because
+totals and compatibility read the catalogue as it is now.
 
 **Found, not fixed — each is the user's call:**
 

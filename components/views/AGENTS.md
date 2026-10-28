@@ -6,5 +6,6 @@
 - `catalogue-view.tsx`: 插件浏览、筛选与分类入口。
 - `plugin-view.tsx`: 插件详情与安装信息。
 - `top-view.tsx`: 排行榜视图。
+- `weekly-view.tsx`: 周报列表与单期视图，渲染 `weekly_reports` 里定稿的数据，并提供两类页面的 metadata 与 Article JSON-LD。
 
 [PROTOCOL]: 变更时更新此头部，然后检查 AGENTS.md

@@ -124,6 +124,14 @@ jobs:
       - name: Snapshot daily stats
         run: pnpm tsx scripts/snapshot-stats.ts
 
+      # Right after the snapshot, so the issue ends on tonight's numbers. It
+      # writes only once the newest stored issue is a week old and never
+      # overwrites one. A failure here is an issue late by a night, not a
+      # reason to skip tonight's install checks, hence continue-on-error.
+      - name: Store the weekly report when one is due
+        run: pnpm tsx scripts/weekly-report.ts --save --if-due
+        continue-on-error: true
+
       # Which listings still need running is a database question, so it is
       # answered here, where the credentials already are. The answer crosses
       # to the sandbox as a plain file.

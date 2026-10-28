@@ -34,7 +34,7 @@ components/views/    The actual pages, locale-parameterised, shared by both
 lib/dict.ts          Every visible string, both languages
 lib/i18n.ts          Locale type, path helpers, hreflang, relative dates
 db/schema.ts         plugins, categories, plugin_stats, install_runs,
-                     ingest_rejections, submissions
+                     ingest_rejections, submissions, weekly_reports
 scripts/             Author-time jobs: seed, sync, write-content, promote
 ```
 
