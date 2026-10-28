@@ -140,6 +140,37 @@ The browser bundle's external list is a hard allowlist — their build fails the
 pack if any other `require()` survives. Worth copying that check: it turns a
 runtime failure inside someone's harness into a build failure on our machine.
 
+## Custom plugin indexes (dsh ≥ 0.2.1-rc.2)
+
+Read from the packed `@deepseek-ai/dsh-plugin-market`, `-plugin-manager`,
+`-hmr` and `-commands` at 0.2.1-rc.2, 0.2.1-rc.4 and 0.2.2-alpha.2 (28 Oct
+2026); the API below is identical across the three. 0.2.0-rc.2 ships none of it.
+
+- The optional bundle `@deepseek-ai/dsh-experimental-plugin-market-bundle`
+  ("Custom plugin indexes", off in shipped profiles) mounts the host service
+  `pluginMarket` — and only with a `profileContext`. `listIndexes()` returns
+  `{url, title?, description?, error?}[]`; `setIndexes(urls)` replaces the
+  list, keeps an already-configured URL as written, and throws
+  `plugin-market/invalid-index-url` on a repeated URL (compared by `new
+  URL().href`) or a new non-http(s) / credentialed / `#` URL.
+- `pluginManager.listBundles()` lists it with `availability`
+  (`installation | profile | missing`) and `enabled`;
+  `setBundleEnabled(name, true)` answers `{application: applied |
+  restart-required | overridden | failed | cancelled}`.
+- Settings and plugin-manager writes run under `hmr.runExclusive`, which
+  rejects "HMR transactions cannot be nested" when called from inside a reload
+  — and a plugin loaded by one runs `apply` inside it (AsyncLocalStorage, so
+  every promise it starts inherits it). Step out with
+  `ctx.get("hmr").executing.exit(fn)` first.
+- A command handler's result is normalised at the registry: only `kind`,
+  `text` and `sourceEventSeq` survive, and `kind: "error"` needs non-empty
+  `text`. Our `/store` handler's `query` field is dropped there.
+- `dshmarketplace-plugin` ≥ 0.3.0 uses this: once per profile it switches the
+  bundle on and appends `https://dshmarketplace.dev/market/index.json`
+  (marker `.dshmarketplace-plugin.json` in the profile dir), and
+  `/store-index` repeats both on request. `dsh-open-market` (dshopen.org) does
+  the same for its index.
+
 ## What ours does differently
 
 Not a second copy of anyone's store. The plugin exists to put *our* catalogue
