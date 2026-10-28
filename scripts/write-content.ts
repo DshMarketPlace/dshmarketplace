@@ -236,7 +236,13 @@ async function main() {
             sql`length(${plugins.readmeMd}) >= 600`,
           ),
     )
-    .orderBy(desc(plugins.inRegistry), desc(plugins.stars))
+    // A page is a recommendation, so a plugin the sandbox installed goes
+    // ahead of one that it could not.
+    .orderBy(
+      desc(plugins.inRegistry),
+      desc(sql`${plugins.installStatus} = 'passed'`),
+      desc(plugins.stars),
+    )
     .limit(only ? 1 : limit);
 
   console.log(`${candidates.length} plugin(s) to write\n`);

@@ -183,6 +183,9 @@ export async function generateImageSync(
   if (!base || !key) {
     throw new Error("IMAGE_API_BASE and IMAGE_API_KEY must be set in .dev.vars");
   }
+  if (process.env.IMAGE_API_MODE === "task") {
+    return generateImageTask(base, key, prompt, opts);
+  }
 
   const res = await fetch(`${base}/v1/images/generations`, {
     method: "POST",
@@ -216,6 +219,59 @@ export async function generateImageSync(
   }
 
   throw new Error(`no image in response: ${JSON.stringify(data).slice(0, 200)}`);
+}
+
+/**
+ * The same image through BeatAPI (`IMAGE_API_MODE=task`), which only exposes
+ * images as tasks: `POST /v1/images/tasks`, then poll `GET /v1/tasks/{id}`.
+ * It takes an aspect ratio and a 1K/2K tier instead of a pixel size, so the
+ * size is reduced to its ratio. gpt-image-2 at 1K settles in ~20 s.
+ */
+async function generateImageTask(
+  base: string,
+  key: string,
+  prompt: string,
+  opts: { size?: string; model?: string },
+): Promise<Buffer> {
+  const [w, h] = (opts.size ?? "1536x1024").split("x").map(Number);
+  const gcd = (a: number, b: number): number => (b ? gcd(b, a % b) : a);
+  const g = gcd(w, h);
+  const headers = { Authorization: `Bearer ${key}`, "Content-Type": "application/json" };
+
+  const res = await fetch(`${base}/v1/images/tasks`, {
+    method: "POST",
+    headers,
+    body: JSON.stringify({
+      model: opts.model ?? process.env.IMAGE_MODEL ?? "gpt-image-2",
+      prompt,
+      aspect_ratio: `${w / g}:${h / g}`,
+      resolution: "1K",
+    }),
+  });
+  if (!res.ok) {
+    throw new Error(`images/tasks → ${res.status}: ${(await res.text()).slice(0, 300)}`);
+  }
+  const id: string = (await res.json())?.data?.id;
+  if (!id) throw new Error("images/tasks returned no task id");
+
+  // Ten minutes is several times the gateway's own p90 (~66 s).
+  for (let i = 0; i < 120; i++) {
+    await sleep(5000);
+    const poll = await fetch(`${base}/v1/tasks/${id}`, { headers });
+    if (!poll.ok) continue;
+    const task = (await poll.json())?.data;
+    if (task?.status === "succeeded") {
+      const url: string | undefined = task.output?.media?.[0]?.url ?? task.output?.r2_url;
+      if (!url) throw new Error(`task ${id} succeeded with no image`);
+      const img = await fetch(url);
+      if (!img.ok) throw new Error(`image url → ${img.status}`);
+      return Buffer.from(await img.arrayBuffer());
+    }
+    if (task?.status === "failed" || task?.status === "cancelled") {
+      throw new Error(`task ${id} ${task.status}: ${task.error_code ?? ""} ${task.error_message ?? ""}`);
+    }
+  }
+  throw new Error(`task ${id} still running after 10 minutes`);
 }
 
 export function sleep(ms: number) {
