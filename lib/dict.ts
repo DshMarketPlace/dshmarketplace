@@ -79,6 +79,7 @@ const en = {
     explore: "Explore plugins",
     api: "Public API",
     installFailed: "Install failed?",
+    weekly: "Weekly report",
     faq: "FAQ",
     project: "Project",
     about: "About",
@@ -393,6 +394,44 @@ const en = {
     rank: (i: number) => `#${i}`,
   },
 
+  weekly: {
+    eyebrow: "Weekly report",
+    listTitle: "DeepSeek Harness plugins, week by week",
+    listLede:
+      "One issue a week: what arrived in the catalogue, what climbed, what people installed from inside DeepSeek Harness, and what the current release refuses. Each issue is fixed the night it is written — the numbers are what we measured then.",
+    listMetaTitle: "DeepSeek Harness Plugins Weekly — New, Rising & Most Installed",
+    listMetaDescription:
+      "A weekly report on DeepSeek Harness plugins: new arrivals, the week's GitHub star gains, installs from inside the harness, and what the current release refuses. Measured from nightly snapshots and sandbox runs.",
+    listItem: (total: number, added: number) =>
+      `${added.toLocaleString("en")} added · ${total.toLocaleString("en")} in the catalogue`,
+    noIssues: "No issue has been published yet. The first one appears after a week of nightly snapshots.",
+    issueTitle: (from: string, to: string) => `DeepSeek Harness plugins this week · ${from} → ${to}`,
+    issueMetaTitle: (from: string, to: string) => `DeepSeek Harness Plugins Weekly, ${from} to ${to}`,
+    issueMetaDescription: (from: string, to: string, added: number) =>
+      `${added.toLocaleString("en")} new DeepSeek Harness plugins between ${from} and ${to}, the week's biggest star gains, the most installed, and what the current release refuses.`,
+    lede: (total: number, added: number) =>
+      `${total.toLocaleString("en")} plugins in the catalogue, ${added.toLocaleString("en")} added this week. Every number comes from the nightly snapshots and sandbox runs.`,
+    frozen: (day: string) =>
+      `Recorded from the snapshot of ${day} and not updated since: the catalogue keeps moving, this page keeps what we measured that night.`,
+    allIssues: "All issues",
+    releasesHeading: "DeepSeek Harness releases this week",
+    arrivedHeading: "New this week, by stars",
+    risingHeading: "Most stars gained",
+    installedHeading: "Most installed from inside DeepSeek Harness",
+    compatHeading: (dsh: string) => `Compatibility with DeepSeek Harness ${dsh}`,
+    compatBody: (dsh: string, tested: number, refused: number, rescued: number) =>
+      `${tested.toLocaleString("en")} plugins run on ${dsh}: ${refused.toLocaleString("en")} had their latest release refused, ${rescued.toLocaleString("en")} of those have an older release that installs.`,
+    compatHelp: "If one will not install, read the fixes",
+    cliLead: " — or run",
+    cliCommand: "npx dshmarketplace-cli add <plugin>",
+    cliTail: ", which picks a release your dsh accepts.",
+    starsMetric: (n: number) => `★ ${n.toLocaleString("en")}`,
+    gainedMetric: (n: number) => `+${n.toLocaleString("en")} ★`,
+    installsMetric: (n: number) => `${n.toLocaleString("en")} installs`,
+    noFit: "no release fits yet",
+    none: "None this week.",
+  },
+
   refusals: {
     plugin: "Plugin",
     needs: "Latest release needs dsh",
@@ -480,6 +519,7 @@ const zh: Dict = {
     explore: "浏览插件",
     api: "公开 API",
     installFailed: "装不上？",
+    weekly: "周报",
     faq: "常见问题",
     project: "项目",
     about: "关于",
@@ -774,6 +814,43 @@ const zh: Dict = {
     verifiedMetric: (n: number) => `★ ${n.toLocaleString("zh")}`,
     empty: "这一榜的数据还不够。",
     rank: (i: number) => `#${i}`,
+  },
+
+  weekly: {
+    eyebrow: "周报",
+    listTitle: "DeepSeek Harness 插件周报",
+    listLede:
+      "每周一期：目录里新来了什么、谁涨得快、大家在 DeepSeek Harness 里实际装了什么、当前版本又拒装了哪些。每期在生成那晚就定稿，里面的数字是当时量到的。",
+    listMetaTitle: "DeepSeek Harness 插件周报：新收录、Star 涨幅与安装排行",
+    listMetaDescription:
+      "DeepSeek Harness 插件周报：每周新收录的插件、GitHub Star 涨得最多的、在 harness 里实际被装得最多的，以及当前版本拒装的插件。数字全部来自夜间快照和 sandbox 实测。",
+    listItem: (total: number, added: number) =>
+      `新收录 ${added.toLocaleString("zh")} 个 · 目录共 ${total.toLocaleString("zh")} 个`,
+    noIssues: "还没有发过周报。夜间快照攒满一周后出第一期。",
+    issueTitle: (from: string, to: string) => `DeepSeek Harness 插件周报 · ${from} → ${to}`,
+    issueMetaTitle: (from: string, to: string) => `DeepSeek Harness 插件周报（${from} 至 ${to}）`,
+    issueMetaDescription: (from: string, to: string, added: number) =>
+      `${from} 到 ${to} 这一周的 DeepSeek Harness 插件：新收录 ${added.toLocaleString("zh")} 个，Star 涨得最多的、被装得最多的，还有当前版本拒装的。`,
+    lede: (total: number, added: number) =>
+      `目录现有 ${total.toLocaleString("zh")} 个插件，本周新收录 ${added.toLocaleString("zh")} 个。数字都来自夜间快照和 sandbox 实测，不是估的。`,
+    frozen: (day: string) => `按 ${day} 的夜间快照定稿，之后不再改：目录还在变，这一页留的是那晚量到的结果。`,
+    allIssues: "全部周报",
+    releasesHeading: "本周 DeepSeek Harness 发版",
+    arrivedHeading: "本周新收录（按 Star）",
+    risingHeading: "本周涨 Star 最多",
+    installedHeading: "本周在 DeepSeek Harness 里被安装最多",
+    compatHeading: (dsh: string) => `DeepSeek Harness ${dsh} 兼容情况`,
+    compatBody: (dsh: string, tested: number, refused: number, rescued: number) =>
+      `已在 ${dsh} 上实测 ${tested.toLocaleString("zh")} 个，其中 ${refused.toLocaleString("zh")} 个最新版被拒，${rescued.toLocaleString("zh")} 个有能装的旧版。`,
+    compatHelp: "装不上先看这里",
+    cliLead: "，或者直接",
+    cliCommand: "npx dshmarketplace-cli add <插件>",
+    cliTail: "，它会按你本机的 dsh 挑版本。",
+    starsMetric: (n: number) => `★ ${n.toLocaleString("zh")}`,
+    gainedMetric: (n: number) => `+${n.toLocaleString("zh")} ★`,
+    installsMetric: (n: number) => `${n.toLocaleString("zh")} 次`,
+    noFit: "暂无能装的版本",
+    none: "本周没有。",
   },
 
   refusals: {

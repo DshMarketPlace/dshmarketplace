@@ -152,6 +152,7 @@ function SiteFooter({ locale }: { locale: Locale }) {
           links={[
             { href: p("/plugins"), label: d.footer.explore },
             { href: p("/top"), label: d.nav.top },
+            { href: p("/weekly"), label: d.footer.weekly },
             { href: p("/presets"), label: d.nav.presets },
             { href: p("/install-failed"), label: d.footer.installFailed },
             { href: p("/api-docs"), label: d.footer.api },

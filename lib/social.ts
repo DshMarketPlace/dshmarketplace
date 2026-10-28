@@ -25,7 +25,7 @@ const cover = (locale: Locale) => ({
   height: 630,
 });
 
-const OG_LOCALE: Record<Locale, string> = { en: "en_US", zh: "zh_CN" };
+export const OG_LOCALE: Record<Locale, string> = { en: "en_US", zh: "zh_CN" };
 
 export function socialMetadata(locale: Locale): Metadata {
   const d = t(locale);

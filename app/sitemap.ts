@@ -2,6 +2,7 @@ import type { MetadataRoute } from "next";
 
 import { getIndexedPlugins, getAllCategories } from "@/lib/data";
 import { absoluteUrl } from "@/lib/i18n";
+import { listWeeklyIssues } from "@/lib/weekly";
 
 export const revalidate = 3600;
 
@@ -30,9 +31,10 @@ function entry(
 }
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const [plugins, categories] = await Promise.all([
+  const [plugins, categories, issues] = await Promise.all([
     getIndexedPlugins(),
     getAllCategories(),
+    listWeeklyIssues(),
   ]);
 
   const now = new Date();
@@ -45,7 +47,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   // `install-failed` answers the search people make right after DeepSeek
   // Harness 0.2 refuses a plugin, with the releases our sandbox installed.
   // `top` ranks on installs and verdicts, which a scraper has neither of.
-  const DOC_PAGES = ["api-docs", "presets", "install-failed", "top"];
+  // `weekly` lists the stored issues; each issue is its own entry below.
+  const DOC_PAGES = ["api-docs", "presets", "install-failed", "top", "weekly"];
 
   return [
     ...entry("/", { lastModified: now, changeFrequency: "daily", priority: 1 }),
@@ -66,6 +69,14 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         lastModified: now,
         changeFrequency: "monthly",
         priority: 0.4,
+      }),
+    ),
+    // A stored issue never changes, so its write time is its last change.
+    ...issues.flatMap((issue) =>
+      entry(`/weekly/${issue.day}`, {
+        lastModified: issue.createdAt,
+        changeFrequency: "yearly",
+        priority: 0.6,
       }),
     ),
     ...categories.flatMap((c) =>
