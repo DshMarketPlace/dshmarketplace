@@ -28,7 +28,10 @@ const NPM = /^(?:@[a-z0-9-~][a-z0-9-._~]*\/)?[a-z0-9-~][a-z0-9-._~]*$/;
 // GitHub's: an owner of up to 39, a repository of up to 100, and our subpath.
 const OWNER = "[A-Za-z0-9](?:[A-Za-z0-9-]{0,38})";
 const REPO = "[A-Za-z0-9._-]{1,100}";
-const FULL_NAME = new RegExp(`^${OWNER}/${REPO}(?:#[A-Za-z0-9._/-]{1,200})?$`);
+// `owner/repo:sub` is the same name as `owner/repo#sub`, for URLs: Cloudflare
+// drops everything from a `#` on before the Worker sees the query, encoded
+// as %23 or not, so the API's own callers send `:`.
+const FULL_NAME = new RegExp(`^(${OWNER}/${REPO})(?:[#:](?:path:\\/?)?([A-Za-z0-9._/-]{1,200}))?$`);
 const GITHUB_URL = new RegExp(`^(?:git\\+)?https?://(?:www\\.)?github\\.com/(${OWNER})/(${REPO}?)(?:\\.git)?(?:[/#?].*)?$`);
 const GITHUB_SPEC = new RegExp(`^github:(${OWNER})/(${REPO}?)(?:\\.git)?(?:#(.*))?$`);
 
@@ -80,7 +83,8 @@ export function parseName(raw: string): CompatKey | null {
     return name.length <= 214 && NPM.test(name) ? { kind: "npm", key: name } : null;
   }
 
-  return FULL_NAME.test(token) ? { kind: "repo", key: token } : null;
+  const full = FULL_NAME.exec(token);
+  return full ? { kind: "repo", key: full[2] ? `${full[1]}#${full[2]}` : full[1] } : null;
 }
 
 /** A `package.json` dependency: the spec decides, the key is the fallback. */
@@ -131,7 +135,7 @@ function fromText(text: string): string[] {
 
 /** What the API's `names` parameter carries for a key. */
 export function encodeKey(key: CompatKey): string {
-  return key.key;
+  return key.key.replace("#", ":");
 }
 
 /**

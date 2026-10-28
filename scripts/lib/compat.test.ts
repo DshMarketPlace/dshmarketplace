@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { parseName, parseNames } from "../../lib/compat-names";
+import { encodeKey, parseName, parseNames } from "../../lib/compat-names";
 import {
   pickPreviewCandidates,
   previewRejection,
@@ -29,6 +29,15 @@ test("names: a pnpm path: fragment is the subpath, any other fragment is a ref",
   assert.equal(parseName("github:a/b#path:/examples/x")?.key, "a/b#examples/x");
   assert.equal(parseName("github:a/b#main")?.key, "a/b");
   assert.equal(parseName("github:a/b#v1.0::path:sub")?.key, "a/b#sub");
+});
+
+test("names: `owner/repo:sub` is `owner/repo#sub`, and that is what goes over the wire", () => {
+  assert.deepEqual(parseName("a/b:examples/x"), { kind: "repo", key: "a/b#examples/x" });
+  assert.deepEqual(parseName("a/b#examples/x"), { kind: "repo", key: "a/b#examples/x" });
+  assert.deepEqual(parseName("a/b#path:examples/x"), { kind: "repo", key: "a/b#examples/x" });
+  // Cloudflare cuts a query at `#`, even as %23.
+  assert.equal(encodeKey({ kind: "repo", key: "a/b#examples/x" }), "a/b:examples/x");
+  assert.equal(parseName(encodeKey({ kind: "repo", key: "a/b#examples/x" }))?.key, "a/b#examples/x");
 });
 
 test("names: anything that is not a name is refused, not looked up", () => {
