@@ -263,6 +263,31 @@ export const plugins = sqliteTable(
       t.slug,
       t.stars,
     ),
+    // /market/index.json selects ~1,800 install-verified rows and a dozen
+    // columns past the README; this partial index holds all of them, so the
+    // read never touches the table. migrations/0013.
+    marketCoverIdx: index("plugins_market_cover_idx")
+      .on(
+        t.isArchived,
+        t.stars,
+        t.installStatus,
+        t.installDshVersion,
+        t.verifiedRelease,
+        t.fullName,
+        t.name,
+        t.owner,
+        t.subpath,
+        t.repoUrl,
+        t.summary,
+        t.summaryZh,
+        t.categoryId,
+        t.slug,
+        t.visibility,
+        t.inRegistry,
+        t.linuxdoUrl,
+        t.installCount,
+      )
+      .where(sql`${t.installDshVersion} IS NOT NULL AND ${t.verifiedRelease} IS NOT NULL`),
   }),
 );
 

@@ -1,0 +1,11 @@
+-- The plugin index (/market/index.json) reads every install-verified listing:
+-- ~1,800 rows, and most of the columns it needs (stars, verdict, verified
+-- release, visibility, installs…) sit past the README, so each row walked its
+-- README overflow chain. Measured on production 28 Oct 2026: 13.6 s and
+-- 16.1 s for one read. It is cached for 15 minutes, so that is ~100 such
+-- reads a day on the shared DB box (CLAUDE.md rule 7).
+--
+-- Partial and covering: only rows the index can list are in it, and every
+-- column the query selects is in it, so the read never touches the table.
+-- Applied by hand, like 0005-0012. Until it is, the query is correct, just slow.
+CREATE INDEX IF NOT EXISTS `plugins_market_cover_idx` ON `plugins` (`is_archived`, `stars`, `install_status`, `install_dsh_version`, `verified_release`, `full_name`, `name`, `owner`, `subpath`, `repo_url`, `summary`, `summary_zh`, `category_id`, `slug`, `visibility`, `in_registry`, `linuxdo_url`, `install_count`) WHERE `install_dsh_version` IS NOT NULL AND `verified_release` IS NOT NULL;
