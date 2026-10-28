@@ -4,13 +4,13 @@ import { Star, GitFork, ExternalLink, MessagesSquare, Sparkles } from "lucide-re
 import { PluginCard } from "@/components/plugin-card";
 import { CopyCommand } from "@/components/copy-command";
 import { InstallCheck } from "@/components/install-check";
+import { SecurityPanel } from "@/components/security-panel";
 import { installOptions, installKindLabel } from "@/lib/install";
 import { t } from "@/lib/dict";
 import {
   absoluteUrl,
   localePath,
   relativeTime,
-  riskList,
   HTML_LANG,
   type Locale,
 } from "@/lib/i18n";
@@ -191,7 +191,6 @@ export async function PluginView({
 }) {
   const d = t(locale).plugin;
   const related = await getRelatedPlugins(plugin);
-  const flags: string[] = plugin.riskFlags ? JSON.parse(plugin.riskFlags) : [];
   const commands = installOptions(plugin, locale);
   const checkedAgo = relativeTime(plugin.installCheckedAt, locale);
   const summary = summaryFor(plugin, locale);
@@ -393,14 +392,10 @@ export async function PluginView({
             ) : (
               <li>{d.noLicence}</li>
             )}
-            {flags.length > 0 ? (
-              <li className="text-copper">
-                {d.detected(riskList(flags, locale))}
-              </li>
-            ) : null}
-            <li>{d.notAReview}</li>
           </ul>
         </section>
+
+        <SecurityPanel plugin={plugin} locale={locale} />
 
         {review ? (
           // Above the overview on purpose: it is the shortest thing on the

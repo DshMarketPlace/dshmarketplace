@@ -271,6 +271,46 @@ const en = {
       "For maintainers: the badge serves this listing's latest sandbox verdict, so a re-run updates it on its own — and it links readers to the full result here.",
   },
 
+  // Every row names where it came from, because the three sources differ in
+  // weight: one is an install we ran, two are text scans of the repository.
+  security: {
+    eyebrow: "Security",
+    heading: (name: string) => `What installing ${name} runs`,
+    buildLabel: "Build scripts",
+    buildHeld:
+      "pnpm held these build scripts for approval, and the plugin did not register until they were allowed:",
+    buildSelf: "the plugin's own prepare script",
+    buildApprove:
+      "An approved script runs with your user account's permissions. DSH's Plugins page offers to allow them and retry — read the script before you do.",
+    buildHeldEmpty:
+      "pnpm held a build script for approval, and the plugin did not register until it was allowed. The run did not record which.",
+    buildSkipped:
+      "pnpm skipped these dependency build scripts, and the plugin registered without them:",
+    buildSkippedNote:
+      "Under pnpm 11 the install stops and asks you to approve them instead; an approved script runs with your user account's permissions.",
+    buildNone: "No build script was blocked in our run.",
+    buildNever: "Not measured — we have not installed it yet.",
+    buildRefused: "Not measured — DSH refused the latest release before running anything.",
+    buildIncomplete: "Not measured — the install did not complete.",
+    buildSource: (dsh: string | null, when: string | null) =>
+      `Source: our sandbox install${dsh ? ` on DeepSeek Harness ${dsh}` : ""}${when ? `, ${when}` : ""}.`,
+    lifecycleLabel: "Install hooks",
+    lifecycleYes:
+      "package.json declares a preinstall, install or postinstall script, which runs when the package is installed.",
+    lifecycleNo: "package.json declares no preinstall, install or postinstall script.",
+    lifecycleSource:
+      "Source: package.json on GitHub, read at our last sync. prepare is not recorded; it runs only on a GitHub install, and shows up under build scripts when pnpm blocks it.",
+    readmeLabel: "README mentions",
+    readmeTerminal: "shell commands (bash, exec, spawn …)",
+    readmeCredentials: "API keys, tokens or passwords",
+    readmeNo: "Neither shell commands nor credentials.",
+    readmeSource:
+      "Source: a keyword match on the README — a hint about what the plugin touches, not an analysis of its code.",
+    notScanned: "Not checked yet.",
+    footer:
+      "Not an audit. These are the record of one install and two text scans; nobody has read this plugin's code on your behalf. Plugins run with your agent's permissions.",
+  },
+
   how: {
     eyebrow: "How it works",
     heading: "How to install a DeepSeek Harness plugin",
@@ -338,10 +378,6 @@ const en = {
     licensed: (l: string) => `Licensed under ${l}.`,
     noLicence:
       "No licence file detected. Code without a licence is all-rights-reserved by default.",
-    detected: (f: string) =>
-      `Detected: ${f}. Read the source before granting these.`,
-    notAReview:
-      "A listing here is not a security review. Plugins run with your agent's permissions.",
     overviewHeading: (name: string) => `What ${name} does`,
     readmeHeading: (name: string) => `${name} documentation`,
     docsNote:
@@ -754,6 +790,40 @@ const zh: Dict = {
       "给维护者的：badge 取这条 listing 最近一次 sandbox 实测的结果，重跑之后它自己会变，读者点开就是这页的完整记录。",
   },
 
+  security: {
+    eyebrow: "安全",
+    heading: (name: string) => `装 ${name} 会执行什么`,
+    buildLabel: "构建脚本",
+    buildHeld: "pnpm 把下面这些构建脚本拦下来等你放行，放行之前插件不会注册：",
+    buildSelf: "插件自己的 prepare 脚本",
+    buildApprove:
+      "放行之后，脚本以你当前用户的权限执行。DSH 的 Plugins 页面会提示放行并重试——放行前先看一眼脚本写了什么。",
+    buildHeldEmpty:
+      "pnpm 拦下了一个构建脚本等你放行，放行之前插件不会注册。这次运行没记下是哪个。",
+    buildSkipped: "pnpm 跳过了下面这些依赖的构建脚本，插件没有它们也注册上了：",
+    buildSkippedNote:
+      "换成 pnpm 11，安装会停下来先让你放行；放行之后，脚本以你当前用户的权限执行。",
+    buildNone: "我们这次实装里没有构建脚本被拦。",
+    buildNever: "没测到——还没实装过。",
+    buildRefused: "没测到——DSH 在执行任何东西之前就拒装了最新版。",
+    buildIncomplete: "没测到——安装没有跑完。",
+    buildSource: (dsh: string | null, when: string | null) =>
+      `来源：我们在沙箱里的实装${dsh ? `，DeepSeek Harness ${dsh}` : ""}${when ? `，${when}` : ""}。`,
+    lifecycleLabel: "安装钩子",
+    lifecycleYes: "package.json 里声明了 preinstall / install / postinstall 脚本，装包时会执行。",
+    lifecycleNo: "package.json 里没有 preinstall / install / postinstall 脚本。",
+    lifecycleSource:
+      "来源：最近一次同步时读到的 GitHub 上的 package.json。prepare 没有记录——它只在从 GitHub 装时执行，被 pnpm 拦下时会出现在「构建脚本」那一行。",
+    readmeLabel: "README 里提到",
+    readmeTerminal: "shell 命令（bash、exec、spawn 之类）",
+    readmeCredentials: "API key、token 或密码",
+    readmeNo: "既没提 shell 命令，也没提密钥。",
+    readmeSource: "来源：对 README 做的关键词匹配，只提示它可能碰到什么，不是代码分析。",
+    notScanned: "还没检查。",
+    footer:
+      "这不是安全审计。上面是一次实装记录加两次文本扫描，没有人替你读过这个插件的代码。插件带着你 agent 的权限在跑。",
+  },
+
   how: {
     eyebrow: "怎么用",
     heading: "怎么安装 DeepSeek Harness 插件",
@@ -822,9 +892,6 @@ const zh: Dict = {
       "——从社区帖子人工收录，没有进入 DSH 自带市场的那个精选库。",
     licensed: (l: string) => `开源协议：${l}。`,
     noLicence: "没检测到协议文件。没有协议的代码，默认保留全部权利。",
-    detected: (f: string) => `自动识别到：${f}。授权之前请先读一遍源码。`,
-    notAReview:
-      "被收录在这里不代表通过了安全审计。插件是带着你 agent 的权限在跑。",
     overviewHeading: (name: string) => `${name} 是做什么的`,
     readmeHeading: (name: string) => `${name} 的文档`,
     docsNote:

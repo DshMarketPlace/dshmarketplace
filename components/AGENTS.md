@@ -20,6 +20,7 @@
 - `pull-request-submission.tsx`: Pull Request 提交引导。
 - `refusal-table.tsx`: 拒绝安装结果列表。
 - `review-dialog.tsx`: 插件评测对话框。
+- `security-panel.tsx`: 详情页「安全」区块：沙箱被拦的构建脚本、package.json 安装钩子、README 关键词，每行注明来源，不是审计。
 - `submit-form.tsx`: 插件投稿表单。
 - `theme-provider.tsx`: 主题上下文。
 - `theme-toggle.tsx`: 明暗主题切换。
