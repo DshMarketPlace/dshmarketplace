@@ -12,10 +12,11 @@
 import "dotenv/config";
 import { lstatSync, readFileSync, readdirSync } from "node:fs";
 import { join, resolve } from "node:path";
-import { eq } from "drizzle-orm";
+import { asc, eq, gt } from "drizzle-orm";
 
 import { db } from "../db/client";
 import { categories, plugins } from "../db/schema";
+import { readAllById } from "./lib/paged";
 import {
   CATEGORY_LABELS,
   CATEGORY_ORDER,
@@ -171,17 +172,23 @@ async function main() {
       )
     : allEntries;
 
-  const existing = await db
-    .select({
-      id: plugins.id,
-      fullName: plugins.fullName,
-      slug: plugins.slug,
-      summary: plugins.summary,
-      summaryZh: plugins.summaryZh,
-      categoryId: plugins.categoryId,
-      inRegistry: plugins.inRegistry,
-    })
-    .from(plugins);
+  // Paged: every summary in one response is over sqld's size cap.
+  const existing = await readAllById((after, size) =>
+    db
+      .select({
+        id: plugins.id,
+        fullName: plugins.fullName,
+        slug: plugins.slug,
+        summary: plugins.summary,
+        summaryZh: plugins.summaryZh,
+        categoryId: plugins.categoryId,
+        inRegistry: plugins.inRegistry,
+      })
+      .from(plugins)
+      .where(gt(plugins.id, after))
+      .orderBy(asc(plugins.id))
+      .limit(size),
+  );
   const existingByName = new Map(
     existing.map((row) => [row.fullName.toLowerCase(), row]),
   );

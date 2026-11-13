@@ -14,10 +14,11 @@
  * deleting the only thing here that cannot be regenerated.
  */
 import "dotenv/config";
-import { and, eq, inArray, isNull, or, sql } from "drizzle-orm";
+import { and, asc, eq, gt, inArray, isNull, or, sql } from "drizzle-orm";
 
 import { db } from "../db/client";
 import { plugins } from "../db/schema";
+import { readAllById } from "./lib/paged";
 import { commitCount, exhausted } from "./lib/github";
 
 const CONCURRENCY = 6;
@@ -26,23 +27,30 @@ const MIN_COMMITS = 10;
 async function main() {
   const dryRun = process.argv.includes("--dry-run");
 
-  const rows = await db
-    .select({
-      id: plugins.id,
-      fullName: plugins.fullName,
-      owner: plugins.owner,
-      repo: plugins.repo,
-      summary: plugins.summary,
-      stars: plugins.stars,
-    })
-    .from(plugins)
-    .where(
-      and(
-        eq(plugins.provenance, "topic"),
-        eq(plugins.visibility, "hidden"),
-        isNull(plugins.overview),
-      ),
-    );
+  // Paged for the same reason as sync-registry: these summaries grow with
+  // every night's discovery, and one response has a size cap.
+  const rows = await readAllById((after, size) =>
+    db
+      .select({
+        id: plugins.id,
+        fullName: plugins.fullName,
+        owner: plugins.owner,
+        repo: plugins.repo,
+        summary: plugins.summary,
+        stars: plugins.stars,
+      })
+      .from(plugins)
+      .where(
+        and(
+          eq(plugins.provenance, "topic"),
+          eq(plugins.visibility, "hidden"),
+          isNull(plugins.overview),
+          gt(plugins.id, after),
+        ),
+      )
+      .orderBy(asc(plugins.id))
+      .limit(size),
+  );
 
   console.log(`${rows.length} topic rows to check, bar is ${MIN_COMMITS} commits\n`);
 
