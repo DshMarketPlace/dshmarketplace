@@ -58,6 +58,28 @@ Pages, each in both languages: `/` (hero, catalogue, how-it-works, FAQ),
 `/p/[slug]`, `/api-docs`, `/about`, `/submit`, `/contact`, `/terms`, `/privacy`.
 English-only: `/admin`, `/api/v1/*`, `/badge/[slug]`.
 
+## What changed, 13 Nov
+
+**The nightly sync was down 7–12 Nov.** `Sync catalogue` failed six nights
+running at its first step, `Reconcile upstream registry`, with
+`RESPONSE_TOO_LARGE`: `sync-registry.ts` read every plugin's `summary` and
+`summary_zh` in one select (17,645 rows, ~6.9 MB raw, ~10 MB as hrana JSON),
+over sqld's per-response cap. Nothing after it ran — README fetches, metadata
+refresh, npm checks, pruning, stats, install checks, reviews, previews — while
+Deploy and the daily content job stayed green, so the site looked fine.
+
+Fixed in 2928c83: `scripts/lib/paged.ts` (`readAllById`, keyset on `id`,
+2,000 rows a page, tested) now backs `sync-registry.ts` and the growing
+summary read in `prune-topic.ts` (~4.4 MB, same trajectory). Verified against
+prod with `--dry-run` (backlog: 1,362 inserts, 329 updates; 443 detected
+removals stay unapplied without `--apply-removals`); a manual run passed the
+reconcile step. Other whole-table reads select names only (~2 MB) or are
+limited, and were left alone.
+
+**Rule from this:** a read whose size grows with the catalogue and carries
+text columns is paged. And "is it working" includes `gh run list`, not just
+the site.
+
 ## What changed, 20 Oct
 
 **The database left Turso.** The Developer plan's 2.5B rows-read quota ran out
