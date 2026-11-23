@@ -35,6 +35,11 @@ import { plugins } from "../db/schema";
 const DRY = process.argv.includes("--dry");
 const EXISTS_CONCURRENCY = 16;
 const OWNER_CONCURRENCY = 4;
+// undici's own limits are 300s for headers plus 300s for the body, so a
+// registry connection that is held open without answering parked a worker for
+// ten minutes. On 21 Nov that happened every few hundred names until the sync
+// job hit its two-hour limit. A request that has not answered in 15s will not.
+const FETCH_TIMEOUT_MS = 15_000;
 
 const encode = (name: string) => name.replace("/", "%2f");
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
@@ -55,6 +60,7 @@ async function exists(name: string): Promise<boolean | undefined> {
       const res = await fetch(`https://registry.npmjs.org/${encode(name)}`, {
         method: "HEAD",
         headers: { "User-Agent": "dshmarketplace-repair" },
+        signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
       });
       if (res.status === 404) return false;
       if (res.ok) return true;
@@ -73,7 +79,10 @@ async function publisher(name: string): Promise<string | null | undefined> {
     try {
       const res = await fetch(
         `https://registry.npmjs.org/${encode(name)}/latest`,
-        { headers: { "User-Agent": "dshmarketplace-repair" } },
+        {
+          headers: { "User-Agent": "dshmarketplace-repair" },
+          signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
+        },
       );
       if (res.status === 429) {
         await sleep(3000 * (attempt + 1));

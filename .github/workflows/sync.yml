@@ -110,7 +110,13 @@ jobs:
       # for a package that was never published, or was somebody else's. A
       # correct check nothing sweeps with is not a check. This one is cheap —
       # a HEAD per distinct name — so it runs over the whole catalogue.
+      #
+      # Bounded and non-fatal: an unanswered lookup already means "leave the
+      # claim alone", so a slow registry night should cost this sweep, not the
+      # whole sync and its deploy.
       - name: Verify every npm claim
+        timeout-minutes: 30
+        continue-on-error: true
         run: pnpm tsx scripts/repair-npm-claims.ts
 
       - name: Re-apply the admission bar

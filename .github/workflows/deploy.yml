@@ -34,8 +34,23 @@ jobs:
 
       - run: pnpm install --frozen-lockfile
 
-      - name: Build and deploy
-        run: pnpm exec opennextjs-cloudflare build && pnpm exec opennextjs-cloudflare deploy
+      # The build reads the catalogue from the self-hosted DB, so one dropped
+      # connection from the runner failed the whole deploy (23 Nov: connect
+      # timeout during "collect page data"). Retry the build once before
+      # giving up; a real outage still fails on the second attempt.
+      - name: Build
+        run: |
+          pnpm exec opennextjs-cloudflare build || {
+            echo "::warning::build failed; retrying once in 60s"
+            sleep 60
+            pnpm exec opennextjs-cloudflare build
+          }
+        env:
+          TURSO_DATABASE_URL: ${{ secrets.TURSO_DATABASE_URL }}
+          TURSO_AUTH_TOKEN: ${{ secrets.TURSO_AUTH_TOKEN }}
+
+      - name: Deploy
+        run: pnpm exec opennextjs-cloudflare deploy
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}

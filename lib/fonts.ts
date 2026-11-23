@@ -1,14 +1,18 @@
 import localFont from "next/font/local";
-import { Bricolage_Grotesque } from "next/font/google";
 
 // Shared by both root layouts. Declaring them once keeps a single subset in
 // the build — two declarations of the same face would ship it twice.
 
 // Display face carries the brand. Deliberately not Inter — a grotesque with
 // real character reads as designed rather than defaulted.
-export const display = Bricolage_Grotesque({
-  subsets: ["latin"],
-  weight: ["600", "700", "800"],
+//
+// Self-hosted (latin subset, variable wght 600–800, from Google Fonts, OFL).
+// `next/font/google` fetched it from fonts.gstatic.com at build time, and that
+// fetch failing broke two deploys (15 and 21 Nov) with "next/font/google
+// queries have exactly one entry" — a CDN hiccup should not block a release.
+export const display = localFont({
+  src: "../app/fonts/BricolageGrotesque-latin-wght.woff2",
+  weight: "600 800",
   // On a throttled mobile connection the late swap moved the entire hero and
   // stats grid (CLS ~0.15). `optional` keeps the metric-adjusted fallback for
   // that first slow visit; the preloaded brand face is used whenever it is
